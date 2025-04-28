@@ -42,23 +42,21 @@ pip install --extra-index-url http://localhost:8080/simple/ ...
 pip install passlib
 ```
 
+#### 2. 创建 `htpasswd` 文件
+passlib提供了创建和读取验证密码信息的方法，通过以下代码创建包含用户名`admin`和测试密码`abc123```的身份验证文件。
+
 ```python
 >>> from passlib.apache import HtpasswdFile
 >>> ht = HtpasswdFile("test.htpasswd", new=True)
 >>> ht.set_password("admin", "abc123")
 False
 >>> ht.save()
->>>
 ```
 
-
-#### 2. 创建 `htpasswd` 文件
-使用 `htpasswd` 命令创建一个包含至少一个用户/密码对的文件。执行以下命令时，系统会提示你输入密码：
+### 3. 带身份验证启动服务
 ```bash
-htpasswd -sc htpasswd.txt <some_username>
+pypi-server run -p 8000 /data/app/packages -P test.htpasswd &!
 ```
-将 `<some_username>` 替换为你想要设置的用户名，这样就能完成 `pypi-server` 基于 `htpasswd` 的密码控制配置。 
-
 
 ### 使用场景
 - **企业内部开发**：企业内部开发团队可以将内部开发的Python包上传到本地的`pypi-server`，方便团队成员共享和使用这些包，避免将内部包发布到公共的PyPI上，提高了包的安全性和可控性。
