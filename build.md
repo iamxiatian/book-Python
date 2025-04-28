@@ -14,21 +14,50 @@
 
 ### 安装与运行
 - **安装**：通常可以使用`pip`来安装`pypi - server`，命令如下：
-```
+```bash
 pip install pypi-server
 ```
 - **运行**：安装完成后，可以通过命令行启动`pypi - server`。例如，在终端中输入`pypi-server`并指定存储包的目录等参数，即可启动服务器。
 
-```
+```bash
 pip install pypiserver                # Or: pypiserver[passlib,cache]
 mkdir ~/packages                      # Copy packages into this directory.
 pypi-server run -p 8080 ~/packages &      # Will listen to all IPs.
 ```
 - **客户端使用**：在客户端，可以通过执行如下命令使用
-```
+```bash
 # Download and install hosted packages.
 pip install --extra-index-url http://localhost:8080/simple/ ...
 ```
+
+
+### 身份验证
+在使用 `pypi-server` 时，密码控制是一项重要的安全措施。不过，在某些特定场景下，比如在内部网络环境中，也可以选择禁用上传时的身份验证。但为了避免因疏忽而做出不合理的安全决策，通常建议启动身份验证功能。
+
+要实现类似 Apache 的身份验证，你需要使用 `htpasswd` 文件来管理用户的密码。具体操作步骤如下：
+
+#### 1. 安装 `passlib` 模块
+解析 `htpasswd` 文件需要用到 `passlib` 模块，并且要求其版本在 1.6 及以上。你可以使用 `pip` 来安装该模块，命令如下：
+```bash
+pip install passlib
+```
+
+```python
+>>> from passlib.apache import HtpasswdFile
+>>> ht = HtpasswdFile("test.htpasswd", new=True)
+>>> ht.set_password("admin", "abc123")
+False
+>>> ht.save()
+>>>
+```
+
+
+#### 2. 创建 `htpasswd` 文件
+使用 `htpasswd` 命令创建一个包含至少一个用户/密码对的文件。执行以下命令时，系统会提示你输入密码：
+```bash
+htpasswd -sc htpasswd.txt <some_username>
+```
+将 `<some_username>` 替换为你想要设置的用户名，这样就能完成 `pypi-server` 基于 `htpasswd` 的密码控制配置。 
 
 
 ### 使用场景
