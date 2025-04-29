@@ -104,9 +104,13 @@ This instance is running version 2.3.2 of the pypiserver software.
 name = "xiaobai"
 url = "http://10.96.1.43:9020/simple/"
 publish-url = "http://10.96.1.43:9020/"
-explicit = true
 username = "admin"
 password = "abc123"
+default = true
+
+[[tool.uv.index]]
+name= "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
 ```
 
 然后指定打包和发布命令：
@@ -127,3 +131,33 @@ Uploading commons-0.1.0.tar.gz (7.9KiB)
 ```
 
 此时，再次打开地址<http://10.96.1.43:9020/>，会看到私有服务器上索引的包的数量发生了变化，打开连接<http://10.96.1.43:9020/simple/>能看到新加入的包。
+
+
+## 利用uv引用私有库中的包
+
+假设要引用上面发布在私有库中的`commons-0.1.0`，该怎么处理呢？我们现在项目的`pyproject.toml`文件中，增加指向私有仓库的源和外部的源，以支持从私有库和外部源中添加第三方依赖。
+
+
+```toml
+[[tool.uv.index]]
+name = "xiaobai"
+url = "http://10.96.1.43:9020/simple/"
+publish-url = "http://10.96.1.43:9020/"
+username = "admin"
+password = "abc123"
+default = true
+
+[[tool.uv.index]]
+name= "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+```
+注意，应该将私有库设为`default = true`，这样，通过`uv add`添加包时，会首先从其他源中检索数据，找不到时，则继续扫描`default`默认库。
+
+添加命令如下：
+```
+uv add -U commons
+```
+
+上述的参数`-U`表示会自动更新为最新版本的包。
+
+
