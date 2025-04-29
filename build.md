@@ -66,13 +66,16 @@ False
 此时在`/data/xiaobai/packages`目录下会生成一个存放有身份验证信息的文件`my.htpasswd`。
 
 ### 3. 带身份验证启动服务
+
+通过以下命令后台运行`pypi-server`：
+
 ```bash
-pypi-server run -p 9020 /data/app/packages -P my.htpasswd &!
+nohup pypi-server run -p 9020 /data/app/packages -P my.htpasswd &!
 ```
 
 ### 测试
 
-通过浏览器访问服务器地址，假设服务器地址为`10.96.1.43`，则打开http://10.96.1.43:9020/,会出现如下提示信息，表明PyPI服务已经成功运行起来。
+通过浏览器访问服务器地址，假设服务器地址为`10.96.1.43`，则打开[http://10.96.1.43:9020/],会出现如下提示信息，表明PyPI服务已经成功运行起来。
 
 ```plain
 Welcome to pypiserver!
@@ -91,3 +94,36 @@ The complete list of all packages can be found here or via the simple index.
 
 This instance is running version 2.3.2 of the pypiserver software.
 ```
+
+## 利用uv打包和发布
+
+打开`pyproject.toml`文件，在后面添加如下内容，来增加一个名字叫`xiaobai`的私有发布源：
+
+```toml
+[[tool.uv.index]]
+name = "xiaobai"
+url = "http://10.96.1.43:9020/simple/"
+publish-url = "http://10.96.1.43:9020/"
+explicit = true
+username = "admin"
+password = "abc123"
+```
+
+然后指定打包和发布命令：
+
+```bash
+uv build
+uv publish --index xiaobai
+```
+
+提示输入用户名和密码，分别输入前面所设置的`admin`和`abc123`，即可实现上传处理，提示信息如下：
+
+```
+Publishing 2 files http://10.96.1.43:9020/
+Enter username ('__token__' if using a token): admin
+Enter password:
+Uploading commons-0.1.0-py3-none-any.whl (9.2KiB)
+Uploading commons-0.1.0.tar.gz (7.9KiB)
+```
+
+此时，再次打开地址[http://10.96.1.43:9020/]，会看到
