@@ -1,0 +1,13 @@
+**/*.aux
+**/*.log
+**/_minted-book-Python/
+**/.DS_Store
+book-Python.bcf
+book-Python.idx
+book-Python.ilg
+book-Python.ind
+book-Python.pdf
+book-Python.run.xml
+book-Python.toc
+book-Python.bbl
+book-Python.blg
