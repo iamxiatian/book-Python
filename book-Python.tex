@@ -16,7 +16,6 @@
 
 
 \usepackage{fontspec, xunicode, xltxtra, fancybox, setspace}
-%\usepackage{ fontspec, xunicode, xltxtra, fancybox, setspace,xcolor}
 \usepackage[dvipsnames,table,xcdraw, svgnames]{xcolor}
 \usepackage{pifont} % special symbols like circle number etc. 
 
@@ -188,11 +187,10 @@
 		breakanywhere
 	}
 \setminted{bgcolor=bg, numbersep=2mm}
-\setminted{fontfamily="Fira Code", fontsize=\small}
-
+\setminted{fontsize=\small}
+%\setminted{fontfamily="Fira Code", fontsize=\small}
 
 \usepackage{enumitem}
-%\setlist[itemize]{align=parleft,left=0pt..1em, leftmargin=3em}
 \setenumerate[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt,}
 \setitemize[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
 \setdescription{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
@@ -210,6 +208,8 @@
 %\newcommand{\inlinecmd}[1]{  {\color{blue} ~\texttt{#1}}~ }
 %\newcommand{\inlinecmd}[1]{ \mintinline{bash}{#1} }
 \newcommand{\inlinefile}[1]{ \mintinline{bash}{#1} }
+\newcommand{\inlinepython}[1]{ \mintinline{python}{#1} }
+\newcommand{\variable}[1]{ \texttt{#1} }
 
 % 重定义数学向量符号的形式
 \renewcommand{\vec}[1]{\symbf{#1}}  
@@ -221,6 +221,7 @@
 \renewcommand{\midrule}{\Xhline{0.5pt}}
 \renewcommand{\bottomrule}{\Xhline{0.7pt}}
 
+\setmonofont{Intel One Mono} % 代码字体
 
 \setstretch{1.35} % 利用setspace包提供的命令，设置行间距
 \begin{document}
@@ -301,22 +302,22 @@
 	\include{chapter/ch01}
 	\include{chapter/ch02}
 	\include{chapter/ch03}
-	% \part{代码质量、类型与设计模式 (Quality \& Design)}
+	% \part{代码质量、类型与设计模式}
 	% \include{chapter/ch04}
  	% \include{chapter/ch05}
 	% \include{chapter/ch06}
-	% \part{并发、异步与性能优化 (Performance \& Concurrency)}
+	% \part{并发、异步与性能优化}
 	% \include{chapter/ch07}
 	% \include{chapter/ch08}
 	% \include{chapter/ch09}
-	% \part{健壮性：测试、配置与可观测性 (Robustness \& Observability)}
+	% \part{健壮性：测试、配置与可观测性}
 	% \include{chapter/ch10}
 	% \include{chapter/ch11}
 	% \include{chapter/ch12}
-	% \part{Git与工程协作流程 (Workflow \& Collaboration)}
+	% \part{Git与工程协作流程}
 	% \include{chapter/ch13}
 	% \include{chapter/ch14}
-	% \part{项目的交付与分发 (Delivery \& Distribution)}
+	% \part{项目的交付与分发}
 	% \include{chapter/ch15}
 	% \include{chapter/ch16}
 	 
