@@ -176,7 +176,7 @@ import my_package  # 现在虽然能导入了，但隐患重重
 
 \heading{PEP 420 与隐式命名空间}
 
-在 Python 3.3 之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{__init__.py} 中使用 \inlinepython{pkgutil.extend_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
+在 Python 3.3 之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{__init__.py} 中使用 \inlinepython{pkgutil.extend\_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
 
 PEP 420 允许我们将一个逻辑上的包拆分到文件系统中的不同目录下，甚至不同的发布包（Distribution Packages）中。其核心规则只有一个：在命名空间目录中不要包含 \inlinefile{__init__.py} 文件。
 
@@ -394,13 +394,18 @@ uv pip install -e .
 如此安装成功后，就可以快速运行代码或者执行测试，而不会出现ModuleNotFoundError的现象了。
 
 
-\section{模块化设计原则}
+\section{源代码文件的模块化设计原则}
 
-良好的项目结构需要配合合理的模块化设计。高内聚、低耦合是核心原则。
+良好的项目结构不仅是文件摆放，更是对模块职责的清晰划分。高内聚、低耦合作为软件工程的通用原则，在Python项目结构中同样至关重要。这些设计理念源于结构化程序设计方法和面向对象设计准则，在现代软件工程中被广泛认可和应用。下面简要介绍如何在Python项目中应用这些原则，更多内容可参考设计模式一章。
 
 \subsection{高内聚：专注单一职责}
 
-\textbf{反例：混杂的模块}
+高内聚要求一个模块或类中的所有元素紧密相关，共同为完成一个单一的、明确定义的任务而服务。这种设计理念在Robert C. Martin的代码整洁之道\citep{martin2017clean}中被系统阐述，强调每个模块都应该有清晰的职责边界。
+
+高内聚的设计提高了代码的可读性和可维护性。当需要修改某个功能时，开发者能够快速定位到相关模块，而不必在多个文件中来回跳转。在实际开发中，应将功能相关的代码组织在同一个模块中，避免创建承担过多职责的全能模块。
+
+\heading{反例：职责混杂的模块}
+
 \begin{minted}{python}
 # data_processor.py - 职责不清晰
 def read_database():
@@ -413,7 +418,8 @@ def call_api():
     pass
 \end{minted}
 
-\textbf{正例：职责清晰的模块}
+\heading{正例：职责清晰的模块划分}
+
 \begin{minted}{python}
 # database.py - 专注数据访问
 def get_user(user_id):
@@ -434,9 +440,14 @@ def fetch_data(endpoint):
     pass
 \end{minted}
 
+这种职责清晰的模块划分不仅提高了代码的可读性，也便于协作和维护。例如，当需要修改文件处理逻辑时，开发者只需关注 \inlinefile{file_processor.py} 模块，而不会意外影响到数据库或API相关的功能。
+
 \subsection{低耦合：减少模块依赖}
 
-\textbf{反例：硬编码依赖}
+低耦合要求模块间的依赖关系尽量减少和简化，一个模块的变动不应该强制要求其他大量模块做出修改。实现低耦合的关键策略包括依赖注入和接口抽象。通过依赖抽象接口而非具体实现，可以显著降低模块间的耦合度。
+
+\heading{反例：硬编码依赖导致的紧耦合}
+
 \begin{minted}{python}
 class UserService:
     def __init__(self):
@@ -446,7 +457,8 @@ class UserService:
         return self.db.query(f"SELECT * FROM users WHERE id = {user_id}")
 \end{minted}
 
-\textbf{正例：依赖注入 + 接口抽象}
+\heading{正例：依赖注入与接口抽象}
+
 \begin{minted}{python}
 from abc import ABC, abstractmethod
 
@@ -456,7 +468,7 @@ class Database(ABC):
         pass
 
 class UserService:
-    def __init__(self, db: Database):  # 依赖抽象
+    def __init__(self, db: Database):  # 依赖抽象而非具体实现
         self.db = db
         
     def get_user(self, user_id):
@@ -467,25 +479,36 @@ postgres_db = PostgreSQLDatabase()
 user_service = UserService(postgres_db)
 \end{minted}
 
-\section{非代码文件的管理规范}
+这种设计不仅提高了代码的可测试性，也使得系统更容易适应技术栈的变化和需求演进。例如，当需要从PostgreSQL迁移到MySQL时，只需创建一个新的MySQLDatabase类实现Database接口，而无需修改UserService的核心逻辑。
 
-\subsection{配置文件组织}
+在实践中，可以将这两个原则结合起来应用。首先通过高内聚设计创建职责清晰的模块，然后通过低耦合策略管理模块间的关系。值得注意的是，模块化设计不是一次性的任务，而是需要在整个项目生命周期中持续关注和改进的过程。随着需求的变化和系统的演进，应该定期审视模块的职责边界和依赖关系，确保设计始终符合当前的需求和约束条件。
 
-现代Python项目推荐统一的配置文件管理：
+
+\section{工程文件的规范化管理}
+
+除了源代码之外，项目的配置文件、测试文件和文档等工程文件同样需要规范化管理。
+
+\subsection{配置文件的集中管理}
+
+现代Python项目推荐采用统一的配置文件管理策略，将所有工程配置和元数据文件集中放置在项目根目录。这种集中化管理理念源于Unix哲学中的约定优于配置原则，便于开发工具和CI/CD流程的自动发现和处理。
+
+标准配置文件结构示例如下：
 
 \begin{minted}{text}
 my-project/
 ├── .editorconfig          # 编辑器配置
 ├── .gitignore            # Git忽略规则
 ├── .pre-commit-config.yaml # 代码提交前检查
-├── pyproject.toml        # 项目配置和依赖
+├── pyproject.toml        # 项目配置和依赖（PEP 621标准）
 ├── Dockerfile            # 容器化配置
 └── docker-compose.yml    # 服务编排
 \end{minted}
 
-\subsection{测试文件组织}
+\subsection{测试文件的专业组织}
 
-测试文件应遵循清晰的目录结构：
+测试文件的规范化组织对于保证测试的可维护性和可执行性至关重要。Python社区的测试实践主要受到JUnit和xUnit模式的影响，逐渐形成了清晰的约定。
+
+推荐的测试目录结构如下：
 
 \begin{minted}{text}
 tests/
@@ -500,16 +523,13 @@ tests/
 └── __init__.py
 \end{minted}
 
-使用uv运行测试：
-\begin{minted}{bash}
-uv add --dev pytest pytest-cov
-uv run pytest tests/unit/
-uv run pytest --cov=src tests/
-\end{minted}
+测试文件应该统一放置在根目录的\inlinefile{tests/}目录中，遵循\inlinefile{test\_*.py}的命名规范，便于测试框架自动发现。合理的测试目录结构应该区分单元测试和集成测试，为不同类型的测试提供独立的运行环境。此外，如果你的项目比较简单，也可以直接将测试文件放在\inlinefile{tests/}目录下。
 
-\subsection{文档管理}
+\subsection{文档的持续维护策略}
 
-文档应与代码同步维护：
+正如Python之禅中提到的``可读性很重要''，专业项目的文档管理应遵循与代码同等重要的原则，文档应该与代码同步维护。
+
+以下是文档目录的一种常见组织方式：
 
 \begin{minted}{text}
 docs/
@@ -525,98 +545,22 @@ docs/
 └── requirements.txt      # 文档依赖
 \end{minted}
 
-\section{实践建议与常见陷阱}
+文档源文件应该统一放置在\inlinefile{docs/}目录中，与Sphinx\footnote{\url{https://www.sphinx-doc.org/}}、MkDocs\footnote{\url{https://www.mkdocs.org/}}等文档生成工具集成，实现文档的自动化构建和发布。通过将文档构建流程纳入开发工作流，可以确保文档与代码的同步更新，避免文档过时的问题。
 
-\subsection{项目结构选择建议}
+\section{项目结构的实践建议}
+
+在实际项目开发中，项目结构的选择应该基于项目的生命周期、团队规模和分发需求，可遵循以下原则：
 
 \begin{itemize}
-    \item \textbf{从小开始}：从简单结构开始，随着项目复杂度增加逐步演进
-    \item \textbf{团队一致性}：团队内部应统一项目结构规范
-    \item \textbf{工具适配}：选择适合团队技术栈的项目结构
-    \item \textbf{持续优化}：定期review项目结构，适应需求变化
+    \item {渐进式演进}：项目结构不是一锤子买卖，而应跟着项目成长曲线动态调整。起步阶段只保留最简骨架，能跑通代码和测试即可；当功能膨胀、团队协作人数上升，再逐步拆分层次、划定边界，避免在项目初期过度设计。
+    \item {团队一致性}：无论多少人参与，团队先得把目录怎么起名、模块怎么引用、文档放哪里等问题形成共识，避免每人按自己习惯命名，统一项目结构规范，确保协作效率。
+    \item {工具适配性}：选择适合团队技术栈和工具链的项目结构，如采用uv作为构建工具，支持Makefile、Docker等，确保项目结构与工具链无缝集成。
+    \item {持续优化}：定期评审项目结构，根据实际需求变化进行调整，保持项目结构的灵活性和可扩展性。
 \end{itemize}
 
-\subsection{常见陷阱与解决方案}
+初学者在构建 Python 项目时，常会踩中``过早优化结构''的坑：还没写几行代码就急着把目录拆成深层级的 src、core、utils，结果每次新建文件都要在多层文件夹里来回跳转，反而拖慢开发节奏。最简单的办法是只用一级或两级目录把当前功能放下即可，等真正出现文件太多不好查找的情况再进行拆分。
 
-\textbf{陷阱1：过早优化}
-\begin{itemize}
-    \item \textbf{问题}：在项目初期过度设计结构
-    \item \textbf{解决}：从简单结构开始，根据实际需求演进
-\end{itemize}
-
-\textbf{陷阱2：导入混乱}
-\begin{itemize}
-    \item \textbf{问题}：相对导入和绝对导入混用
-    \item \textbf{解决}：统一使用绝对导入，或在包内使用相对导入
-\end{itemize}
-
-\textbf{陷阱3：循环依赖}
-\begin{itemize}
-    \item \textbf{问题}：模块间相互引用导致循环依赖
-    \item \textbf{解决}：重新设计模块职责，引入接口抽象
-\end{itemize}
-
-
-\section{模块化设计的核心原则}
-
-良好的项目结构不仅是文件摆放，更是对模块职责的清晰划分。高内聚、低耦合作为软件工程的通用原则，在Python项目结构中同样至关重要。
-
-\subsection{高内聚：单一职责的实践}
-
-高内聚要求一个模块或类中的所有元素紧密相关，共同为完成一个单一的、明确定义的任务而服务。这种设计理念源于结构化程序设计方法，在Robert C. Martin的《Clean Architecture》中被系统阐述。
-
-高内聚的设计提高了代码的可读性和可维护性，使每个模块都具有清晰的职责边界。当需要修改某个功能时，开发者能够快速定位到相关模块，而不必在多个文件中来回跳转。
-
-在实际开发中，应将功能相关的代码组织在同一个模块中。例如，一个数据处理项目应该将数据库操作、文件处理和API调用等不同职责分离到独立的模块中，而不是混杂在一个"上帝模块"中。这种职责清晰的模块划分不仅提高了代码的可读性，也便于团队协作和后续维护。
-
-\subsection{低耦合：依赖管理的艺术}
-
-低耦合要求模块间的依赖关系尽量减少和简化。这一原则最早在Larry Constantine的结构化设计中提出，后来成为面向对象设计的重要准则。低耦合的价值在于提高系统的灵活性和可扩展性，一个模块的变动不应该强制要求其他大量模块做出修改。
-
-实现低耦合的关键策略包括依赖注入和接口抽象。通过依赖抽象接口而非具体实现，可以显著降低模块间的耦合度。其他策略还包括最小化导入、使用事件驱动架构减少模块间的直接调用，以及采用领域驱动设计来界定清晰的上下文边界。
-
-在实践中，应该避免硬编码依赖，而是通过依赖注入的方式管理模块间的关系。这种设计不仅提高了代码的可测试性，也使得系统更容易适应技术栈的变化和需求演进。
-
-\section{工程文件的规范化管理}
-
-除了源代码，项目的配置文件、测试文件和文档等工程文件也需要规范化管理。合理的非代码文件组织是项目专业度的重要体现。
-
-\subsection{配置与元数据的集中管理}
-
-所有工程配置和元数据文件均应放置在项目根目录，便于工具和CI/CD流程查找。这种集中化管理理念源于Unix哲学中的"约定优于配置"原则，在现代开发工具中得到了广泛应用。
-
-现代Python项目的核心配置文件包括\inlinefile{pyproject.toml}、\inlinefile{.editorconfig}、\inlinefile{.gitignore}等。其中\inlinefile{pyproject.toml}作为Python标准配置文件，基于PEP 621标准，已经成为现代工具链的事实标准。
-
-使用uv等现代工具管理项目时，\inlinefile{pyproject.toml}不仅记录项目元数据和依赖配置，还可以统一管理构建系统和工具配置，实现了项目配置的集中化和标准化。
-
-\subsection{测试文件的专业组织}
-
-测试文件的规范化组织对于保证测试的可维护性和可执行性至关重要。Python社区的测试实践主要受到JUnit和xUnit模式的影响，逐渐形成了自己的约定。
-
-测试文件应该统一放置在根目录的\inlinefile{tests/}目录中，遵循\inlinefile{test\_*.py}的命名规范，便于测试框架自动发现。合理的测试目录结构应该区分单元测试和集成测试，为不同类型的测试提供独立的运行环境。
-
-使用uv运行测试的典型工作流体现了现代工具对测试管理的支持。通过统一的命令接口，开发者可以轻松运行特定测试、生成覆盖率报告，确保测试过程的可重复性和一致性。
-
-\subsection{文档的持续维护策略}
-
-专业项目的文档管理应遵循与代码同等重要的原则。Python社区的文档文化深受Python之禅中"可读性很重要"理念的影响，强调文档应该与代码同步维护。
-
-文档源文件应该统一放置在\inlinefile{docs/}目录中，与Sphinx、MkDocs等文档生成工具集成，实现文档的自动化构建和发布。通过将文档构建流程纳入开发工作流，可以确保文档与代码的同步更新，避免文档过时的问题。
-
-\section{工具链对项目结构的支持}
-
-现代Python工具链为项目结构的最佳实践提供了良好的支持。uv作为新一代Python工具，不仅简化了依赖管理，也对现代项目结构提供了原生支持。
-
-使用uv管理src布局项目时，可以通过简单的配置指定包目录：
-
-\begin{minted}{toml}
-[tool.uv.build]
-package-dir = "src"
-\end{minted}
-
-这种配置确保了uv在构建和打包时能够正确识别src目录中的包结构，体现了现代工具对Python打包标准的良好支持。
-
-对于现有项目的迁移，uv提供了渐进式的迁移路径。项目可以从传统的requirements.txt开始，逐步过渡到结构化的pyproject.toml配置，最终完全采用现代工作流。这种渐进迁移策略降低了采用新工具的门槛，使团队能够平滑过渡到现代开发实践。
+导入路径混乱也是初学者常遇到的问题，一会儿\inlinepython{from ..utils import foo}，一会儿\inlinepython{from src.utils import foo}，路径提示全靠开发工具猜，换台机器或跑个 pytest就报ImportError。解决这一问题的简答办法是采用\inlinefile{pyproject.toml}和uv等工具，把包安装到虚拟环境，采用\inlinepython{from my\_project.utils import foo}这种形式的绝对导入方式。
 
 
 \section{本章总结与进阶思考}
@@ -625,9 +569,33 @@ package-dir = "src"
 
 \textbf{关键要点回顾：}
 \begin{itemize}
-    \item \textbf{渐进式演进}：项目结构应随项目复杂度逐步演进
-    \item \textbf{工具集成}：现代工具为最佳实践提供了良好支持
-    \item \textbf{团队协作}：统一的规范比完美的结构更重要
+    \item {渐进式演进}：项目结构应随项目复杂度逐步演进
+    \item {工具集成}：现代工具为最佳实践提供了良好支持
+    \item {团队协作}：统一的规范比完美的结构更重要
 \end{itemize}
 
 \textbf{进阶思考：}项目结构解决了代码组织的宏观问题，但代码质量还需要微观层面的保障。下一章将探讨如何通过静态类型检查、代码格式化、自动化测试等工程实践，构建真正可维护的Python项目。
+
+
+
+
+\section{本章总结与进阶思考}
+
+项目结构的规范化组织是构建可维护Python项目的基础。本章系统介绍了不同规模项目所适用的布局方式及其设计理念。
+
+\textbf{关键要点回顾：}
+
+\begin{itemize}
+    \item {布局演进与适用场景}：从单文件、扁平布局到src布局，项目结构应随复杂度渐进演进。扁平布局适合简单脚本，src布局通过物理隔离确保测试可靠性，更适合长期维护和分发的项目。
+    
+    \item {关键技术机制}：src布局需结合\inlinecmd{pip install -e .}进行可编辑安装；命名空间包（PEP 420）支持跨仓库模块化，需省略\inlinefile{__init__.py}文件。
+    
+    \item {模块化设计原则}：高内聚聚焦单一职责，低耦合通过依赖注入减少模块依赖，共同提升代码可维护性与可测试性。
+    
+    \item {工程文件规范}：配置、测试、文档应集中管理，结构清晰，便于工具集成和团队协作。
+    
+    \item {工具链支持}：uv等现代工具为各类布局提供原生支持，降低了遵循最佳实践的成本。
+\end{itemize}
+
+\textbf{进阶思考：}
+项目结构解决了代码组织的宏观问题，而代码质量的全面提升还需微观实践的配合。后续章节将探讨如何通过静态类型检查、代码格式化、自动化测试等工程实践，构建真正可维护的Python项目。

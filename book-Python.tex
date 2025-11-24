@@ -205,11 +205,10 @@
 % 利用pifont在heading前加上方框符号
 \newcommand{\heading}[1]{  {\vspace{4pt} \color{darkgray}\ding{111} \textbf{#1}} \vspace{2pt}}
 
-%\newcommand{\inlinecmd}[1]{  {\color{blue} ~\texttt{#1}}~ }
-%\newcommand{\inlinecmd}[1]{ \mintinline{bash}{#1} }
+\newcommand{\inlinecmd}[1]{ \mintinline{bash}{#1} }
 \newcommand{\inlinefile}[1]{ \mintinline{bash}{#1} }
-\newcommand{\inlinepython}[1]{ \mintinline{python}{#1} }
-\newcommand{\variable}[1]{ \texttt{#1} }
+\newcommand{\inlinepython}[1]{ \colorbox{gray!10}{#1} }
+\newcommand{\variable}[1]{ {#1} }
 
 % 重定义数学向量符号的形式
 \renewcommand{\vec}[1]{\symbf{#1}}  
