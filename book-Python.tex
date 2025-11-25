@@ -190,6 +190,9 @@
 \setminted{fontsize=\small}
 %\setminted{fontfamily="Fira Code", fontsize=\small}
 
+\AfterEndEnvironment{minted}{\par\noindent}
+
+
 \usepackage{enumitem}
 \setenumerate[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt,}
 \setitemize[1]{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
@@ -209,10 +212,12 @@
 \newcommand{\inlinefile}[1]{ \mintinline{bash}{#1} }
 \newcommand{\inlinepython}[1]{ \colorbox{gray!10}{#1} }
 \newcommand{\variable}[1]{ {#1} }
+\newcommand{\textem}[1]{{\color{red} #1}} % 强调文本
 
 % 重定义数学向量符号的形式
 \renewcommand{\vec}[1]{\symbf{#1}}  
 %\renewcommand{\vec}[1]{\overrightarrow{#1}} 
+
 
 % 设置表格的行高
 \renewcommand{\arraystretch}{1.5}
@@ -301,8 +306,8 @@
 	\include{chapter/ch01}
 	\include{chapter/ch02}
 	\include{chapter/ch03}
-	% \part{代码质量、类型与设计模式}
-	% \include{chapter/ch04}
+	\part{类型、质量与设计模式}
+	\include{chapter/ch04}
  	% \include{chapter/ch05}
 	% \include{chapter/ch06}
 	% \part{并发、异步与性能优化}
