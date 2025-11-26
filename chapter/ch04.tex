@@ -522,6 +522,7 @@ def good_api() -> dict[str, str | int]:
 以下是\inlinepython{\# type: ignore}的一个使用示例：
 
 \begin{minted}{python}
+# demo_typeignore.py
 from typing import List
 
 # 创建一个整数列表的类型注解
@@ -533,9 +534,8 @@ items.append("string")  # 这里会引发类型错误
 # 使用 type: ignore 来抑制类型检查错误
 items.append("string")  # type: ignore
 
-# 虽然类型检查器会警告类型不匹配
-# 但我们知道 str() 函数可以处理所有这些类型
-string_items = [str(item) for item in items]  # type: ignore[misc]
+# 转换列表中的所有元素为字符串
+string_items = [str(item) for item in items]
 
 print(f"字符串列表: {string_items}")
 \end{minted}
