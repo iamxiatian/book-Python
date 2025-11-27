@@ -1,12 +1,35 @@
+% 封面页
+
+% 重定义\maketitle，减少顶部空白
+\makeatletter  % 进入内部命令模式
+\renewcommand{\maketitle}{
+  \newpage
+  \null  % 定位页面起点
+  \vspace{0.5cm}  % 标题顶部仅留1cm空白（关键！调小这个值更靠上）
+  \begin{center}
+    \textbf{\huge \@title}\\[0.5cm]  % 标题字体+标题与作者间距
+    \textbf{\large \@author}\\[0.2cm] % 作者字体
+    \@date  % 日期（可删）
+  \end{center}
+  \vskip 1.1em  % 标题与正文间距
+}
+\makeatother  % 退出内部命令模式
+
 \title{
-    \LARGE{\textcolor{black!80}{非小白的Python：从代码到部署的工程化实践}} \vspace{0.5cm} \\ 
-    \large{\textcolor{blue!45}{~}} \vspace{1.5cm}
-    \\
-	\includegraphics[width=0.4\textwidth]{figures/logo.pdf} \\
+    %：从代码到部署的工程化实践
+    \Huge{\textcolor{blue!90}{非小白的Python}} \vspace{0.5cm} \\ 
+
+	%\includegraphics[width=1.1\textwidth]{figures/cover.jpg} \\
+    \begin{tikzpicture}[remember picture,overlay]
+    \node[inner sep=0pt,opacity=0.65] at (0, -12.5) {
+        \includegraphics[width=1.35\textwidth]{figures/cover.jpg}
+    };
+    \end{tikzpicture}
 }
 \author{
 	夏天
 }
+
 
 \pagestyle{empty} % 关闭页码输出
 \maketitle
