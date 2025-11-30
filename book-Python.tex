@@ -180,12 +180,17 @@
 
 \usepackage{minted} %compile： lualatex/xelatex -shell-escape spark.tex
 \usemintedstyle{solarized-light} % https://pygments.org/styles/
-\definecolor{bg}{rgb}{0.975,0.975,0.975}
 \setminted{encoding=utf-8} %注意字体，如果设置了CJKmonofont，会出现乱码
-\setminted{linenos=true,tabsize=4, xleftmargin=1mm,
+\setminted{linenos=true,
+		frame=none, % 单线边框:single
+    	framesep=2mm,
+    	baselinestretch=1.2,
+		tabsize=4, 
+		xleftmargin=1mm,
 		breaklines, 
 		breakanywhere
 	}
+\definecolor{bg}{rgb}{0.98,0.98,0.98}
 \setminted{bgcolor=bg, numbersep=2mm}
 \setminted{fontsize=\small}
 %\setminted{fontfamily="Fira Code", fontsize=\small}
