@@ -4,4 +4,34 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi[all]>=0.122.0",
+    "pydantic>=2.12.5",
+    "tqdm>=4.67.1",
+    "uvicorn>=0.38.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.0",
+]
+
+
+[tool.mypy]
+    python_version = "3.12"              # 指定目标Python版本
+    warn_return_any = true              # 对返回Any类型的函数发出警告
+    disallow_untyped_defs = true        # 禁止定义无类型注解的函数
+    strict_optional = true              # 启用严格的Optional类型检查
+    warn_unused_ignores = true          # 警告未使用的type: ignore注释
+    check_untyped_defs = true           # 检查未注解函数内部的类型一致性
+    no_implicit_optional = true         # 禁止隐式的可选类型声明
+
+
+# 模块级差异化配置
+[[tool.mypy.overrides]]
+module = "pandas.*"
+ignore_missing_imports = true       # 忽略pandas相关的缺失导入错误
+
+[[tool.mypy.overrides]]
+module = "tests.*"  
+disallow_untyped_defs = false       # 测试文件允许无类型定义
