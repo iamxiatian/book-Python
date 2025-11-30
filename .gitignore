@@ -2,6 +2,7 @@
 **/*.log
 **/_minted-book-Python/
 **/.DS_Store
+**/*.pyc
 book-Python.bcf
 book-Python.idx
 book-Python.ilg
@@ -11,3 +12,4 @@ book-Python.run.xml
 book-Python.toc
 book-Python.bbl
 book-Python.blg
+book-Python_v*.pdf

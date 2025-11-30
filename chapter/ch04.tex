@@ -787,7 +787,7 @@ Pydantic自动处理类型转换和验证，当数据不符合模式要求时会
 
 \subsection{高级数据验证技术}
 
-除了基础类型验证，Pydantic提供了丰富的验证器来支持复杂的业务规则验证：
+Pydantic提供了丰富的验证器来支持复杂的业务规则验证，例如：
 
 \begin{minted}{python}
 from pydantic import BaseModel, field_validator
@@ -875,8 +875,7 @@ current_id = 1
 @app.post("/users/", response_model=UserResponse)
 async def register_user(user_data: UserRegisterRequest):
     """
-    用户注册接口
-    FastAPI 自动验证请求数据并生成 API 文档
+    用户注册接口，FastAPI 自动验证请求数据并生成 API 文档
     """
     global current_id
     
@@ -935,14 +934,14 @@ http POST http://127.0.0.1:8000/users/ \
     email="xiaobai@example.com" 
 \end{minted}
 
-成功创建用户后，会得到如下响应：
+成功创建用户后，会得到如下响应（created\_at为运行时的系统时间）：
 
 \begin{minted}{json}
 {
     "id": 1,
     "username": "小白",
     "email": "xiaobai@example.com",
-    "created_at": "2025-11-30T13:27:27.002075" # 运行时的系统时间
+    "created_at": "2025-11-30T13:27:27.002075"
 }
 \end{minted}
 
