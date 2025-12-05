@@ -1,0 +1,1014 @@
+\chapter{自动化代码规范与质量保障}
+
+在团队协作和长期项目中，一致的代码风格和高质量标准至关重要。依赖人工审查维护规范是低效且不可持续的。本章将探讨如何通过集成Black、Ruff等现代化工具链，建立强制执行规范的工程流程，从代码格式、静态检查到提交前验证，构建全方位的质量保障体系。
+
+\section{现代化代码规范工具链}
+
+代码质量工具覆盖多个维度：从代码格式化、规范检查到类型安全验证，通过在开发早期发现潜在问题，降低维护成本，提升协作效率。虽然上一章提到的mypy等类型检查工具同样关注代码质量，但其核心在于类型安全验证。
+
+本节重点探讨代码格式化工具和代码检查工具。代码格式化工具（Formatter）用于自动调整代码格式，使其符合统一的风格（如缩进、空格、换行等），目的是保持代码风格一致，减少格式争议。代码检查工具（Linter\footnote{Lint原本指织物表面的绒毛、线头，后延伸为代码里多余、有问题的片段，通常对应为代码检查动作或直接使用Lint。由Lint加后缀``-er''构成的Linter，则指代码检查工具，翻译为代码检查器或直接使用Linter这一术语。}）主要进行代码静态分析，检查代码中的错误、不符合编码规范的地方、可疑的代码结构等，目的是提高代码质量和可维护性。
+
+\subsection{工具生态演进：从传统工具到现代一体化方案}
+
+Python生态中的代码质量工具经历了从分散到统一、从缓慢到高速的演进过程。理解Black和Ruff在这一演进过程中的定位及其相互关系，是构建高效开发工作流的基础，相关工具演进对比如表\ref{ch5:tab:tool-evolution}所示。
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \renewcommand{\arraystretch}{1.2} 
+  \caption{Python 代码质量工具演进对比}
+  \label{ch5:tab:tool-evolution}
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{2.5cm} p{3cm} p{3cm} p{3cm}@{}}
+    \toprule
+    特性 & \makecell{传统工具链\\(2010-2020)} & 过渡期工具 & \makecell{现代工具链\\(2020+)}  \\
+    \midrule
+    格式化工具 & autopep8, yapf & Black & Black + Ruff 格式化 \\
+    代码检查 & Flake8 + 插件 & Flake8 + Pylint & Ruff \\
+    导入排序 & isort & isort & Ruff (内置) \\
+    执行速度 & 慢 & 中等 & 极快 (Rust 实现) \\
+    配置复杂度 & 高 (多个文件) & 中等 & 低 (pyproject.toml) \\
+    核心价值 & 功能全面 & 平衡功能与速度 & 速度快、一体化 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+总体来看，传统工具链虽然功能全面，但存在配置复杂、执行缓慢的问题。Black 的出现统一了代码格式化标准，而 Ruff 则通过 Rust 重写实现了大幅度的性能提升，逐步取代了Flake8（代码检查工具）、Pylint（代码检查与格式化工具）、isort（导入排序工具）等传统工具。
+
+\subsection{Black：Python 代码的权威格式化工具}
+
+随着程序规模扩大，代码可读性会急剧下降——有时甚至开发者自己也难以理解早期的代码实现。保持统一的代码格式对维护性至关重要，而Black正是为此设计的自动化格式化工具，它通过强制执行一致的代码风格来保障代码质量。
+
+\heading{自动化而非讨论的Black设计哲学}
+
+Black的核心理念是自动修复而非讨论争议。正如其官方文档所述\footnote{https://github.com/psf/black/README.md}：
+
+\begin{quote}
+Black是一款毫不妥协的Python代码格式化工具。使用它，即表示你同意放弃对代码手动格式化细节的控制权。作为回报，Black为你带来高效、确定性，以及摆脱pycodestyle格式化唠叨的自由。你将节省时间和精力，专注于更重要的事情。
+
+经Black格式化后的代码，无论你阅读的是哪个项目，风格都保持一致。一段时间后，格式化将变得无感知，你可以专注于代码内容本身，而非格式。
+\end{quote}
+
+Black通过严格的自动格式化处理消除团队中的风格争论，让开发者能更专注于代码逻辑本身。其主要特点包括：
+
+\begin{itemize}
+  \item {统一的格式处理}：Black 对所有代码实施一致的格式化，不提供个性化选项，从根本上避免了风格分歧。
+  \item {减少决策负担}：开发者无需在代码布局（如缩进、换行、引号）上花费精力，从而降低了心智负担。
+  \item {符合 PEP 8 规范}：Black 遵循 Python 官方的 PEP 8 代码风格指南，并在其基础上做出明确、具体的格式决策。
+  \item {确定性输出}：同一段代码经 Black 格式化后结果永远相同，确保了团队协作和版本控制中的一致性。
+\end{itemize}
+
+\heading{安装与使用方式}
+
+可以通过uv工具安装Black，并使用命令行工具进行格式化。以下是相关示例：
+
+\begin{minted}{bash}
+# 全局安装
+uv tool install black
+
+# 项目本地安装
+uv add black --dev
+
+# 格式化整个项目
+black .
+
+# 检查但不修改
+black --check .
+
+# 格式化特定目录
+black src/ tests/
+
+# 显示格式化差异
+black --diff .
+\end{minted}
+
+
+\heading{格式化效果演示}
+
+Black 能够智能处理复杂的代码布局问题，如下例所示：
+
+\begin{minted}{python}
+# 格式化前：混乱的缩进和布局
+def hello(
+               name
+               ):
+    return    f"Hello, {name}!"
+if __name__ == "__main__":
+    print(
+          hello(input())
+         )
+\end{minted}
+
+将上述代码保存为 \inlinefile{src/demo_black.py} 并执行：
+
+\begin{minted}{bash}
+black src/demo_black.py
+\end{minted}
+
+格式化后的代码展现出清晰的层次结构：
+
+\begin{minted}{python}
+# 格式化后：一致的缩进和合理布局
+def hello(name):
+    return f"Hello, {name}!"
+
+
+if __name__ == "__main__":
+    print(hello(input()))
+\end{minted}
+
+\heading{在项目中配置Black}
+
+Black能够从\inlinefile{pyproject.toml}文件中读取命令行选项的项目专用默认值。这对于为项目指定自定义的\mintinline{text}{--include}和\mintinline{text}{--exclude}模式特别有用。
+同时，如果你在思考``我到底需要配置什么吗？''，Black给出的答案是``不需要''，并建议秉承合理默认值的理念。
+
+如果你确定需要要针对项目修改Black的默认值，Black官网给出了如下一个参考示例\footnote{\url{https://ichard26-testblackdocs.readthedocs.io/en/refactor\_docs/pyproject\_toml.html}}：
+
+\begin{minted}{toml}
+[tool.black]
+line-length = 88
+target-version = ['py37']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs     # exclude a few common directories in the
+    | \.git      # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | foo.py      # also separately exclude a file named foo.py in
+                # the root of the project
+)
+'''
+\end{minted}
+
+Black 通过智能的行拆分、缩进调整和空格管理，确保代码在遵循规范的同时保持最佳可读性，真正实现写代码而不操心格式的开发体验。
+
+
+\subsection{Ruff：极速一体化的代码质量检查工具}
+
+Ruff\footnote{\url{https://docs.astral.sh/ruff/}}是一款采用Rust语言重写传统 Python 代码检查工具栈的新兴工具。它在完整保留所有功能的同时，实现了百倍以上的性能提升，已成为现代 Python项目的首选检查器。其技术架构带来了多重优势：性能实现从分钟级到秒级的突破，尤其适合大型代码库；内存使用极为高效，单进程即可完成所有检查且内存占用显著降低；内置 800 余项规则，全面覆盖传统工具的核心功能；此外，它还支持对安全问题进行自动修复，极大减少了人工干预的需要。
+
+Ruff的愿景远不止于此，其目标是成为一个功能强大、性能卓越的代码检查器，并提供安全的自动修复功能，有望完全替代Flake8、Black、isort、pydocstyle、pyupgrade 及 autoflake 等一系列分散的代码质量工具。例如，其内置的\inlinecmd{ruff format}命令即可用于取代Black，实现代码格式化\footnote{Ruff与Black在格式化方面的差异可参考：\url{https://docs.astral.sh/ruff/formatter/black/}}。在工程实践中，同时使用Black与Ruff仍是一种较为常见的方案，新项目也可以完全使用Ruff进行格式化与代码检查的自动化控制。
+
+
+\heading{Ruff的安装与使用}
+
+\begin{minted}{bash}
+uv tool install ruff
+
+# 基础代码检查，会显示可修复的详情信息
+ruff check .
+
+# 显示可修复的详情信息
+ruff check --show-fixes .
+
+# 自动修复安全的问题
+ruff check --fix .
+
+# 格式化代码
+ruff format .
+
+# 显示可修复的简洁信息
+ruff check --output-format=concise .
+
+# 监视模式，在开发环境下使用时，可实时检测代码变化，给出提示，但不修改代码
+ruff check --watch .
+
+# 监视模式，代码修改后保存时，会自动修复问题
+ruff check --fix --watch .
+\end{minted}
+
+例如，在项目目录下执行命令：
+
+\begin{minted}{bash}
+ruff check --fix --watch.
+\end{minted}
+
+Ruff便会开始监听项目文件的变化。此后，你可以照常在VS Code等编辑器中编写代码，每次保存文件时，Ruff都会自动触发代码检查。一旦发现问题，它将直接进行安全修复，这能极大地帮助你保持代码的质量。
+
+\heading{典型问题检测示例}
+
+Ruff 能够检测多种代码质量问题并提供自动修复：
+
+\begin{minted}{python}
+# RUF002: 未使用的注解（可自动删除）
+from typing import List  # 错误：导入 `List` 但未使用
+
+# B006: 可变默认参数
+def append_to_list(item, target=[]):  # 错误：不要使用可变默认值
+    target.append(item)
+    return target
+
+# F821: 未定义名称
+def calculate_total(items):
+    return sum(item['price'] for item in items)  # 错误：如果 items 为空会报 KeyError？
+
+# I001: 导入排序混乱
+from .utils import helper
+import os  # 错误：第三方导入应在本地导入之前
+
+# UP006: 过时的类型注解
+def process_data(data: List[str]) -> Dict[str, int]:  # 建议：使用 list[str], dict[str, int]
+    return {item: len(item) for item in data}
+\end{minted}
+
+
+
+\heading{Ruff在项目中的一体化配置}
+
+Ruff可通过\inlinefile{myproject.toml}来管理所有检查规则，如果没有明确指定，Ruff的默认配置等价于下面的设置\footnote{参见网页：\url{https://docs.astral.sh/ruff/configuration/}}：
+
+\begin{minted}{toml}
+[tool.ruff]
+# 排除一系列通常被忽略的目录
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# 与Black保持一致
+line-length = 88
+indent-width = 4
+
+# 目标Python版本为3.9
+target-version = "py39"
+
+[tool.ruff.lint]
+# 默认启用Pyflakes（`F`）和pycodestyle（`E`）的部分代码
+# 与Flake8不同，Ruff默认不启用pycodestyle警告（`W`）或McCabe复杂度检查（`C901`）
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+# 允许修复所有启用的规则（当提供`--fix`参数时）
+fixable = ["ALL"]
+unfixable = []
+
+# 允许以下划线开头的未使用变量
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# 与Black一样，字符串使用双引号
+quote-style = "double"
+
+# 与Black一样，使用空格而非制表符进行缩进
+indent-style = "space"
+
+# 与Black一样，尊重末尾的魔法逗号
+skip-magic-trailing-comma = false
+
+# 与Black一样，自动检测合适的行尾符
+line-ending = "auto"
+
+# 启用文档字符串中代码示例的自动格式化。支持Markdown、
+# reStructuredText代码/字面块以及doctests。
+#
+# 当前默认禁用，但计划将来改为默认启用（需要主动选择退出）。
+docstring-code-format = false
+
+# 设置格式化文档字符串中代码片段时的行长度限制
+#
+# 仅当`docstring-code-format`设置启用时生效
+docstring-code-line-length = "dynamic"
+\end{minted}
+
+例如，想要在项目中让代码行的最大长度设置为80，代码支持的Python版本为Python 3.12，则可以在\inlinefile{pyproject.toml}中添加以下配置：
+
+\begin{minted}{toml}
+[tool.ruff]
+line-length = 80
+# 目标Python版本为3.9
+target-version = "py312"
+\end{minted}
+
+
+\section{统一项目配置管理}
+
+现代 Python 项目通过统一的配置文件管理工具链行为，确保团队协作的一致性和开发环境的可重现性。
+
+\subsection{EditorConfig跨编辑器配置规范}
+
+\heading{为什么需要EditorConfig}
+
+在团队协作开发中，当项目的Git仓库被运行于不同操作系统、使用不同开发编辑器的开发者克隆时，诸如缩进风格、换行符类型和字符编码等隐式差异会迅速污染Git的diff输出，显著增加代码审查中的噪声。为了应对这一问题，EditorConfig\footnote{\url{https://editorconfig.org/}}规范应运而生，它通过明确定义缩进风格、换行符类型、字符编码等一系列格式属性，确保不同开发者在多样的编辑环境中仍能保持代码格式的高度一致性，从而将代码风格像依赖一样明确地``锁''进项目文件中。
+
+具体而言，只需在项目根目录中放置一个名为\inlinefile{.editorconfig}的配置文件，主流编辑器（如 VS Code、PyCharm、Vim、Sublime Text、Emacs等）便会自动读取并应用其中定义的规则。这一机制显著减少了因格式不一致导致的审查干扰，该配置文件可随项目代码一并提交至Git等版本控制系统，确保了配置的同步与版本化管理。
+
+\heading{常用属性说明}
+
+表\ref{tab:editorconfig-properties}列出了EditorConfig中常用的属性及其说明。
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \caption{EditorConfig常用属性}\label{tab:editorconfig-properties}
+    \begin{tabular}{@{}>{\centering\arraybackslash}p{4cm} p{5cm} p{3cm}@{}}
+    \toprule
+        {属性名} & {说明} & {常见取值} \\
+    \midrule
+        indent\_style & 缩进类型 & tab 或 space \\
+        indent\_size & 缩进大小（空格数或 tab 宽度） & 数字，如 2、4 \\
+        tab\_width & tab 显示宽度 & 数字，如 2、4 \\
+        end\_of\_line & 换行符类型 & lf、cr、crlf \\
+        charset & 文件编码 & utf-8、latin1等 \\
+        trim\_trailing\_whitespace & 是否自动删除行尾空格 & true/false \\
+        insert\_final\_newline & 文件末尾是否保留空行 & true/false \\
+        root & 标记为根配置文件 & true/false \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\heading{配置示例}
+
+EditorConfig通过根目录下名为\inlinefile{.editorconfig}的INI格式文件来管理规则。该文件支持通配符（如 *、**、\{\}）进行文件匹配，并采用节（Section）的结构来组织配置。每个节由方括号定义，其中包含一个文件匹配模式，其下的属性规则对该模式匹配的所有文件生效。规则支持多级目录继承与覆盖，通常将 root = true 置于文件顶部以声明此为根配置，阻止编辑器继续向上层目录查找。
+
+以下是一个Python项目的典型配置示例，它定义了适用于多种文件类型的默认规则，并对特定文件类型进行精细化设置：
+
+\begin{minted}{ini}
+# EditorConfig 根配置文件
+# Python 项目通用配置
+root = true
+
+# 所有文件的默认规则
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python 文件配置 (遵循 PEP 8)
+[*.py]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# 配置文件 (YAML, TOML, INI)
+[*.{yml,yaml,toml,ini}]
+indent_style = space
+indent_size = 2
+
+# JSON 配置文件
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Makefile 使用制表符
+[Makefile]
+indent_style = tab
+
+# Dockerfile 配置
+[Dockerfile]
+indent_size = 2
+
+# 版本控制配置文件
+[.gitignore]
+indent_style = tab
+
+[.gitattributes]
+indent_style = tab
+
+# 二进制文件不应用格式规则
+[*.{png,jpg,jpeg,gif,ico,pdf,zip,whl}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+\end{minted}
+
+应用此配置后，当开发者在支持EditorConfig的编辑器（例如，在VS Code中安装插件：EditorConfig for Visual Studio Code）中工作时，所有文件将统一使用UTF-8编码与LF换行符；编辑\inlinefile{*.py}文件时会自动采用4空格缩进；在保存文件时，编辑器将自动清理行尾空格并确保文件末行有单独的换行。这种机制从编辑源头锁定了基础格式，确保了跨环境的一致性。
+
+
+\subsection{pyproject.toml：现代 Python 项目的配置枢纽}
+
+自PEP 518\footnote{PEP 518 -- 为Python项目指定最低构建系统要求: \url{https://peps.python.org/pep-0518/}}发布以来，Python 社区终于拥有了一份项目级的通用配置文件——\inlinefile{pyproject.toml}。该文件用于集中管理项目的元数据、构建系统要求以及各类工具（如代码格式化、静态检查、测试等）的分散配置信息，确保团队协作的一致性和开发环境的可重现性。
+
+\heading{为什么选择 pyproject.toml？}
+
+传统 Python 项目常使用分散的配置文件（如 \inlinefile{.flake8}、\inlinefile{.isort.cfg}、\inlinefile{pytest.ini} 等），导致配置冗余且难以维护。\inlinefile{pyproject.toml} 通过统一的 TOML 格式将所有配置集中管理，具有以下显著优势：
+
+\begin{itemize}
+    \item {统一管理}：所有工具配置集中在一个文件中，便于查看和修改；
+    \item {版本化跟踪}：可随代码一同提交版本控制系统，确保配置与代码同步；
+    \item {环境一致性}：新成员克隆项目后即可获得完全一致的开发环境；
+    \item {工具生态支持}：Black、Ruff、mypy、pytest 等主流工具均已原生支持。
+\end{itemize}
+
+\heading{pyproject.toml配置示例}
+
+以下是一个典型的现代化 Python 项目配置示例，涵盖了项目元数据、构建系统、代码格式化、静态检查、类型检查和测试配置：
+
+\begin{minted}{toml}
+[project]
+name = "my-project"
+version = "0.1.0"
+description = "现代化 Python 项目示例"
+dependencies = [
+    "pydantic>=2.0.0",
+    "httpx>=0.24.0",
+]
+requires-python = ">=3.9"
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Black 代码格式化配置
+[tool.black]
+line-length = 88
+target-version = ['py312']
+skip-magic-trailing-comma = false
+
+# Ruff 代码检查与格式化配置
+[tool.ruff]
+line-length = 88
+show-fixes = true
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "S", "RUF"]
+ignore = ["E501", "S101", "RUF003"]
+
+
+[tool.ruff.isort]
+known-first-party = ["my_project"]
+lines-between-types = 1
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**" = ["S101", "PLR2004"]
+
+# 类型检查配置（Mypy）
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+# 测试配置（pytest）
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+    "slow: 标记为慢速测试",
+    "integration: 集成测试",
+    "unit: 单元测试",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+\end{minted}
+
+
+其中，项目元数据区 [project] 像一张身份证，把名字、版本、依赖和最低 Python 版本一次性交代清楚；任何符合 PEP 621规范的工具都能读懂。  
+
+[build-system]用于指定构建依赖和构建后端，可以支持setuptools, pip、uv等不同工具；
+
+[tool.*] 段落相当于给各工具写``小纸条''。Black 收到纸条后，会按88字符换行，并假设代码里可能出现 3.12 的语法糖；Ruff拿到的纸条更厚，既精选了常用规则，又对测试目录网开一面，允许断言魔法值、允许未使用导入。上例中还同时设置了与Mypy，pytest相关的配置信息，具体配置项可以在官方文档中找到。
+
+把以上片段保存为\inlinefile{pyproject.toml}并推入仓库，你就拥有了开箱即用的现代化工程体验：格式化、检查、类型验证、单元测试，一条命令即可跑完，结果在不同机器上完全一致。如此处理，项目不仅具备了良好的可维护性和可重现性，也为持续集成（CI）和团队协作提供了统一的质量标准基础。
+
+
+\section{代码提交前自动质量检查}
+
+在团队协作或长期项目中，保持代码风格一致、避免低级错误是提升代码质量的关键。Git提供了钩子（Hooks）机制，允许你在特定操作（如提交代码）前自动运行脚本。而Pre-Commit是一个Python工具，它简化了Git Hooks的使用，让你可以轻松地在每次提交前自动运行代码格式化、静态检查等任务。
+
+
+\subsection{Git Hooks与Pre-Commit简介}
+
+\heading{Git Hooks}
+
+Git Hooks是Git提供的一种机制，允许在特定事件（如提交、合并、推送）发生时自动执行脚本。它们存储在项目的\inlinefile{.git/hooks/}目录中。
+
+在Git控制的项目根目录下执行命令\inlinecmd{tree .git/hooks}，可以看到常见的钩子示例文件。
+
+\begin{minted}{text}
+$ tree .git/hooks
+.git/hooks
+├── applypatch-msg.sample
+├── commit-msg.sample
+├── fsmonitor-watchman.sample
+├── post-update.sample
+├── pre-applypatch.sample
+├── pre-commit.sample
+├── pre-merge-commit.sample
+├── pre-push.sample
+├── pre-rebase.sample
+├── pre-receive.sample
+├── prepare-commit-msg.sample
+├── push-to-checkout.sample
+├── sendemail-validate.sample
+└── update.sample
+\end{minted}
+
+
+这些钩子默认是\inlinecmd{.sample}文件，需要手动启用和编写脚本，使用起来不够灵活，也不易与团队共享。钩子文件的名称体现了其用途，如pre-commit表示在提交前运行，pre-push表示在推送前运行，commit-msg则表示在提交信息被记录前运行。
+
+\heading{Pre-Commit}
+
+Pre-Commit 是一个 Python 工具，用于简化Git Hooks的配置和管理。它通过一个配置文件\inlinefile{.pre-commit-config.yaml}来定义在提交前要执行的任务，如自动格式化代码、检查语法错误、删除行尾空格等。
+
+\subsection{Pre-Commit的配置与使用}
+
+\heading{安装Pre-Commit}
+
+可以使用pip或uv命令安装Pre-Commit，如下：
+
+\begin{minted}{bash}
+# 使用pip安装
+pip install pre-commit
+
+# 使用uv安装
+uv add pre-commit --dev
+source .venv/bin/activate
+
+# 验证安装结果，输出版本信息表示安装成功
+pre-commit --version
+\end{minted}
+
+
+\heading{配置Pre-Commit}
+
+配置文件\inlinefile{.pre-commit-config.yaml}是一个 YAML 文件，用于定义要执行的任务。
+在项目根目录下创建\inlinefile{.pre-commit-config.yaml}：
+
+\begin{minted}{bash}
+touch .pre-commit-config.yaml
+\end{minted}
+
+以下是一个简单的配置示例：
+
+\begin{minted}{yaml}
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.14.7
+    hooks:
+        # Run the linter.
+        - id: ruff-check
+            args: [ --fix ]
+        # Run the formatter.
+        - id: ruff-format
+\end{minted}
+
+上面涉及的配置字段含义如下：
+
+\begin{description}
+  \item[repos] 顶层列表，每一项对应一个外部 Git 仓库，该仓库内含一个或多个钩子脚本。
+  \item[repo] 字符串，给出仓库的克隆地址（HTTPS 或 SSH）。pre-commit 会临时克隆该仓库以获取钩子脚本。
+  \item[rev] 字符串，指定仓库的版本标签、分支或提交哈希，确保团队使用同一版本的脚本，避免升级带来的行为差异。
+  \item[hooks] 列表，从上述仓库中挑选要启用的钩子，并可为每个钩子单独传参、限定文件类型等。
+  \item[id] 钩子在该仓库中的唯一标识符，与仓库内\inlinefile{.pre-commit-hooks.yaml} 定义的名称保持一致。
+  \item[args] 可选列表，为当前钩子追加命令行参数；示例中[\-\-fix]让 ruff 在发现可修复问题时自动改写文件。
+\end{description}
+
+更多的钩子列表，请查看官方文档：\url{https://pre-commit.com/hooks.html}。
+
+此外，Pre-Commit 还允许你使用本地脚本，如 Makefile，Ruff等，而不是依赖外部仓库，在使用外部仓库时有网络访问限制的场景下尤为有用。例如：
+
+\begin{minted}{yaml}
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+
+  - repo: local
+    hooks:
+      - id: format
+        name: format
+        entry: ruff format
+        language: python
+        types: [python]
+      - id: lint
+        name: lint
+        entry: ruff check --fix
+        language: python
+        types: [python]
+\end{minted}
+
+本地脚本的详细配置方式，可查看：\url{https://pre-commit.com/index.html#repository-local-hooks}
+
+\heading{使用Pre-Commit}
+
+在uv管理的项目中，完成上面的Pre-Commit配置后，执行以下命令安装钩子：
+
+\begin{minted}{bash}
+# 如果没有安装过，请先安装pre-commit
+uv add pre-commit --dev
+# 激活环境
+source .venv/bin/activate
+# 安装钩子
+pre-commit install
+\end{minted}
+
+安装完成后，Pre-Commit会生成一个\inlinefile{.git/hooks/pre-commit}文件。之后，每次提交代码时，Pre-Commit会自动运行配置中的所有钩子。如果有问题，会停止提交并显示错误信息。以下是采用本节带有本地仓库的配置文件时，检测到错误的提示信息示例：
+
+\begin{minted}{text}
+$ git commit -m "my commit message"
+trim trailing whitespace...........................Passed
+fix end of files...................................Failed
+- hook id: end-of-file-fixer
+- exit code: 1
+- files were modified by this hook
+
+Fixing .pre-commit-config.yaml
+
+check yaml.........................................Passed
+format.............................................Failed
+- hook id: format
+- files were modified by this hook
+
+1 file reformatted
+
+lint...............................................Passed
+\end{minted}
+
+执行后，脚本会提示错误信息并自动修复问题。再次执行如正常通过，则会输出如下提示：
+
+\begin{minted}{text}
+$ git commit -m "my commit message"
+trim trailing whitespace............................Passed
+fix end of files....................................Passed
+check yaml..........................................Passed
+format..............................................Passed
+lint................................................Passed
+\end{minted}
+
+如果遇到错误，但想要跳过钩子，可以使用以下命令：
+
+\begin{minted}{bash}
+git commit --no-verify -m "my commit message"
+\end{minted}
+
+
+\section{代码复杂性管理}
+
+除了基础格式和风格检查，专业的代码质量保障还需要关注结构复杂度和设计质量，从根源上提升代码的可维护性。
+
+\subsection{圈复杂度分析与重构}
+\label{subsec:cyclomatic-complexity}
+
+圈复杂度（Cyclomatic Complexity），又称条件复杂度或循环复杂度，是由托马斯·J·麦凯布（Thomas J. McCabe）于1976年提出的一种软件度量指标\citep{McCabe1976}，用于量化程序的复杂性。它通过测量程序源代码中线性独立路径的数量来评估复杂度。
+
+\heading{圈复杂度等级与影响}
+
+圈复杂度基于程序的控制流图计算得出，理解并主动管理这一指标，对于提升代码的可维护性、可测试性以及降低缺陷风险至关重要。其数值直观地指向了代码的质量特性：它决定了充分测试所需的最少用例数，过高的数值则意味着逻辑纠缠、难以理解与修改，并预示着更高的出错概率。
+
+圈复杂度为开发人员提供一个明确的信号，以识别并重构那些过于复杂、难以安全修改的代码模块。表\ref{tab:cyclomatic-complexity} 展示了不同复杂度阈值下的影响。
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{圈复杂度等级与影响}
+  \label{tab:cyclomatic-complexity}
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{2cm} p{3cm} p{3cm} p{3cm}@{}}
+    \toprule
+    复杂度范围 & 可维护性 & 测试难度 & 重构建议 \\
+    \midrule
+    1-10 & 优秀 & 简单 & 保持现状 \\
+    11-20 & 中等 & 中等 & 考虑拆分 \\
+    21-30 & 困难 & 困难 & 优先重构 \\
+    30+ & 极困难 & 极困难 & 立即重构 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+单个函数或方法的圈复杂度应尽量控制在10以下。若超过此阈值，应强烈考虑对其进行拆分和重构。许多现代编码规范及持续集成检查均将此作为硬性约束。在某些严格场景下，甚至建议以7作为圈复杂度的上限。
+
+\heading{高复杂度函数重构示例}
+
+我们可以用一个模拟水果加工的函数来举例说明圈复杂度。想象这样一个函数 \inlinepython{process\_fruit(fruit)}，它根据水果的类型、状态和处理方式做出不同处理：
+
+\begin{minted}{python}
+# 文件保存在ch5/src/fruit1.py
+def process_fruit(fruit):
+    if fruit is None:  # 条件1: 检查水果是否有效
+        return "无效水果"
+
+    if fruit.type == "apple":  # 条件2: 检查水果类型
+        if fruit.is_fresh:  # 条件3: 检查苹果是否新鲜
+            if fruit.process == "peel":  # 条件4: 检查处理方式
+                return "削皮苹果"
+            elif fruit.process == "juice":  # 条件5: 检查处理方式
+                return "苹果汁"
+            else:
+                return "整个苹果"
+        else:
+            return "坏苹果"
+    elif fruit.type == "banana":  # 条件6: 检查水果类型
+        if fruit.ripeness == "ripe":  # 条件7: 检查香蕉是否成熟
+            return "成熟香蕉"
+        elif fruit.ripeness == "green":  # 条件8: 检查香蕉是否成熟
+            return "青香蕉"
+        else:
+            return "过熟香蕉"
+    else:
+        # 条件5:检查是否为浆果类
+        if fruit.family == "berry":  # 条件9: 检查浆果类
+            if fruit.washed:  # 条件10: 检查是否清洗
+                return "洗净的" + fruit.type
+            else:
+                return "未清洗的" + fruit.type
+        else:
+            return "其他水果"
+\end{minted}
+
+根据``圈复杂度 = 决策点数量 + 1''的简化公式计算，上述函数共包含10个条件判断（即所有出现\inlinepython{if}或\inlinepython{elif}的代码行），因此其圈复杂度为11。
+
+这表示该函数具有较高的逻辑复杂性：一方面，至少需要11个测试用例才能实现路径全覆盖；另一方面，多层嵌套的条件结构显著增加了代码的理解难度与维护风险。一旦需要新增水果品类或处理条件，开发者将不得不直接修改这个已然复杂的函数，极易引入错误。
+
+更好的工程实践是使用策略模式或多态重构，将不同类型水果的处理逻辑分离到各自的类或函数中，从而显著降低每个单元的圈复杂度。以下是使用策略模式重构后的代码示例：
+
+\begin{minted}{python}
+# # 文件保存在ch5/src/fruit2.py
+# 1. 定义策略接口和具体策略
+def process_apple(fruit):
+    """处理苹果的逻辑, 圈复杂度=3"""
+    if not fruit.is_fresh:
+        return "坏苹果"
+
+    if fruit.process == "peel":
+        return "削皮苹果"
+    elif fruit.process == "juice":
+        return "苹果汁"
+    return "整个苹果"
+
+def process_banana(fruit):
+    """处理香蕉的逻辑, 圈复杂度=2"""
+    if fruit.ripeness == "ripe":
+        return "成熟香蕉"
+    elif fruit.ripeness == "green":
+        return "青香蕉"
+    return "过熟香蕉"
+
+def process_berry(fruit):
+    """处理浆果的逻辑, 圈复杂度=2"""
+    if fruit.washed:
+        return "洗净的" + fruit.type
+    return "未清洗的" + fruit.type
+
+# 2. 创建策略注册表(清晰的数据驱动映射)
+FRUIT_PROCESSORS = {
+    "apple": process_apple,
+    "banana": process_banana,
+    "strawberry": process_berry,  # 草莓
+    "blueberry": process_berry,  # 蓝莓
+    # 可轻松扩展新水果
+}
+
+# 3. 精简的主协调函数
+def process_fruit(fruit):
+    """
+    主函数, 圈复杂度=2
+    职责: 路由分发, 不包含具体业务逻辑
+    """
+    # 条件1: 检查水果类型是否支持
+    processor = FRUIT_PROCESSORS.get(fruit.type)
+
+    # 条件2: 有处理器则调用, 否则返回默认
+    if processor:
+        return processor(fruit)
+    return "其他水果"
+\end{minted}
+
+上述重构将冗长的if-else链转化为哈希表查询方式，单一函数的圈复杂度从原来的11降至3。这一模式还带来了多重工程优势：每个函数职责清晰，仅处理单一水果类型，符合单一职责原则；各处理器函数可独立测试，降低了模拟成本；扩展新水果类型时，只需增加对应函数并更新注册表，无需修改既有逻辑，显著提升了灵活性和可维护性。
+
+\heading{Ruff复杂度检查配置}
+
+Ruff在C901规则中实现了圈复杂度检查。通过在\mintinline{toml}{[tool.ruff.lint]}的select中启用C901，或者设置为包含C901的父集合规则，如"C9"、"ALL"，即可启用圈复杂度检查。同时，通过在\mintinline{toml}{[tool.ruff.lint.mccabe]}中设置max-complexity参数，可改变圈复杂度的警示阈值。
+
+\begin{minted}{toml}
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["C9"]
+ignore = []
+fixable = ["ALL"]
+
+# 设置圈复杂度阈值
+[tool.ruff.lint.mccabe]
+# 需要在[tool.ruff.lint]的select中启用C901
+max-complexity = 8
+
+# 文件级例外配置
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"src/legacy/" = ["C901"]  # 遗留代码暂时忽略高复杂度
+\end{minted}
+
+在\inlinefile{pyproject.toml}中配置后，即可用Ruff检查代码复杂度。示例如下：
+
+\begin{minted}{text}
+$ ruff check src/fruit1.py
+src/fruit1.py:1:5: C901 `process_fruit` is too complex (11 > 8)
+  |
+1 | def process_fruit(fruit):
+  |     ^^^^^^^^^^^^^ C901
+2 |     if fruit is None:  # 条件1: 检查水果是否有效
+3 |         return "无效水果"
+  |
+
+Found 1 error.
+
+$ ruff check src/fruit2.py
+All checks passed!
+\end{minted}
+
+
+\subsection{代码异味检测与设计改进}
+
+代码异味（Code Smells）是代码中隐含的深层设计问题的表面征兆，它们虽不一定是错误，却预示着可维护性、可读性或扩展性方面的风险。常见的代码异味包括重复代码、过长函数、过大类、过长参数列表、过度嵌套的条件判断等。通过静态分析工具自动识别这些异味，并结合有针对性的重构，可以从根本上提升代码的设计质量，降低长期维护成本。
+
+\heading{代码异味及其静态检测支持}
+
+Ruff 内置了丰富的规则集，能够检测多种代码异味并给出修复建议。每类规则有一个唯一的代码标识符，如代码``B''对应flake8-bugbear的规则实现。通过在\inlinefile{pyproject.toml} 中启用相应规则集，即可在开发早期自动发现潜在的设计缺陷。
+
+以下是Ruff内置的部分规则集及其包含的规则：
+
+\begin{description}
+  \item[B (flake8-bugbear)] 检测常见的错误模式与不良实践，如可变默认参数、不安全的断言用法等\footnote{\url{https://pypi.org/project/flake8-bugbear/}}。
+  \item[C4 (flake8-comprehensions)] 检测复杂的列表、字典、集合推导式\footnote{\url{https://pypi.org/project/pylint/}}。
+  \item[SIM (flake8-simplify)] 提出代码简化建议，如简化比较方式，简化字典的使用等\footnote{\url{https://pypi.org/project/pylint/}}。
+  \item[PL (Pylint)] 涵盖部分Pylint中的设计相关检查，如检查错误、查找代码异味等\footnote{\url{https://pypi.org/project/pylint/}}。
+  \item[RUF (Ruff-specific)] Ruff自有的代码质量规则。
+\end{description}
+
+Ruff中许多规则的灵感来源于Flake8、isort等流行工具，Ruff将每条规则都用Rust重新实现。完整的规则列表可以参考网址\url{https://docs.astral.sh/ruff/rules/}。
+
+默认情况下，Ruff会启用Flake8的F规则以及部分E规则，同时省略了与格式化程序（如\inlinecmd{ruff format}或Black）使用重叠的样式规则。
+
+
+\heading{Ruff中代码异味的检测配置}
+
+以下配置示例启用了常见的代码异味检测规则，并对测试文件或某些特殊场景进行了适当放宽：
+
+\begin{minted}{toml}
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",        # 基础错误与警告
+    "B",                  # bugbear - 常见错误模式
+    "C4",                 # 理解复杂性（含圈复杂度）
+    "SIM",                # 简化建议
+    "PL",                 # Pylint 规则（部分设计相关）
+    "RUF",                # Ruff 特定规则
+]
+
+ignore = [
+    "D107",               # 缺少 __init__ 文档字符串（可暂时忽略）
+    "S101",               # 使用 assert（测试中可接受）
+    "PLR0913",            # 太多参数（某些场景可接受）
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10       # 圈复杂度阈值设为 10
+
+# 针对测试目录放宽某些规则
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004"]
+\end{minted}
+
+\heading{典型代码异味与重构示例}
+
+\circled{1}  过长参数列表 $\Rightarrow$ 使用数据类封装
+
+\begin{minted}{python}
+# 检测到 PLR0913（参数过多）
+def create_user(
+    name: str, email: str, age: int, address: str,
+    phone: str, role: str, joined: str, active: bool
+) -> dict: ...
+
+# 重构后：使用数据类集中管理参数
+from dataclasses import dataclass
+
+@dataclass
+class UserInfo:
+    name: str
+    email: str
+    age: int
+    address: str = ""
+    phone: str = ""
+    role: str = "member"
+    joined: str = ""
+    active: bool = True
+
+def create_user(info: UserInfo) -> dict: ...
+\end{minted}
+
+\circled{2} 重复条件逻辑 $\Rightarrow$ 使用策略模式
+
+\begin{minted}{python}
+# 检测到 SIM114（重复条件分支）
+def calculate_price(level: str, base: float) -> float:
+    if level == "gold":
+        return base * 0.8
+    elif level == "silver":
+        return base * 0.9
+    elif level == "bronze":
+        return base * 0.95
+    else:
+        return base
+
+# 重构后：策略字典映射
+_price_factor = {"gold": 0.8, "silver": 0.9, "bronze": 0.95}
+
+def calculate_price(level: str, base: float) -> float:
+    return base * _price_factor.get(level, 1.0)
+\end{minted}
+
+\circled{3} 过度嵌套 $\Rightarrow$ 使用卫语句提前返回
+
+卫语句（Guard Clause）是一种编程技巧\citep{eric2023guard}，通过提前处理异常情况并立即返回 来减少代码的嵌套层级，使主逻辑更加清晰和扁平化。
+
+\begin{minted}{python}
+# 检测到 PLR0915（过度嵌套）
+def process_data(data):
+    if data is not None:
+        if data.valid:
+            if data.processed:
+                return data.result
+            else:
+                return None
+        else:
+            return None
+    else:
+        return None
+
+# 重构后：卫语句扁平化
+def process_data(data):
+    if data is None or not data.valid or not data.processed:
+        return None
+    return data.result
+\end{minted}
+
+如上，开发团队通过配置\inlinefile{pyproject.toml}，将静态检测集成到日常开发流程中，可以自动识别代码异味，并采取重构措施消除问题，进而提升系统质量。
+
+\section{本章总结与进阶思考}
+
+通过本章，我们构建了从代码格式、静态检查到提交前验证的完整质量保障体系。Black和Ruff的现代化工具链组合，并配合Pre-Commit的自动化执行，为团队协作提供了统一的技术基础。
+
+\textbf{关键要点回顾：}
+
+\begin{itemize}
+    \item 工具链演进：从分散的传统工具到一体化的现代方案，Ruff凭借其极速性能成为新时代的标准；
+    \item 配置中心化：\inlinefile{pyproject.toml} 作为配置枢纽，统一管理格式化、检查、测试等工具行为；
+    \item 流程自动化：Pre-Commit 框架实现提交前自动质量门禁，确保代码库质量的一致性；
+    \item 质量深度保障：圈复杂度和代码异味检测从结构层面提升代码可维护性；
+\end{itemize}
+
+\textbf{实践建议：}
+
+\begin{itemize}
+    \item 采用Ruff实现自动化的代码格式化与检查，获得现代化工具的性能优势；
+    \item 在 \inlinefile{pyproject.toml} 中集中管理所有工具配置，简化项目维护；
+    \item 将Pre-Commit 检查集成到团队工作流，建立代码质量文化；
+    \item 定期进行复杂度分析和技术债评估，持续改进代码结构；
+\end{itemize}
+
+\textbf{进阶思考：}即使代码通过了所有静态检查，也不意味着它能稳定运行或具有良好的架构设计。下一阶段，我们将转向软件设计原则和架构模式，探讨如何通过SOLID原则、设计模式和清晰的抽象边界，构建可扩展的软件系统。

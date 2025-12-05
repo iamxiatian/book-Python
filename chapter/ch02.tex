@@ -50,7 +50,7 @@ Available versions: 2.32.5, 2.32.4, 2.32.3, 2.32.2, 2.31.0, 2.30.0, 2.29.0, 2.28
 
 \heading{pip安装命令行工具的局限性}
 
-当我们需要安装一个 Python 命令行工具时，比如代码格式化工具black\footnote{\url{https://black.readthedocs.io/}}，通常会这样做：
+当我们需要安装一个 Python 命令行工具时，比如代码格式化工具Black，通常会这样做：
 
 \begin{minted}{bash}
 # 方式一：全局安装（不推荐）
@@ -60,7 +60,7 @@ pip install black
 pip install --user black
 \end{minted}
 
-安装后，我们就可以在终端中直接运行black命令了。
+安装后，我们就可以在终端中直接运行Black命令了。
 
 直接采用pip这种方式安装工具，在实际使用中会带来依赖冲突、环境污染和卸载困难等问题。
 
@@ -79,7 +79,7 @@ pip install --user black
 
 \heading{虚拟环境的局限性}
 
-理论上，为每个工具创建独立的虚拟环境也可以解决依赖冲突问题，但实际操作却极其繁琐。开发者需要手动为每个工具（如black、flake8等）分别创建、激活、安装、再停用对应的虚拟环境，每次使用时还要重新激活特定环境。这种重复性的环境管理工作增加了认知负担，降低了开发效率，因此在实践中难以持续。
+理论上，为每个工具创建独立的虚拟环境也可以解决依赖冲突问题，但实际操作却极其繁琐。开发者需要手动为每个工具分别创建、激活、安装、再停用对应的虚拟环境，每次使用时还要重新激活特定环境。这种重复性的环境管理工作增加了认知负担，降低了开发效率，因此在实践中难以持续。
 
 采用虚拟环境来解决依赖冲突的繁琐示例如下：
 
@@ -131,7 +131,7 @@ pipx uninstall black
 
 有人可能会质疑：只是安装几个小工具，真的需要如此复杂的设计吗？事实上，这种设计体现了软件工程中的重要理念。通过隔离环境，我们确保了工具行为的可预测性——任何工具的安装或升级都不会影响其他工具的运行状态。同时，这种架构提供了优秀的可维护性，开发者可以安全地升级或卸载单个工具，而不必担心破坏其他工具的依赖关系。更重要的是，它保证了环境的可重现性，使团队成员能够使用完全相同的工具版本，避免了仅能在开发机器上能运行的窘境。
 
-在实际开发中，\texttt{pipx} 特别适合管理各类常用工具。如black、flake8、mypy等开发工具，mkdocs、sphinx等文档工具，httpie、ansible等系统工具，都是pipx的典型应用场景。
+在实际开发中，\texttt{pipx} 特别适合管理各类常用工具。如Black、Flake8、Mypy等开发工具，MkDocs、Sphinx等文档工具，HTTPie、Ansible等系统工具，都是pipx的典型应用场景。
 
 综上，pip和pipx有其明确的职责边界，pip专注于在虚拟环境中管理项目依赖，pipx负责管理全局命令行工具。后续第\ref{sec:uvx}节提到的\inlinecmd{uv tool install}、\inlinecmd{uvx}则作为更现代的工具运行器，提供了\inlinecmd{pipx install}和\inlinecmd{pipx run}的快速替代方案。
 
@@ -275,7 +275,7 @@ test = [
 
 \section{uv：新一代极速依赖管理工具}
 
-上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\mintinline{bash}{poetry install}、\mintinline{bash}{poetry add}、\mintinline{bash}{poetry build}，来简化依赖安装、打包和发布流程。
+上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具Poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\mintinline{bash}{poetry install}、\mintinline{bash}{poetry add}、\mintinline{bash}{poetry build}，来简化依赖安装、打包和发布流程。
 
 \begin{figure}[h]
     \centering
