@@ -1,0 +1,54 @@
+[project]
+name = "ch5"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "夏天", email = "xiat@ruc.edu.cn" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+ch5 = "ch5:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.0",
+]
+
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "C4", "C9", "UP", "S", "RUF"]
+ignore = []
+fixable = ["ALL"]
+
+# 设置圈复杂度阈值
+[tool.ruff.lint.mccabe]
+# 需要在[tool.ruff.lint]的select中启用C901
+max-complexity = 8
+
+# 文件级例外配置
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"src/legacy/" = ["C901"]  # 遗留代码暂时忽略高复杂度
+
+[tool.ruff.format]
+# 像 Black 一样，字符串使用双引号。
+quote-style = "double"
+
+# 像 Black 一样，用空格缩进，而不是制表符。
+indent-style = "space"
+
+# 像 Black 一样，保留魔术尾随逗号。
+skip-magic-trailing-comma = false
+
+# 像 Black 一样，自动检测合适的行尾。
+line-ending = "auto"
