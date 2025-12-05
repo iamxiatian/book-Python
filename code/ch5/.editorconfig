@@ -1,0 +1,49 @@
+# EditorConfig 根配置文件
+# Python 项目通用配置
+root = true
+
+# 所有文件的默认规则
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python 文件配置 (遵循 PEP 8)
+[*.py]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+# 配置文件 (YAML, TOML, INI)
+[*.{yml,yaml,toml,ini}]
+indent_style = space
+indent_size = 2
+
+# JSON 配置文件
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Makefile 使用制表符
+[Makefile]
+indent_style = tab
+
+# Dockerfile 配置
+[Dockerfile]
+indent_size = 2
+
+# 版本控制配置文件
+[.gitignore]
+indent_style = tab
+
+[.gitattributes]
+indent_style = tab
+
+# 二进制文件不应用格式规则
+[*.{png,jpg,jpeg,gif,ico,pdf,zip,whl}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
