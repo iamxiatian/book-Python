@@ -1,0 +1,1143 @@
+\chapter{Python 中的设计模式与范式}
+
+类型系统和代码规范确保了代码的局部质量，但只有通过合理的设计，才能使整个系统保持长期的可扩展性和可维护性。本章将探索 Python 语言的独特优势，将面向对象（OO）、函数式编程（FP）以及经典设计模式结合起来，构建优雅而健壮的软件结构。
+
+
+
+\section{函数式编程：利用 Python 特性增强抽象}
+
+Python 并非纯粹的函数式语言，但它提供了强大的函数式编程工具，可以帮助我们编写更简洁、更少副作用的代码。
+
+函数式编程（Functional Programming）是一种编程范式，它将计算视为数学函数的求值，并避免使用可变状态和数据修改。与命令式编程关注``如何做''不同，函数式编程更关注``做什么''。Python作为多范式语言，很好地融合了函数式编程的特性。
+
+\subsection{函数式编程的核心思想}
+
+在Python中实践函数式编程，主要体现以下几个核心思想：
+
+\heading{函数是一等公民}
+
+函数可以像普通数据一样被传递、赋值和返回。这使得高阶函数（接受函数作为参数或返回函数的函数）成为可能，为代码复用和抽象提供了强大工具。
+
+\begin{minted}{python}
+# 函数可以赋值给变量
+def greet(name):
+    return f"你好, {name}!"
+
+say_hello = greet
+print(say_hello("小白"))  # 输出: 你好, 小白!
+
+# 函数作为参数传递
+def apply_twice(func, value):
+    """将函数应用两次"""
+    return func(func(value))
+
+def add_one(x):
+    return x + 1
+
+print(apply_twice(add_one, 10))  # 输出: 12
+\end{minted}
+
+\heading{纯函数与不可变性}
+
+纯函数是指给定相同输入总是返回相同输出，且没有副作用（Side Effect）的函数。其中，确定性是指对于相同的输入，总是返回相同的输出；无副作用是指函数不会修改外部状态，也不依赖外部状态。
+
+在实际编程中，我们尽量使用纯函数来减少程序的不确定性。
+
+\begin{minted}{python}
+# 纯函数示例：无副作用，结果可预测
+def calculate_circle_area(radius):
+    return 3.14159 * radius * radius
+
+# 非纯函数示例：依赖外部状态
+count = 0
+def increment():
+    global count
+    count += 1  # 有副作用
+    return count
+
+print(calculate_circle_area(10))  # 总是返回314.159
+print(increment())  # 第一次调用返回1
+print(increment())  # 第二次调用返回2，结果依赖调用次数
+\end{minted}
+
+\heading{声明式而非命令式}
+
+函数式编程鼓励使用声明式风格编写代码，即描述``做什么''而不是``如何做''。
+
+\begin{minted}{python}
+# 命令式：描述详细步骤
+numbers = [1, 2, 3, 4, 5]
+result = []
+for num in numbers:
+    if num % 2 == 0:
+        result.append(num * 2)
+
+# 声明式：直接描述需求
+result_fp = [num * 2 for num in numbers if num % 2 == 0]
+
+print(result)      # 输出: [4, 8]
+print(result_fp)   # 输出: [4, 8]
+\end{minted}
+
+\subsection{高阶函数：map、filter与推导式}
+
+高阶函数是函数式编程的核心工具。Python内置了\mintinline{python}{map}、\mintinline{python}{filter}等函数，同时提供了推导式语法，为函数式编程提供了多种表达方式。
+
+\heading{基础应用}
+
+\begin{minted}{python}
+# 使用高阶函数处理数据
+numbers = [1, 2, 3, 4, 5]
+
+# map：将函数应用于每个元素
+squared = list(map(lambda x: x ** 2, numbers))
+print(squared)  # 输出: [1, 4, 9, 16, 25]
+
+# filter：过滤符合条件的元素
+evens = list(filter(lambda x: x % 2 == 0, numbers))
+print(evens)    # 输出: [2, 4]
+
+# 列表推导式：更Pythonic的表达方式
+squared_comprehension = [x ** 2 for x in numbers]
+evens_comprehension = [x for x in numbers if x % 2 == 0]
+
+print(squared_comprehension)  # 输出: [1, 4, 9, 16, 25]
+print(evens_comprehension)    # 输出: [2, 4]
+\end{minted}
+
+\heading{惰性求值优势}
+
+\mintinline{python}{map}和\mintinline{python}{filter}返回的是迭代器，支持惰性求值，这在处理大数据时可以显著节省内存。
+
+\begin{minted}[escapeinside=||]{python}
+# 生成大量数据
+numbers = range(1_000_000)  # 不实际占用内存
+
+# 列表推导式：立即计算并存储所有结果
+# squared_list = [x**2 for x in numbers]  # 会占用大量内存
+
+# map：只在需要时计算
+squared_map = map(lambda x: x**2, numbers)
+
+# 只取前3个结果进行演示，因为不需要存储所有结果，速度非常快
+for i, value in enumerate(squared_map):
+    if i >= 3:
+        break
+    print(value)  # 输出: 0, 1, 4（即|$0^2, 1^2, 2^2$|）
+\end{minted}
+
+\heading{推导式的高级用法}
+
+推导式不仅适用于列表，也可用于字典、集合，并能处理更复杂的数据结构。
+
+\begin{minted}{python}
+# 字典推导式：创建键值映射
+fruits = ['apple', 'banana', 'cherry']
+fruit_lengths = {fruit: len(fruit) for fruit in fruits}
+print(fruit_lengths)  # 输出: {'apple': 5, 'banana': 6, 'cherry': 6}
+
+# 集合推导式：自动去重
+numbers = [1, 2, 2, 3, 3, 3]
+unique_squares = {x**2 for x in numbers}
+print(unique_squares)  # 输出: {1, 4, 9}
+
+# 嵌套推导式：处理多维数据
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flattened = [num for row in matrix for num in row]
+print(flattened)  # 输出: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+\end{minted}
+
+\heading{实践建议}
+
+在实际Python项目中，应灵活选择适合的工具：
+
+\begin{itemize}
+    \item {列表推导式}：代码简洁直观，适合中小规模数据的立即处理。
+    
+    \item {map/filter}：适合处理流式数据或大数据集，如\mintinline{python}{map(process, large_dataset)}，利用惰性求值节省内存。
+    
+    \item {字典/集合推导式}：创建映射或去重集合时的首选工具。
+    
+    \item {传统循环}：当逻辑复杂、需要中间状态或多步骤处理时，传统循环的可读性可能更好。
+\end{itemize}
+
+函数式编程的真正价值在于其思维方式：通过组合纯函数、避免副作用、使用不可变数据来构建更可靠、更易于测试的代码。在Python开发中，不必追求纯函数式的纯度，而是借鉴其思想，将合适的工具应用于合适的场景。
+
+
+\subsection{偏函数}
+
+偏函数（Partial Functions）是函数式编程中的一个重要概念，它允许我们固定函数的部分参数，从而创建一个参数更少、更专用的新函数。这在简化函数调用、创建特定场景的专用函数时非常有用。
+
+\heading{偏函数的基本使用}
+
+Python通过 \mintinline{python}{functools.partial} 函数支持偏函数功能，让我们通过一个实际场景来理解其应用。
+
+假设我们有一个水果处理函数，它需要多个参数来描述处理方式：
+
+\begin{minted}{python}
+def process_fruit(name, action, peeled=True, sliced=False):
+    """处理水果"""
+    result = f"{name}"
+    if peeled:
+        result += "（去皮）"
+    if sliced:
+        result += "（切片）"
+    result += f" 进行{action}处理"
+    return result
+\end{minted}
+
+每次调用时都需要指定所有参数：
+
+\begin{minted}{python}
+print(process_fruit("苹果", "榨汁", peeled=True, sliced=True))
+# 输出：苹果（去皮）（切片） 进行榨汁处理
+print(process_fruit("香蕉", "制作沙拉", peeled=True, sliced=False))
+# 输出：香蕉（去皮） 进行制作沙拉处理
+print(process_fruit("橙子", "榨汁", peeled=True, sliced=True))
+# 输出：橙子（去皮）（切片） 进行榨汁处理
+\end{minted}
+
+现在使用偏函数来创建一些专用的处理函数：
+
+\begin{minted}{python}
+from functools import partial
+
+# 创建专门榨汁的函数（默认去皮切片）
+make_juice = partial(process_fruit, action="榨汁", peeled=True, sliced=True)
+
+# 创建专门制作水果沙拉的函数
+make_salad = partial(process_fruit, action="制作沙拉", peeled=True, sliced=True)
+
+# 创建带皮处理整果的函数
+process_whole = partial(process_fruit, peeled=False, sliced=False)
+
+# 使用简化后的函数
+print(make_juice("苹果"))      # 苹果（去皮）（切片） 进行榨汁处理
+print(make_juice("橙子"))      # 橙子（去皮）（切片） 进行榨汁处理
+print(make_salad("香蕉"))      # 香蕉（去皮）（切片） 进行制作沙拉处理
+print(process_whole("桃子", "清洗"))  # 桃子 进行清洗处理
+\end{minted}
+
+
+\heading{偏函数的实际优势}
+
+偏函数的核心价值在于：
+
+\circled{1} 减少重复代码，避免在多个地方重复相同的参数。
+
+\begin{minted}{python}
+# 不使用偏函数（重复的参数）
+print(process_fruit("苹果", "榨汁", True, True))
+print(process_fruit("橙子", "榨汁", True, True))
+print(process_fruit("葡萄", "榨汁", True, True))
+
+# 使用偏函数（参数集中管理）
+make_juice = partial(process_fruit, action="榨汁", peeled=True, sliced=True)
+print(make_juice("苹果"))
+print(make_juice("橙子"))
+print(make_juice("葡萄"))
+\end{minted}
+
+\circled{2} 提高代码可读性，函数名称更能体现其用途。
+
+\begin{minted}{python}
+# 原始调用 - 需要查看参数才能理解用途
+result1 = process_fruit("苹果", "榨汁", True, True)
+
+# 使用偏函数 - 函数名直接说明用途
+make_juice = partial(process_fruit, action="榨汁", peeled=True, sliced=True)
+result2 = make_juice("苹果")
+\end{minted}
+
+\circled{3} 方便统一修改，如果需要修改默认参数，只需修改一处。
+
+\begin{minted}{python}
+# 假设现在榨汁不需要切片了
+make_juice = partial(process_fruit, action="榨汁", peeled=True, sliced=False)
+# 所有使用make_juice的地方都会自动使用新的默认值
+\end{minted}
+
+\heading{实践建议}
+
+在实际项目中运用偏函数时，建议关注以下几个原则：当多个函数调用共享相同参数时，偏函数能有效减少重复代码，提升代码的复用性。同时，为偏函数创建有意义的函数名，可以增强代码的可读性和表达力。需要注意的是，应避免过度使用偏函数，确保代码逻辑的清晰与直观，防止因过度封装而增加理解成本。
+
+偏函数本质上是通过固化常用参数来创建更专注、更易用的函数接口，体现了函数式编程中组合优于继承的思想。恰当使用偏函数，不仅能让代码更简洁，还能提升开发效率，是Python函数式编程工具箱中一项实用且灵活的工具。
+
+
+
+\subsection{装饰器与装饰器工厂}
+
+装饰器是Python中元编程（Metaprogramming）的一个典型应用。元编程指的是编写能操作代码的代码，即程序能够在运行时创建、修改或分析其他程序（包括自身）。装饰器作为一种元编程技术，允许我们在不修改原函数代码的情况下增强其功能，是Python实现代码复用和抽象的重要工具。
+
+\heading{元编程视角下的装饰器}
+
+从元编程的角度看，装饰器本质上是一个高阶函数，它接收一个函数作为输入，并返回一个新的函数。这个过程体现了元编程的核心思想——将代码视为可操作的数据。装饰器通过在代码执行层面进行操作，实现了对程序行为的动态修改。
+
+\begin{minted}{python}
+# 装饰器：一个简单的元编程示例
+def trace_calls(func):
+    """跟踪函数调用的装饰器"""
+    def wrapper(*args, **kwargs):
+        print(f"进入函数: {func.__name__}")
+        result = func(*args, **kwargs)
+        print(f"离开函数: {func.__name__}")
+        return result
+    return wrapper
+
+# 使用装饰器
+@trace_calls
+def prepare_fruit_salad(fruits: list[str]):
+    """准备水果沙拉"""
+    return f"用{', '.join(fruits)}制作的水果沙拉"
+
+print(prepare_fruit_salad(["苹果", "香蕉", "橙子"]))
+# 输出:
+# 进入函数: prepare_fruit_salad
+# 离开函数: prepare_fruit_salad
+# 用苹果, 香蕉, 橙子制作的水果沙拉
+\end{minted}
+
+
+\heading{装饰器工厂：参数化的元编程}
+
+装饰器工厂是元编程的进阶应用，它允许我们通过参数来控制装饰器的行为。装饰器工厂本身是一个函数，它返回一个装饰器，而装饰器又返回一个包装函数。这种"函数返回函数返回函数"的三层嵌套结构，体现了元编程的多层抽象能力。
+
+装饰器工厂适用于需要灵活定制装饰逻辑的场景。例如，我们可以创建一个日志装饰器工厂，根据传入的日志级别参数生成不同详细程度的日志装饰器。
+
+\begin{minted}{python}
+def log_factory(level="INFO"):
+    """日志装饰器工厂：根据级别记录日志"""
+    
+    def decorator(func):
+        """装饰器：接收被装饰函数，返回包装函数"""
+        
+        def wrapper(*args, **kwargs):
+            """包装函数：实际执行增强逻辑"""
+            print(f"[{level}] 开始执行: {func.__name__}")
+            result = func(*args, **kwargs)
+            print(f"[{level}] 执行完成: {func.__name__}")
+            return result
+        
+        return wrapper  # 装饰器返回包装函数
+    
+    return decorator     # 装饰器工厂返回装饰器
+
+# 使用装饰器工厂
+@log_factory(level="DEBUG")
+def process_fruit(fruit: str):
+    """处理水果的函数"""
+    return f"处理{fruit}完成"
+
+# 调用函数
+print(process_fruit("苹果"))
+# 输出:
+# [DEBUG] 开始执行: process_fruit
+# [DEBUG] 执行完成: process_fruit
+# 处理苹果完成
+\end{minted}
+
+
+装饰器工厂还可以用于创建可重用的验证、缓存、重试等功能，例如：
+
+\begin{minted}{python}
+def validation_factory(valid_fruits=None):
+    """验证装饰器工厂：确保处理的是有效水果"""
+    if valid_fruits is None:
+        valid_fruits = ["苹果", "香蕉", "橙子", "葡萄"]
+    
+    def decorator(func):
+        def wrapper(fruit, action):
+            if fruit not in valid_fruits:
+                raise ValueError(f"不支持的水果类型: {fruit}，有效类型: {valid_fruits}")
+            return func(fruit, action)
+        return wrapper
+    
+    return decorator
+
+# 创建只允许特定水果的装饰器
+@validation_factory(valid_fruits=["苹果", "橙子"])
+def juice_only(fruit, action):
+    return f"{fruit}被用来{action}"
+
+# 正常调用
+print(juice_only("苹果", "榨汁"))  # 正常执行并输出：苹果被用来榨汁
+# 异常调用
+try:
+    print(juice_only("香蕉", "榨汁"))  # 抛出异常
+except ValueError as e:
+    print(f"验证失败: {e}")
+# 输出：验证失败: 不支持的水果类型: 香蕉，有效类型: ['苹果', '橙子']
+\end{minted}
+
+
+\heading{实践建议}
+
+在实际项目中使用装饰器时，应把握其核心价值：通过封装通用功能（如日志、验证、缓存等）实现代码复用，同时将业务逻辑与辅助功能分离以保持代码清晰。装饰器应专注于``增强''而非核心业务，逻辑应尽量简单，复杂处理宜放在被装饰函数中。
+
+需要注意的是，装饰器会带来一定的复杂性：多层装饰可能增加调试难度，并引入额外调用开销，在性能关键路径上需审慎使用。同时，多个装饰器的执行顺序是由内向外（从下往上），这一特性需要留意。过度装饰可能降低代码可读性，尤其对初学者而言，因此应适度使用。
+
+为保障代码质量，建议为装饰器编写清晰的文档说明，并针对其改变函数行为的特点补充相应的测试。装饰器体现了代码即数据的元编程思想，合理运用能帮助我们构建更模块化、可维护且灵活的表达。
+
+
+
+\section{常用设计模式}
+
+设计模式是针对软件开发中常见问题的可复用解决方案。它们如同建筑蓝图，提供了一套经过验证的方法来构建可靠、可维护的软件系统。在Python中，由于语言的动态特性，许多设计模式的实现可以变得更加简洁和直观。
+
+下面介绍三种最常用的设计模式，展示它们如何帮助我们编写更好的代码。
+
+\subsection{单例模式：确保类的全局唯一实例}
+
+单例模式（Singleton Pattern）是一种创建型设计模式，其核心思想是确保一个类只有一个实例，并提供该实例的全局访问点。这种模式常用于管理共享资源，如配置管理、数据库连接、日志记录器等场景。
+
+在Python中，实现单例模式有四种常见方法。
+
+\heading{方法一：基于模块实现}
+
+在 Python 中，模块本身就是天然的单例。这是最简单的实现方式。
+
+\begin{minted}{python}
+class AppConfig:
+    """应用程序配置"""
+    
+    def __init__(self):
+        self.settings = {
+            'debug': False,
+            'timeout': 30
+        }
+        print("初始化应用配置")
+
+# 在模块级别创建实例
+config = AppConfig()
+
+# 使用方法：
+# from config import config
+# print(config.settings['debug'])
+\end{minted}
+
+\heading{方法二：基于\mintinline{python}{__new__}方法实现}
+
+这是最常见的单例实现方式，通过重写类的 \mintinline{python}{__new__} 方法来控制实例的创建过程。
+
+\begin{minted}{python}
+class SingletonByNew:
+    """基于 __new__ 方法的单例模式"""
+    
+    _instance = None  # 类变量，用于存储唯一实例
+    
+    def __new__(cls, *args, **kwargs):
+        # 如果实例不存在，则创建新实例
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            print("创建单例实例")
+        return cls._instance
+    
+    def __init__(self):
+        # 防止 __init__ 被多次调用
+        if not hasattr(self, '_initialized'):
+            self.data = { } # 初始化数据
+            self._initialized = True
+            print("初始化单例实例")
+
+# 测试
+s1 = SingletonByNew()  # 输出: 创建单例实例\n初始化单例实例
+s2 = SingletonByNew()  # 不会再次创建和初始化
+
+s1.data["host"] = "localhost"
+print(f"s1.data: {s1.data}")      # 输出: {'host': 'localhost'}
+print(f"s2.data: {s2.data}")      # 输出: {'host': 'localhost'}
+print(f"是同一个实例: {s1 is s2}")  # 输出: True
+\end{minted}
+
+对于这一实现方式，正确理解和使用\mintinline{python}{__new__}与\mintinline{python}{__init__} 两个魔术方法至关重要。其中，\mintinline{python}{__new__}方法负责控制实例的创建过程，它决定是创建新实例还是返回已有的实例；而\mintinline{python}{__init__}方法则负责实例的初始化工作，确保单例对象只被正确初始化一次。这两个方法的调用顺序总是\mintinline{python}{__new__}先于\mintinline{python}{__init__}执行。为了防止单例被重复初始化，需要设置一个初始化标识来确保\mintinline{python}{__init__}方法只执行一次，如上面的``\_initialized''标识。
+
+
+\heading{方法三：基于装饰器实现}
+
+使用前面提到的装饰器可以更灵活地实现单例模式，且可以应用于多个类。
+
+\begin{minted}{python}
+def singleton(cls):
+    """单例装饰器"""
+    instances = {}
+    
+    def get_instance(*args, **kwargs):
+        if cls not in instances:
+            instances[cls] = cls(*args, **kwargs)
+            print(f"创建 {cls.__name__} 实例")
+        return instances[cls]
+    
+    return get_instance
+
+@singleton
+class ConfigManager:
+    """配置管理器"""
+    
+    def __init__(self):
+        self.settings = {
+            'host': 'localhost',
+            'port': 8080,
+            'debug': False
+        }
+        print("初始化配置管理器")
+
+@singleton
+class Logger:
+    """日志记录器"""
+    
+    def __init__(self):
+        self.log_level = 'INFO'
+        print("初始化日志记录器")
+
+# 测试装饰器实现的单例
+config1 = ConfigManager()  # 输出: 创建 ConfigManager 实例\n初始化配置管理器
+config2 = ConfigManager()  # 不会再次创建和初始化
+print(f"同一个实例: {config1 is config2}")  # 输出: True
+
+logger1 = Logger()  # 输出: 创建 Logger 实例\n初始化日志记录器
+logger2 = Logger()  # 不会再次创建和初始化
+print(f"同一个实例: {logger1 is logger2}")  # 输出: True
+\end{minted}
+
+\heading{方法四：基于元类实现}
+
+在Python中，元类是创建类的模板。当我们使用 \mintinline{python}{class} 关键字定义类时，实际上是在调用元类来创建这个类。默认情况下，所有类都由 \mintinline{python}{type} 元类创建，例如：
+
+\begin{minted}{python}
+# 定义一个类
+class Fruit:
+    def __init__(self, name):
+        self.name = name
+    
+# 等价于下面显式定义的类
+class Fruit(object, metaclass=type):
+    def __init__(self, name):
+        self.name = name
+\end{minted}
+
+Python 在构造一个对象时，真正做的事是\mintinline{python}{cls(*args, **kwargs)}，而这个表达式会先去调用元类的\mintinline{python}{__call__}方法；只要把\mintinline{python}{__call__}拦住，只允许它生成一次实例并缓存起来，以后无论用户怎么\mintinline{python}{cls()}，都只会拿到同一份缓存。因此，可以用如下方式实现单例模式：
+
+\begin{minted}{python}
+class SingletonMeta(type):
+    """单例元类"""
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        # 如果该类还没有实例，则创建新实例
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+            print(f"创建 {cls.__name__} 实例（通过元类）")
+        return cls._instances[cls]
+
+class DatabaseConnection(metaclass=SingletonMeta):
+    """数据库连接（使用元类实现单例）"""
+
+    def __init__(self):
+        self.connection_string = "localhost:1234/mydb"
+        print("初始化数据库连接")
+
+# 测试元类实现的单例
+db1 = DatabaseConnection() # 输出: 初始化数据库连接\n创建 DatabaseConnection 实例（通过元类）
+db2 = DatabaseConnection()  # 不会再次创建和初始化
+
+print(f"是同一个数据库连接: {db1 is db2}")  # 输出: True
+\end{minted}
+
+\heading{实践建议}
+
+在Python中，单例模式的首选实现是模块单例，因为它最简单、最自然。如果模块单例不满足需求，可以考虑使用\mintinline{python}{__new__}方法或装饰器。元类单例虽然强大，但应作为最后的选择，因为它的复杂性和可读性较差，多用于框架开发或需要为多个类统一管理单例逻辑的高级场景。另外，无论选择哪种方式，都要注意线程安全和避免重复初始化。
+
+
+\subsection{工厂模式：灵活创建对象}
+
+工厂模式将对象的创建逻辑与使用逻辑分离。就像水果加工厂，根据客户需求生产不同的水果产品，而客户不需要知道具体的生产过程。
+
+\begin{minted}{python}
+# 定义水果接口
+class Fruit:
+    def get_description(self):
+        pass
+    
+    def get_price(self):
+        pass
+
+# 具体水果类
+class Apple(Fruit):
+    def get_description(self):
+        return "新鲜的红苹果"
+    
+    def get_price(self):
+        return 3.0
+
+class Orange(Fruit):
+    def get_description(self):
+        return "多汁的橙子"
+    
+    def get_price(self):
+        return 4.0
+
+# 水果工厂
+class FruitFactory:
+    """水果工厂，负责创建水果对象"""
+    
+    @staticmethod
+    def create_fruit(fruit_type):
+        if fruit_type == "apple":
+            return Apple()
+        elif fruit_type == "orange":
+            return Orange()
+        else:
+            raise ValueError(f"不支持的水果类型: {fruit_type}")
+
+# 使用工厂模式
+def create_fruit_basket(fruit_list):
+    """创建水果篮"""
+    basket = []
+    total_price = 0
+    
+    for fruit_type in fruit_list:
+        fruit = FruitFactory.create_fruit(fruit_type)
+        basket.append(fruit.get_description())
+        total_price += fruit.get_price()
+    
+    return basket, total_price
+
+# 测试工厂模式
+basket, price = create_fruit_basket(["apple", "orange"])
+print(f"水果篮: {basket}")  # 输出: 水果篮: ['新鲜的红苹果', '多汁的橙子']
+print(f"总价: {price}元")   # 输出: 总价: 7.0元
+\end{minted}
+
+工厂模式的优势体现在多个方面：首先，它实现了对象创建与使用的解耦，使得客户端代码无需了解对象的具体创建细节，只需通过工厂接口获取所需对象即可；其次，工厂模式具有良好的可扩展性，当需要添加新的产品类型时，仅需修改工厂类即可，不会对现有的客户端代码产生影响；最后，工厂模式将对象的创建逻辑集中管理，便于代码的维护、测试和统一管理，从而提高了代码的可维护性。
+
+
+\subsection{策略模式：灵活选择算法}
+
+策略模式通过定义一系列算法，将每个算法封装起来，使它们可以相互替换。就像水果定价策略，可以根据季节、会员等级、促销活动等不同条件采用不同的计价方式，而购物车无需关心具体的计算逻辑。
+
+\begin{minted}{python}
+# file: src/fxb/ch6/strategy.py
+# 策略接口：定价策略
+class PricingStrategy:
+    """定价策略接口"""
+
+    def calculate_price(
+        self, fruit: str, quantity: int, base_price: float
+    ) -> float:
+        pass
+
+# 具体策略类
+class SeasonalDiscount(PricingStrategy):
+    """季节性折扣策略"""
+
+    def __init__(self, discount_rate: float = 0.1):
+        self.discount_rate = discount_rate
+
+    def calculate_price(
+        self, fruit: str, quantity: int, base_price: float
+    ) -> float:
+        return base_price * quantity * (1 - self.discount_rate)
+
+class MemberDiscount(PricingStrategy):
+    """会员折扣策略"""
+
+    def __init__(self, member_level: str = "gold"):
+        self.discount_rates = {"gold": 0.2, "silver": 0.1, "bronze": 0.05}
+        self.discount_rate = self.discount_rates.get(member_level, 0)
+
+    def calculate_price(
+        self, fruit: str, quantity: int, base_price: float
+    ) -> float:
+        return base_price * quantity * (1 - self.discount_rate)
+
+# 上下文类：水果购物车
+class FruitShoppingCart:
+    """水果购物车，使用策略模式计算总价"""
+
+    def __init__(self, pricing_strategy: PricingStrategy):
+        self.items = []
+        self.pricing_strategy = pricing_strategy
+
+    def add_item(self, fruit: str, quantity: int, base_price: float):
+        self.items.append(
+            {"fruit": fruit, "quantity": quantity, "base_price": base_price}
+        )
+
+    def calculate_total(self) -> float:
+        total = 0.0
+        for item in self.items:
+            price = self.pricing_strategy.calculate_price(
+                item["fruit"], item["quantity"], item["base_price"]
+            )
+            total += price
+        return total
+
+    def set_pricing_strategy(self, strategy: PricingStrategy):
+        """动态切换定价策略"""
+        self.pricing_strategy = strategy
+
+def test_stragety():
+    """演示策略模式的使用"""
+
+    cart = FruitShoppingCart(SeasonalDiscount(0.1))  # 季节性9折
+    cart.add_item("苹果", 5, 3.0)
+    cart.add_item("香蕉", 3, 2.5)
+    print(f"季节性折扣总价: {cart.calculate_total():.2f}元")
+
+    # 切换到会员折扣策略
+    cart.set_pricing_strategy(MemberDiscount("gold"))
+    print(f"黄金会员折扣总价: {cart.calculate_total():.2f}元")
+
+if __name__ == "__main__":
+    test_stragety()
+\end{minted}
+
+策略模式的核心优势在于它将算法与使用算法的上下文逻辑分离，从而提升系统的灵活性和可扩展性。每个算法被封装在独立的策略类中，便于单独测试与维护。该模式支持在运行时动态切换不同算法，而无需修改客户端代码。同时，它用多态替代了复杂的条件判断语句，显著提高了代码的可读性。此外，策略模式遵循开闭原则，新增算法只需添加新的策略类，无需改动现有代码。
+
+在Python中，由于函数是一等公民，策略模式还可通过函数进一步简化实现，使代码结构更加清晰。
+
+
+\section{面向对象重构技巧}
+
+良好的面向对象设计是构建可维护、可扩展软件系统的基石。SOLID原则\citep{abba2022solid}作为五个核心设计原则的缩写，为我们提供了重构复杂代码、提升设计质量的指导方针。SOLID是五个设计原则的首字母缩写，具体中英文对照含义见表\ref{tab:solid}。
+
+\begin{table}[ht]
+    \centering
+    \small
+    \caption{SOLID 原则中英文对照}
+    \label{tab:solid}
+      \begin{tabular}{@{}>{\centering\arraybackslash}p{2cm} p{6cm} p{3cm} @{}}
+        \toprule
+        缩写 & 英文 & 中文 \\
+        \midrule
+        SRP & Single Responsibility Principle & 单一职责原则 \\
+        OCP & Open-Closed Principle & 开闭原则 \\
+        LSP & Liskov Substitution Principle & 里氏替换原则 \\
+        ISP & Interface Segregation Principle & 接口隔离原则 \\
+        DIP & Dependency Inversion Principle & 依赖倒置原则 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\subsection{单一职责原则 (SRP)}
+
+单一职责原则强调一个类或模块应当只有一个引起其变化的原因。换句话说，它应该只承担一种职责。违反SRP的``全能类''会混杂多种职责，导致代码难以理解、测试和修改。重构的关键在于识别并分离不同的关注点。
+
+违反单一职责原则的示例：
+
+\begin{minted}{python}
+# 违反 SRP 的类：混杂了验证、业务、日志和持久化逻辑
+class UserManager:
+    """上帝类 - 负责太多事情"""
+    
+    def __init__(self):
+        self.users = []
+    
+    def add_user(self, username: str, email: str) -> None:
+        """添加用户"""
+        # 验证逻辑
+        if not self._is_valid_email(email):
+            raise ValueError("无效的邮箱地址")
+        
+        # 业务逻辑
+        user = {"username": username, "email": email}
+        self.users.append(user)
+        
+        # 日志记录
+        self._log_user_creation(username)
+        
+        # 数据持久化
+        self._save_to_database(user)
+    
+    def _is_valid_email(self, email: str) -> bool:
+        return "@" in email
+    
+    def _log_user_creation(self, username: str) -> None:
+        print(f"用户 {username} 已创建")
+    
+    def _save_to_database(self, user: dict) -> None:
+        print(f"保存用户到数据库: {user}")
+\end{minted}
+
+遵循单一职责原则对代码进行重构，每个类只承担一项明确职责：
+
+\begin{minted}{python}
+class EmailValidator:
+    """专门负责邮箱验证"""
+    
+    def is_valid(self, email: str) -> bool:
+        return "@" in email and "." in email
+
+class UserLogger:
+    """专门负责用户相关日志"""
+    
+    def log_creation(self, username: str) -> None:
+        print(f"用户 {username} 已创建")
+
+class UserRepository:
+    """专门负责用户数据持久化"""
+    
+    def save(self, user: dict) -> None:
+        print(f"保存用户到数据库: {user}")
+
+class UserService:
+    """专门负责用户业务逻辑"""
+    
+    def __init__(self):
+        self.validator = EmailValidator()
+        self.logger = UserLogger()
+        self.repository = UserRepository()
+        self.users = []
+    
+    def add_user(self, username: str, email: str) -> None:
+        """添加用户 - 只关注业务逻辑"""
+        if not self.validator.is_valid(email):
+            raise ValueError("无效的邮箱地址")
+        
+        user = {"username": username, "email": email}
+        self.users.append(user)
+        self.logger.log_creation(username)
+        self.repository.save(user)
+\end{minted}
+
+基于单一职责原则重构后，每个类变得小巧、专注，更易于测试，且需求变更时的影响范围被有效限制。
+
+
+\subsection{开闭原则 (OCP)}
+
+开闭原则强调软件实体（类、模块、函数等）应该对扩展开放，对修改封闭。这意味着应通过添加新代码而非修改已有代码来实现新功能。
+
+违反OCP的代码会在核心逻辑中出现大量条件判断，每次新增功能都需修改原有结构。重构的核心是利用抽象和多态机制。
+
+违反开闭原则的示例：
+
+\begin{minted}{python}
+from typing import Protocol, List
+from abc import ABC, abstractmethod
+
+# ==== 违反 OCP 的设计：通过条件分支硬编码所有类型 ====
+class ReportGenerator:
+    """违反 OCP - 每次新增报告类型都要修改这个类"""
+    
+    def generate_report(self, report_type: str, data: List) -> str:
+        if report_type == "csv":
+            return self._generate_csv(data)
+        elif report_type == "html":
+            return self._generate_html(data)
+        elif report_type == "json":
+            return self._generate_json(data)
+        else:
+            raise ValueError(f"不支持的报告类型: {report_type}")
+    
+    def _generate_csv(self, data: List) -> str:
+        return "CSV 报告"
+    
+    def _generate_html(self, data: List) -> str:
+        return "HTML 报告"
+    
+    def _generate_json(self, data: List) -> str:
+        return "JSON 报告"
+\end{minted}
+
+遵循开闭原则的设计,通过策略模式实现重构：
+
+\begin{minted}{python}
+class ReportStrategy(Protocol):
+    def generate(self, data: List) -> str: ...
+
+class CSVReport:
+    def generate(self, data: List) -> str:
+        return "CSV 报告"
+
+class HTMLReport:
+    def generate(self, data: List) -> str:
+        return "HTML 报告"
+
+class JSONReport:
+    def generate(self, data: List) -> str:
+        return "JSON 报告"
+
+class ExtensibleReportGenerator:
+    """遵循 OCP - 可以通过注册新策略来扩展"""
+    
+    def __init__(self):
+        self._strategies: dict[str, ReportStrategy] = {}
+    
+    def register_strategy(self, report_type: str, strategy: ReportStrategy):
+        self._strategies[report_type] = strategy
+    
+    def generate_report(self, report_type: str, data: List) -> str:
+        strategy = self._strategies.get(report_type)
+        if not strategy:
+            raise ValueError(f"不支持的报告类型: {report_type}")
+        return strategy.generate(data)
+
+# 演示OCP的使用方式
+class PDFReport:
+    def generate(self, data: List) -> str:
+        return "PDF报告"
+
+def test_ocp():
+    generator = ExtensibleReportGenerator()
+    generator.register_strategy("csv", CSVReport())
+    generator.register_strategy("html", HTMLReport())
+    generator.register_strategy("json", JSONReport())
+    
+    # 可以轻松扩展新类型，无需修改现有代码
+    generator.register_strategy("pdf", PDFReport())
+    
+    data = [1, 2, 3]
+    for report_type in ["csv", "html", "pdf"]:
+        result = generator.generate_report(report_type, data)
+        print(f"{report_type}: {result}")
+
+test_ocp() # 执行示例
+\end{minted}
+
+基于开闭原则的代码重构，可以让系统核心逻辑保持稳定，新增功能只需添加新的策略类并注册，从而提升系统的可维护性和可扩展性。
+
+
+\subsection{里氏替换原则 (LSP)}
+
+里氏替换原则由2008年的图灵奖获得者芭芭拉·利斯科夫（Barbara Liskov）于1994年提出，要求子类型必须能够替换掉它们的父类型，而不影响程序的正确性\citep{liskov1994}。即，程序中任何使用基类对象的地方，都可以透明地替换为子类对象。
+
+违反里氏替换原则通常表现为子类覆写父类方法时，做出了与父类承诺不符的行为，如抛出异常、返回类型不同等。重构的关键在于设计合理的继承层次。本部分示例代码由文献\citep{artem2022solid}中的Java代码改写而来。
+
+违反里氏替换原则的示例：
+
+\begin{minted}{python}
+from typing import List
+
+# 违反 LSP 的例子
+class Bird:
+    def fly(self) -> str:
+        return "飞行中"
+    
+    def eat(self) -> str:
+        return "进食中"
+
+class Penguin(Bird):
+    def fly(self) -> str:
+        # 企鹅不会飞，违反 LSP
+        raise NotImplementedError("企鹅不会飞！")
+\end{minted}
+
+遵循里氏替换原则，对上面代码进行重构：
+
+\begin{minted}{python}
+class Bird:
+    def eat(self) -> str:
+        return "进食中"
+
+class FlyingBird(Bird):
+    def fly(self) -> str:
+        return "飞行中"
+
+class Penguin(Bird):
+    def swim(self) -> str:
+        return "游泳中"
+
+class Sparrow(FlyingBird):
+    def fly(self) -> str:
+        return "麻雀在飞行"
+
+
+def process_birds(birds: List[Bird]):
+    """处理鸟类 - 应该能接受任何 Bird 子类"""
+    for bird in birds:
+        print(bird.eat())
+        # 不能调用 fly()，因为不是所有鸟都会飞
+
+def process_flying_birds(birds: List[FlyingBird]):
+    """处理会飞的鸟类"""
+    for bird in birds:
+        print(bird.fly())
+
+# 测试 LSP
+def test_lsp():
+    birds = [Penguin(), Sparrow()]
+    process_birds(birds)  # 正常工作
+    
+    flying_birds = [Sparrow()]
+    process_flying_birds(flying_birds)  # 正常工作
+
+test_lsp()
+\end{minted}
+
+里氏替换原则保证了多态的正确性，使得代码更加健壮。子类可以在不破坏客户端代码预期的情况下，增强或特化父类的行为。
+
+
+\subsection{接口隔离原则 (ISP)}
+
+接口隔离原则要求客户端不应该被迫依赖于它不使用的接口。应将庞大的接口拆分成更小、更具体的接口，使客户端只需了解它们真正需要的方法。
+
+违反接口隔离原则会导致实现类被迫实现一些它们根本不需要的方法（空实现或抛出异常）。重构的关键是识别接口的不同角色并将其分离。本部分示例代码由文献\citep{artem2022solid}中的Java代码改写而来。
+
+违反接口隔离原则的代码示例如下：
+
+\begin{minted}{python}
+from typing import Protocol
+
+# 违反 ISP - 胖接口
+class Worker(Protocol):
+    def work(self) -> None: ...
+    def eat(self) -> None: ...
+
+class HumanWorker:
+    def work(self) -> None:
+        print("人类工作")
+    
+    def eat(self) -> None:
+        print("人类进食")
+
+class RobotWorker:
+    def work(self) -> None:
+        print("机器人工作")
+    
+    def eat(self) -> None:
+        # 机器人不需要进食，但被迫实现
+        raise NotImplementedError("机器人不需要进食")
+\end{minted}
+
+重构为遵循接口隔离原则的细粒度接口：
+
+\begin{minted}{python}
+class Workable(Protocol):
+    def work(self) -> None: ...
+
+class Eatable(Protocol):
+    def eat(self) -> None: ...
+
+class HumanWorker:
+    def work(self) -> None:
+        print("人类工作")
+    
+    def eat(self) -> None:
+        print("人类进食")
+    
+
+class RobotWorker:
+    def work(self) -> None:
+        print("机器人工作")
+
+# 专门的工作管理器
+class WorkManager:
+    def __init__(self, worker: Workable):
+        self.worker = worker
+    
+    def manage_work(self) -> None:
+        self.worker.work()
+
+class HumanResources:
+    def __init__(self, worker: Eatable):
+        self.worker = worker
+    
+    def manage_break(self) -> None:
+        self.worker.eat()
+
+# 测试 ISP
+def test_isp():
+    human = HumanWorker()
+    robot = RobotWorker()
+    
+    work_manager = WorkManager(human)
+    work_manager.manage_work()
+    
+    work_manager = WorkManager(robot)
+    work_manager.manage_work()
+    
+    hr = HumanResources(human)
+    hr.manage_break()
+
+test_isp()
+\end{minted}
+
+基于接口隔离原则的代码重构，减少了类之间的耦合，使系统更加灵活。每个接口都代表一个明确的角色，使得代码意图更清晰，也避免了潜在的接口污染。
+
+\subsection{依赖反转原则 (DIP)}
+
+依赖反转原则要求高层模块不应该依赖于低层模块，两者都应该依赖于抽象。抽象不应该依赖于细节，细节应该依赖于抽象。
+
+违反依赖反转原则会导致高层业务逻辑与具体的底层实现（如数据库、外部服务）紧耦合，难以替换和测试。重构的核心是引入抽象层，如接口或抽象基类，并通过依赖注入来提供具体实现。
+
+违反依赖反转原则的代码示例如下：
+
+\begin{minted}{python}
+from typing import Protocol, List
+from abc import ABC, abstractmethod
+
+# 违反 DIP - 高层模块依赖具体实现
+class MySQLDatabase:
+    def save_user(self, user_data: dict) -> None:
+        print(f"MySQL: 保存用户 {user_data}")
+
+class UserService:
+    def __init__(self):
+        # 直接依赖具体实现
+        self.database = MySQLDatabase()
+    
+    def create_user(self, username: str, email: str) -> None:
+        user_data = {"username": username, "email": email}
+        self.database.save_user(user_data)
+\end{minted}
+
+上面代码在UserService中，直接引用了MySQLDatabase，如果有新的数据库实现，如PostgreSQLDatabase或InMemoryDatabase，则需要修改UserService中的代码。遵循依赖反转原则，可采用如下重构方式解决：
+
+\begin{minted}{python}
+from typing import Protocol
+
+class Database(Protocol):
+    def save_user(self, user_data: dict) -> None: ...
+
+class PostgreSQLDatabase:
+    def save_user(self, user_data: dict) -> None:
+        print(f"PostgreSQL: 保存用户 {user_data}")
+
+class InMemoryDatabase:
+    def save_user(self, user_data: dict) -> None:
+        print(f"内存数据库: 保存用户 {user_data}")
+
+class UserService:
+    def __init__(self, database: Database):
+        # 依赖抽象，而不是具体实现
+        self.database = database
+
+    def create_user(self, username: str, email: str) -> None:
+        user_data = {"username": username, "email": email}
+        self.database.save_user(user_data)
+
+# 测试 DIP
+def test_dip():
+    # 使用不同的数据库实现
+    postgres_db = PostgreSQLDatabase()
+    memory_db = InMemoryDatabase()
+
+    service1 = UserService(postgres_db)
+    service1.create_user("小非", "xiaofei@example.com")
+
+    service2 = UserService(memory_db)
+    service2.create_user("小白", "xiaobai@example.com")
+
+test_dip()
+\end{minted}
+
+依赖反转原则彻底解耦了高层策略与底层细节，使系统核心业务逻辑独立于任何具体的技术选型。这极大提升了代码的可测试性（可通过Mock实现测试）、可维护性和可扩展性。
+
+\section*{本章总结与进阶思考}
+
+设计模式和编程范式并非银弹，而是经验的结晶与沟通的桥梁。通过掌握Python独特的函数式特性、领悟经典设计模式的精髓、并运用SOLID原则进行持续重构，你将能够超越实现功能的层面，步入设计系统的领域。
+
+\textbf{关键要点回顾：}
+
+\begin{itemize}
+    \item 函数式编程思维：善用函数作为一等公民、纯函数与不可变性、声明式编程等思想，结合高阶函数（map, filter, reduce）、推导式、偏函数和装饰器，可以编写出更简洁、更具表达力且副作用更少的代码。
+    \item 经典设计模式的应用：单例模式避免多实例创建，工厂模式创建对象，策略模式定义算法。
+    \item SOLID 原则：让每个类/模块只做一件事，职责清晰（SRP）；通过抽象和多态对扩展开放，对修改封闭（OCP）；确保子类能够无缝替换父类，保证继承关系的合理性（LSP）；设计精炼的接口，避免客户端依赖不需要的方法（ISP）；依赖抽象而非具体实现，并通过依赖注入管理依赖关系（DIP）。
+\end{itemize}
+
+\textbf{实践建议：}
+
+Python 是一门多范式语言。在追求函数式纯度或严格OO设计时，应权衡可读性、团队习惯和项目需求。通常，混合范式能产生最佳实践。此外，设计模式为解决特定问题提供了模板，但生搬硬套会导致过度设计。理解其意图和适用场景比记住实现细节更重要。
+
+\textbf{进阶思考：}在构建大型、高并发的应用时，仅有良好的静态设计是不够的。性能、并发与异步处理常常成为新的瓶颈与挑战。我们已经建立了清晰的代码结构与设计规范，下一阶段，我们将深入 Python 的运行时机制，探索如何利用并发、异步编程以及底层性能优化技巧，使我们的系统不仅在结构上优雅，在运行时也能高效、稳健。
