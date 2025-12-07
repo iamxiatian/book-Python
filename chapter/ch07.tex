@@ -1,0 +1,392 @@
+\chapter{深入理解Python的并发模型}
+
+高效处理并发是构建高性能系统的重要技能。然而，Python 中的全局解释器锁(GIL)常常成为开发者面临的首要挑战。本章将系统解构Python的并发机制，从GIL的本质出发，逐步讲解多线程与多进程的适用场景、实现方式与最佳实践，并探讨进程间通信(IPC)的高效实现，帮助你构建真正高性能的Python应用。
+
+\section{全局解释器锁 (GIL)：Python并发模型的核心限制}
+
+Python程序需要通过解释器来运行。解释器负责将编写的Python代码转换成机器可以执行的指令，其中官方标准实现为CPython，这也是当前使用最广泛的解释器。全局解释器锁 (Global Interpreter Lock, GIL)则是CPython解释器中的一个互斥锁，它确保在任何时刻只有一个线程执行Python字节码。虽然这简化了内存管理与线程安全，但也限制了多核CPU上Python线程的并行执行能力。
+
+
+\subsection{GIL的历史背景与存在意义}
+
+GIL并非Python语言的特性，而是CPython解释器在早期设计中的一项工程权衡。在1991年Python诞生之初，多核处理器尚未普及，操作系统的线程机制也较为原始。GIL的设计带来了以下好处：
+
+\begin{itemize}
+    \item 简化内存管理：Python使用引用计数进行内存回收，GIL保护了引用计数的线程安全，避免了复杂的锁机制。
+    \item 提高单线程性能：避免了多线程中频繁的加锁解锁开销。
+    \item 便于C扩展集成：许多早期的C扩展库并非线程安全，GIL为其提供了安全的执行环境。
+\end{itemize}
+
+然而，随着多核CPU的普及与高并发应用场景的增多，GIL逐渐成为性能瓶颈，尤其是对于CPU密集型任务。
+
+\subsection{GIL的工作机制与性能影响}
+
+GIL确保同一时刻只有一个线程执行Python代码，其释放时机包括：线程执行I/O操作（如文件读写、网络请求）；线程主动释放（如调用 \inlinepython{time.sleep()}）；解释器执行一定数量的字节码后强制切换。
+
+如表\ref{tab:gil-impact}所示，GIL的这一特点使其对I/O密集型任务和CPU密集型任务带来了截然不同的影响。
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{GIL 对不同任务类型的影响}
+  \label{tab:gil-impact}
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{3cm} p{3cm} p{3cm} p{3cm}@{}}
+    \toprule
+    任务类型 & 是否受 GIL 限制 & 并发推荐方案 & 性能表现 \\
+    \midrule
+    I/O 密集型 & 否 & 多线程 & 高吞吐 \\
+    CPU 密集型 & 是 & 多进程 & 真正并行 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+下面通过两个示例分别展示GIL对CPU密集型和I/O密集型任务的影响。
+
+\heading{CPU密集型任务示例}
+
+\begin{minted}{python}
+# CPU 密集型任务示例：斐波那契计算
+import threading
+import time
+import os
+import sys
+
+def cpu_task(n):
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+
+def test_cpu():
+    n = 500_000  # 一个较大的数字，模拟计算密集型任务
+    print(f"Python版本：{sys.version}")
+    print(f"CPU 核心数（逻辑核）：{os.cpu_count()}")
+    
+    # 1. 要求四个线程并发执行CPU密集型任务
+    threads = []
+    start = time.time()
+    for _ in range(4):
+        t = threading.Thread(target=cpu_task, args=(n,))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+    print(f"多线程耗时: {time.time() - start:.2f}秒")
+
+    # 2. 要求顺序执行4次CPU密集型任务
+    start = time.time()
+    for _ in range(4):
+        cpu_task(n)
+    print(f"单线程耗时: {time.time() - start:.2f}秒")
+
+if __name__ == "__main__":
+    test_cpu()
+\end{minted}
+
+在笔者个人计算机上运行上述代码后，输出如下结果：
+
+\begin{minted}{text}
+Python版本：3.12.9 (main, Mar 17 2025, 21:36:21) [Clang 20.1.0 ]
+CPU 核心数（逻辑核）：12
+多线程耗时: 10.71秒
+单线程耗时: 10.69秒
+\end{minted}
+
+多线程执行时间略高于单线程执行时间，这是因为Python的GIL限制了多线程的并行执行，而多线程执行时还有额外的切换开销。
+
+\heading{I/O密集型任务示例}
+
+\begin{minted}{python}
+# I/O 密集型任务示例：网络请求
+import threading
+import requests
+import time
+
+def fetch(url):
+    resp = requests.get(url)
+    return resp.status_code
+
+def test_io():
+    urls = ["https://httpbin.org/delay/1"] * 4
+    threads = []
+    start = time.time()
+    for url in urls:
+        t = threading.Thread(target=fetch, args=(url,))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+    print(f"多线程耗时: {time.time() - start:.2f}秒")
+
+    # 1. 要求顺序执行4次CPU密集型任务
+    start = time.time()
+    for url in urls:
+        fetch(url)
+    print(f"单线程耗时: {time.time() - start:.2f}秒")
+
+if __name__ == "__main__":
+    test_io()
+\end{minted}
+
+在笔者个人计算机上运行上述代码后，输出如下结果：
+
+\begin{minted}{text}
+多线程耗时: 6.13秒
+单线程耗时: 25.49秒
+\end{minted}
+
+上述具体数值受计算机配置和网络资源影响而会不同，但可以看出，多线程并行执行时间远小于顺序执行的方式。这是因为对于I/O密集型任务，CPU资源并不是性能的瓶颈所在。
+
+
+\subsection{GIL的应对策略与演进}
+
+虽然GIL在未来一段时间内仍将存在，但开发者已经形成了多种有效的应对策略：
+
+\begin{itemize}
+    \item {多进程（multiprocessing）}：通过创建多个进程，每个进程拥有独立的GIL，实现真正的并行计算。
+    \item {异步编程（asyncio）}：适用于高并发I/O场景，通过协程实现轻量级并发，避免线程阻塞。
+    \item {选择无 GIL 的解释器}：如Jython（基于 Java）或IronPython（基于 .NET），这些实现没有 GIL 限制。
+    \item {利用 C 扩展释放 GIL}：在C语言编写的扩展模块中执行密集型计算时，可以主动释放GIL，允许其他线程运行。
+\end{itemize}
+
+Python 自身也在不断演进。从 Python 3.13 开始，官方提供了实验性的``自由线程（free-threaded）''版本，允许在编译时选择是否启用GIL。而Python 3.14 则首次推出正式的无GIL版本（遵循PEP 703\footnote{PEP 703 – Making the Global Interpreter Lock Optional in CPython: \url{https://peps.python.org/pep-0703/}}），彻底移除了全局解释器锁，让Python真正支持多线程并行，显著释放了CPU计算密集型任务的性能，如下述代码所示：
+
+\begin{minted}{python}
+uv venv --python 3.14+freethreaded
+source .venv/bin/activate
+python -c "import sys;print(sys._is_gil_enabled())" # 输出 False则表示无GIL
+
+# 运行上面的CPU密集型任务，文件保存在了src/fxb/ch07/gil_cpu.py
+uv run fxb.ch07.gil_cpu
+# 输出结果：
+# Python版本：3.14.0a6 experimental free-threading build (main, Mar 17 2025, 21:29:21) [Clang 20.1.0 ]
+# CPU 核心数（逻辑核）：12
+# 多线程耗时: 2.87秒
+# 单线程耗时: 10.19秒
+\end{minted}
+
+可见，最新版本的Python 3.14去除了GIL限制后，CPU密集型任务在多核CPU硬件支持下性能提升非常明显。Python 3.14的无GIL版本是通往真正并行Python的重要里程碑，但生态系统的迁移是一个渐进过程，目前仍需要根据实际情况综合运用多进程、异步、C扩展等多种策略，应对实际使用场景的复杂性。
+
+
+\section{多线程编程：适用于 I/O 密集型任务}
+
+对于网络请求、文件操作、数据库查询等 I/O 密集型场景，多线程仍是提升吞吐量的有效工具。
+
+\subsection{线程安全与锁机制}
+
+Python 提供了 \texttt{threading.Lock}、\texttt{RLock}、\texttt{Semaphore} 等同步原语。以下示例展示了一个线程安全的计数器：
+
+\begin{minted}{python}
+import threading
+
+class SafeCounter:
+    def __init__(self):
+        self.value = 0
+        self.lock = threading.Lock()
+    
+    def increment(self):
+        with self.lock:
+            self.value += 1
+
+def worker(counter, times):
+    for _ in range(times):
+        counter.increment()
+
+def test_counter():
+    counter = SafeCounter()
+    threads = []
+    for _ in range(10):
+        t = threading.Thread(target=worker, args=(counter, 1000))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+    print(f"最终计数: {counter.value}")  # 应为 10000
+\end{minted}
+
+\subsection{线程池的最佳实践}
+
+推荐使用 \texttt{concurrent.futures.ThreadPoolExecutor} 管理线程生命周期，避免频繁创建销毁线程的开销。
+
+\begin{minted}{python}
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+
+def task(name, delay):
+    time.sleep(delay)
+    return f"{name} done"
+
+def use_thread_pool():
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(task, f"Task-{i}", i): i for i in range(5)}
+        for future in as_completed(futures):
+            print(future.result())
+\end{minted}
+
+\section{多进程编程：实现真正的并行计算}
+
+\texttt{multiprocessing} 模块通过创建独立进程绕过 GIL，充分利用多核 CPU。
+
+\subsection{进程与线程的本质区别}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{多进程 vs 多线程}
+  \label{tab:process-vs-thread}
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{3cm} p{4cm} p{4cm}@{}}
+    \toprule
+    特性 & 多线程 & 多进程 \\
+    \midrule
+    内存空间 & 共享 & 独立 \\
+    GIL 影响 & 受限制 & 不受限 \\
+    创建开销 & 小 & 大 \\
+    数据共享 & 直接 & 需 IPC \\
+    适用场景 & I/O 密集型 & CPU 密集型 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{进程池与任务分发}
+
+使用 \texttt{ProcessPoolExecutor} 可方便地管理进程池：
+
+\begin{minted}{python}
+from concurrent.futures import ProcessPoolExecutor
+import math
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(math.sqrt(n)) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+def count_primes(start, end):
+    return sum(1 for i in range(start, end) if is_prime(i))
+
+def use_process_pool():
+    with ProcessPoolExecutor() as executor:
+        ranges = [(1, 25000), (25000, 50000), (50000, 75000), (75000, 100000)]
+        results = executor.map(lambda r: count_primes(*r), ranges)
+        total = sum(results)
+        print(f"总数: {total}")
+\end{minted}
+
+\section{进程间通信 (IPC) 的高效实践}
+
+多进程间需通过 IPC 机制共享数据。选择高效的 IPC 方式至关重要，否则可能抵消并行带来的性能优势。
+
+\subsection{共享内存与同步原语}
+
+\texttt{multiprocessing} 提供了 \texttt{Value}、\texttt{Array} 等共享内存对象：
+
+\begin{minted}{python}
+from multiprocessing import Process, Value, Array
+
+def worker(v, a, i):
+    v.value += i
+    a[i] = i * i
+
+def shared_memory_demo():
+    val = Value('i', 0)
+    arr = Array('i', 5)
+    procs = []
+    for i in range(5):
+        p = Process(target=worker, args=(val, arr, i))
+        procs.append(p)
+        p.start()
+    for p in procs:
+        p.join()
+    print(f"Value: {val.value}")
+    print(f"Array: {list(arr)}")
+\end{minted}
+
+\subsection{队列与管道}
+
+队列 (\texttt{Queue}) 和管道 (\texttt{Pipe}) 是进程间传递数据的常用方式：
+
+\begin{minted}{python}
+from multiprocessing import Process, Queue
+
+def producer(q):
+    for i in range(5):
+        q.put(i)
+        print(f"Produced {i}")
+
+def consumer(q):
+    while True:
+        item = q.get()
+        if item is None:
+            break
+        print(f"Consumed {item}")
+
+def queue_demo():
+    q = Queue()
+    p1 = Process(target=producer, args=(q,))
+    p2 = Process(target=consumer, args=(q,))
+    p1.start()
+    p2.start()
+    p1.join()
+    q.put(None)
+    p2.join()
+\end{minted}
+
+\subsection{Manager 管理共享状态}
+
+\texttt{Manager} 可用于在多个进程间共享复杂数据结构（如字典、列表），但性能开销较大：
+
+\begin{minted}{python}
+from multiprocessing import Manager, Process
+
+def manager_demo():
+    with Manager() as manager:
+        d = manager.dict()
+        l = manager.list()
+        # 启动进程操作共享数据
+        # ...
+\end{minted}
+
+\section{并发方案选型指南}
+
+在实际项目中，应根据任务类型、数据规模、系统资源等因素选择最合适的并发方案：
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Python 并发方案选型指南}
+  \label{tab:concurrency-guide}
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm}@{}}
+    \toprule
+    任务类型 & 数据规模 & 推荐方案 & 优点 & 注意事项 \\
+    \midrule
+    I/O 密集型 & 中小规模 & threading & 轻量、简单 & 注意线程安全 \\
+    I/O 密集型 & 大规模 & asyncio & 高并发、低开销 & 需异步生态支持 \\
+    CPU 密集型 & 中小规模 & multiprocessing & 真并行 & 进程开销大 \\
+    CPU 密集型 & 大规模 & 分布式计算 & 可扩展 & 架构复杂 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section*{本章总结与进阶思考}
+
+本章系统讲解了 Python 并发模型的核心机制与实践方法：
+
+\textbf{关键要点回顾：}
+\begin{itemize}
+    \item GIL 限制了多线程的并行能力，但对 I/O 密集型任务影响较小。
+    \item 多线程适用于 I/O 密集型场景，需注意线程安全。
+    \item 多进程可绕过 GIL，适用于 CPU 密集型计算，但进程间通信成本较高。
+    \item 合理选择 IPC 机制是保证多进程性能的关键。
+\end{itemize}
+
+\textbf{实践建议：}
+\begin{itemize}
+    \item 使用 \texttt{concurrent.futures} 模块统一线程/进程池接口。
+    \item 优先考虑共享内存而非 Manager 进行进程间数据交换。
+    \item 在 CPU 密集型任务中，可考虑使用 C 扩展或 Cython 释放 GIL。
+\end{itemize}
+
+\textbf{进阶思考：} Python 的异步编程模型 (asyncio) 为高并发 I/O 场景提供了更轻量级的解决方案。下一章，我们将深入探讨如何使用 asyncio 构建高性能网络应用与异步任务处理系统。
+
+\end{document}
