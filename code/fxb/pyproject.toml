@@ -7,7 +7,9 @@ authors = [
     { name = "夏天", email = "xiat@ruc.edu.cn" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "requests>=2.32.5",
+]
 
 [project.scripts]
 fxb = "fxb:main"
