@@ -1,4 +1,4 @@
-\chapter{深入理解Python的并发模型}
+\chapter{Python的并发模型}
 
 高效处理并发是构建高性能系统的重要技能。然而，Python 中的全局解释器锁(GIL)常常成为开发者面临的首要挑战。本章将系统解构Python的并发机制，从GIL的本质出发，逐步讲解多线程与多进程的适用场景、实现方式与最佳实践，并探讨进程间通信(IPC)的高效实现，帮助你构建真正高性能的Python应用。
 
@@ -9,7 +9,7 @@ Python程序需要通过解释器来运行。解释器负责将编写的Python�
 
 \subsection{GIL的历史背景与存在意义}
 
-GIL并非Python语言的特性，而是CPython解释器在早期设计中的一项工程权衡。在1991年Python诞生之初，多核处理器尚未普及，操作系统的线程机制也较为原始。GIL的设计带来了以下好处：
+GIL并非Python语言的特性，而是CPython解释器在早期设计中的一项工程权衡。在1991年Python诞生之初，多核处理器尚未普及，操作系统的线程机制也较为原始。GIL的设计在当时带来了以下好处\citep{david2011gil}：
 
 \begin{itemize}
     \item 简化内存管理：Python使用引用计数进行内存回收，GIL保护了引用计数的线程安全，避免了复杂的锁机制。
@@ -30,9 +30,10 @@ GIL确保同一时刻只有一个线程执行Python代码，其释放时机包�
   \small
   \caption{GIL 对不同任务类型的影响}
   \label{tab:gil-impact}
-  \begin{tabular}{@{}>{\centering\arraybackslash}p{3cm} p{3cm} p{3cm} p{3cm}@{}}
+
+  \begin{tabular}{@{}>{\centering\arraybackslash}p{2.2cm} p{3cm} p{2.5cm} p{2.5cm}@{}}
     \toprule
-    任务类型 & 是否受 GIL 限制 & 并发推荐方案 & 性能表现 \\
+    任务类型 & 是否受GIL限制 & 并发推荐方案 & 性能表现 \\
     \midrule
     I/O 密集型 & 否 & 多线程 & 高吞吐 \\
     CPU 密集型 & 是 & 多进程 & 真正并行 \\
@@ -151,40 +152,123 @@ if __name__ == "__main__":
 Python 自身也在不断演进。从 Python 3.13 开始，官方提供了实验性的``自由线程（free-threaded）''版本，允许在编译时选择是否启用GIL。而Python 3.14 则首次推出正式的无GIL版本（遵循PEP 703\footnote{PEP 703 – Making the Global Interpreter Lock Optional in CPython: \url{https://peps.python.org/pep-0703/}}），彻底移除了全局解释器锁，让Python真正支持多线程并行，显著释放了CPU计算密集型任务的性能，如下述代码所示：
 
 \begin{minted}{python}
+# 先进入到项目目录下，假设目录为fxb，则进入到该目录下顺序执行下面的命令
 uv venv --python 3.14+freethreaded
 source .venv/bin/activate
 python -c "import sys;print(sys._is_gil_enabled())" # 输出 False则表示无GIL
 
 # 运行上面的CPU密集型任务，文件保存在了src/fxb/ch07/gil_cpu.py
-uv run fxb.ch07.gil_cpu
-# 输出结果：
-# Python版本：3.14.0a6 experimental free-threading build (main, Mar 17 2025, 21:29:21) [Clang 20.1.0 ]
-# CPU 核心数（逻辑核）：12
-# 多线程耗时: 2.87秒
-# 单线程耗时: 10.19秒
+uv pip install -e . # 将当前项目安装到虚拟环境中
+uv run -m fxb.ch07.gil_cpu #以模块方式运行
 \end{minted}
 
-可见，最新版本的Python 3.14去除了GIL限制后，CPU密集型任务在多核CPU硬件支持下性能提升非常明显。Python 3.14的无GIL版本是通往真正并行Python的重要里程碑，但生态系统的迁移是一个渐进过程，目前仍需要根据实际情况综合运用多进程、异步、C扩展等多种策略，应对实际使用场景的复杂性。
+在笔者设备上运行上述代码，输出结果如下：
+
+\begin{minted}{text}
+Python版本：3.14.0a6 experimental free-threading build (main, Mar 17 2025, 21:29:21) [Clang 20.1.0 ]
+CPU 核心数（逻辑核）：12
+多线程耗时: 2.87秒
+单线程耗时: 10.19秒
+\end{minted}
+
+由此可见，Python 3.14的自由线程版本在移除GIL限制后，能够显著提升CPU密集型任务在多核CPU上的运行性能。该版本是迈向真正并行Python的重要里程碑，但目前并非 Python 3.14 的默认发行版本。此外，整个生态系统的迁移仍需逐步推进，因此在实际情况中，往往仍需综合运用多进程、异步、C 扩展等多种策略，以应对实际应用场景中的复杂性。
 
 
-\section{多线程编程：适用于 I/O 密集型任务}
+\section{适用于I/O密集型任务的多线程编程}
 
-对于网络请求、文件操作、数据库查询等 I/O 密集型场景，多线程仍是提升吞吐量的有效工具。
+对于网络请求、文件操作、数据库查询等I/O密集型场景，多线程编程仍然是提升系统吞吐量的重要手段。虽然Python的全局解释器锁GIL限制了多线程在CPU密集型任务上的并行能力，但在I/O操作期间，线程会主动释放GIL，这使得多线程在I/O密集型任务中仍能有效利用等待时间，实现并发执行。
 
-\subsection{线程安全与锁机制}
+\subsection{线程的创建与管理}
 
-Python 提供了 \texttt{threading.Lock}、\texttt{RLock}、\texttt{Semaphore} 等同步原语。以下示例展示了一个线程安全的计数器：
+Python提供了\inlinepython{threading}模块来支持多线程编程。创建线程主要有两种方式：直接实例化\inlinepython{Thread}类，或继承\inlinepython{Thread}类并重写 \inlinepython{run} 方法。
 
 \begin{minted}{python}
 import threading
+import time
+
+# 方式一：直接使用Thread类, 后面使用target参数指定线程要执行该函数
+def print_numbers():
+    for i in range(5):
+        print(f"Number: {i}")
+        time.sleep(0.5)
+
+# 方式二：继承 Thread 类
+class WorkerThread(threading.Thread):
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+    
+    def run(self):
+        print(f"{self.name} 开始执行")
+        time.sleep(1)
+        print(f"{self.name} 执行结束")
+
+def demo_thread_creation():
+    print("--- 方式一：直接实例化 Thread ---")
+    thread1 = threading.Thread(target=print_numbers, name="数字打印线程")
+    thread1.start()
+    thread1.join()
+    
+    print("\n--- 方式二：继承 Thread 类 ---")
+    thread2 = WorkerThread("工作线程")
+    thread2.start()
+    thread2.join()
+
+if __name__ == "__main__":
+    demo_thread_creation()
+\end{minted}
+
+其中，线程的\inlinepython{join()}方法主要用于阻塞当前线程（通常是主线程），直到调用该方法的线程执行完毕，从而确保线程间的同步执行，防止主线程过早退出导致子线程被强制终止。
+
+
+\subsection{线程安全与锁机制}
+
+当多个线程同时访问共享资源时，可能会引发竞态条件（Race Condition），导致数据不一致。Python提供了多种原语来保证线程安全，\inlinepython{threading.Lock}最为常用。
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Python常用同步原语}
+  \label{tab:thread-sync}
+    \begin{tabular}{@{}>{\centering\arraybackslash}p{2.2cm} p{6.5cm} p{4cm}@{}}
+        \toprule
+        同步原语 & 特点 & 适用场景 \\
+        \midrule
+        Lock & 互斥锁，同一时刻只能有一个线程获取锁 & 共享资源的互斥访问 \\
+        RLock & 可重入锁，同一个线程可以多次获取锁 & 同一线程中需要多次加锁 \\
+        Semaphore & 信号量，控制同时访问资源的线程数 & 限制并发数，如连接池 \\
+        Condition & 条件变量，用于线程间的等待/通知机制 & 生产者-消费者模式 \\
+        Event & 事件标志，线程等待或设置事件 & 简单的线程间通信 \\
+        \bottomrule
+  \end{tabular}
+\end{table}
+
+
+以下通过计数器来展示\inlinepython{threading.Lock}的作用：
+
+\begin{minted}{python}
+# file: src/fxb/ch07/thread_counter.py
+import threading
+import time
+
+class SimpleCounter:
+    """线程不安全的计数器"""
+    def __init__(self):
+        self.value = 0
+    
+    def increment(self):
+        time.sleep(0.001) # 模拟耗时操作，放大竞态条件
+        self.value += 1
 
 class SafeCounter:
+    """线程安全的计数器"""
     def __init__(self):
         self.value = 0
         self.lock = threading.Lock()
     
     def increment(self):
         with self.lock:
+            time.sleep(0.001) # 模拟耗时操作，放大竞态条件
             self.value += 1
 
 def worker(counter, times):
@@ -192,181 +276,687 @@ def worker(counter, times):
         counter.increment()
 
 def test_counter():
-    counter = SafeCounter()
+    simple_counter = SimpleCounter()
     threads = []
     for _ in range(10):
-        t = threading.Thread(target=worker, args=(counter, 1000))
+        t = threading.Thread(target=worker, args=(simple_counter, 1000))
         t.start()
         threads.append(t)
     for t in threads:
         t.join()
-    print(f"最终计数: {counter.value}")  # 应为 10000
+    print(f"最终计数: {simple_counter.value}") # 不一定是10000
+
+    safe_counter = SafeCounter()
+    threads = []
+    for _ in range(10):
+        t = threading.Thread(target=worker, args=(safe_counter, 1000))
+        t.start()
+        threads.append(t)
+    for t in threads:
+        t.join()
+    print(f"最终计数: {safe_counter.value}")  # 一定是10000
+
+if __name__ == "__main__":
+    test_counter()
 \end{minted}
 
-\subsection{线程池的最佳实践}
+上例中，线程不安全的计数器可能会出现计数结果小于10000的情况，这是由于多个线程同时访问共享资源导致的竞态条件。而线程安全的计数器则通过锁机制保证了每次只有一个线程可以修改计数器的值，从而避免了竞态条件的发生。
 
-推荐使用 \texttt{concurrent.futures.ThreadPoolExecutor} 管理线程生命周期，避免频繁创建销毁线程的开销。
+
+\subsection{线程间通信与协调}
+
+除了使用锁进行同步外，线程间还需要进行通信和协调。Python提供了多种线程间通信机制：
+
+\begin{itemize}
+    \item \inlinepython{queue.Queue}：线程安全的队列，常用于生产者-消费者模型。
+    \item \inlinepython{threading.Event}：事件标志，用于线程间的简单信号通知。
+    \item \inlinepython{threading.Condition}：条件变量，用于复杂的线程间协调，如等待/通知模式。
+\end{itemize}
+
+下面通过示例展示如何使用这些机制实现线程间的通信与协调。
+
+\heading{使用队列实现生产者-消费者模型}
+
+\inlinepython{queue.Queue} 是线程安全的先进先出（FIFO）队列，适用于多个线程间安全地传递数据。下面模拟果农生产水果，店员销售水果的场景：
 
 \begin{minted}{python}
-from concurrent.futures import ThreadPoolExecutor, as_completed
+# file: src/fxb/ch07/thread_queue.py
+import threading
+import queue
 import time
 
-def task(name, delay):
-    time.sleep(delay)
-    return f"{name} done"
+# 水果队列，最多存放5个水果
+fruit_queue = queue.Queue(maxsize=5)
 
-def use_thread_pool():
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = {executor.submit(task, f"Task-{i}", i): i for i in range(5)}
-        for future in as_completed(futures):
-            print(future.result())
+def farmer(farmer_id:int):
+    """果农：生产水果放入队列"""
+    fruits = ['苹果', '香蕉', '橙子', '葡萄', '西瓜']
+    for fruit in fruits:
+        time.sleep(0.2)  # 模拟生产时间
+        fruit_queue.put(f"果农{farmer_id}的{fruit}")
+        print(f"果农{farmer_id}生产了: {fruit}")
+
+def clerk(clerk_id:int):
+    """店员：从队列取出水果销售"""
+    while True:
+        try:
+            fruit = fruit_queue.get(timeout=3)  # 3秒超时
+            time.sleep(0.3)  # 模拟销售时间
+            print(f"店员{clerk_id}售出了: {fruit}")
+            fruit_queue.task_done()  # 标记任务完成
+        except queue.Empty:
+            break
+
+# 创建1个果农线程和2个店员线程
+threads = [
+    threading.Thread(target=farmer, args=(1,)),
+    threading.Thread(target=clerk, args=(1,)),
+    threading.Thread(target=clerk, args=(2,)),
+]
+
+for t in threads:
+    t.start()
+
+# 等待所有任务完成
+fruit_queue.join()
+
+for t in threads:
+    t.join()
+
+print("今日水果销售完毕！")
 \end{minted}
 
-\section{多进程编程：实现真正的并行计算}
+上述代码中，果农线程不断生产水果并放入队列，而店员线程则不断从队列中取出水果并销售。通过队列的 \inlinepython{put} 和 \inlinepython{get} 方法，果农和店员可以安全地共享水果数据。
 
-\texttt{multiprocessing} 模块通过创建独立进程绕过 GIL，充分利用多核 CPU。
 
-\subsection{进程与线程的本质区别}
+\heading{使用事件进行线程间协调}
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{多进程 vs 多线程}
-  \label{tab:process-vs-thread}
-  \begin{tabular}{@{}>{\centering\arraybackslash}p{3cm} p{4cm} p{4cm}@{}}
-    \toprule
-    特性 & 多线程 & 多进程 \\
-    \midrule
-    内存空间 & 共享 & 独立 \\
-    GIL 影响 & 受限制 & 不受限 \\
-    创建开销 & 小 & 大 \\
-    数据共享 & 直接 & 需 IPC \\
-    适用场景 & I/O 密集型 & CPU 密集型 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+事件（Event）提供了一种简单的线程间通信机制，通过一个共享的布尔标志来实现线程的协调。一个线程可以设置（\inlinepython{set()}）事件，通知所有等待（\inlinepython{wait()}）该事件的线程条件已满足，从而实现``一对多''的同步唤醒。事件适用于一次性的信号通知场景，例如任务完成通知或资源就绪广播，但它不具备传递数据的能力，且一旦被设置就会保持唤醒状态，除非手动重置（\inlinepython{clear()}）。
 
-\subsection{进程池与任务分发}
-
-使用 \texttt{ProcessPoolExecutor} 可方便地管理进程池：
+这里模拟顾客等待水果拼盘准备好：
 
 \begin{minted}{python}
-from concurrent.futures import ProcessPoolExecutor
-import math
+# file: src/fxb/ch07/thread_event.py
+import threading
+import time
 
-def is_prime(n):
-    if n < 2:
-        return False
-    for i in range(2, int(math.sqrt(n)) + 1):
-        if n % i == 0:
-            return False
-    return True
+# 创建一个事件，表示水果拼盘是否准备好
+fruit_plate_ready = threading.Event()
 
-def count_primes(start, end):
-    return sum(1 for i in range(start, end) if is_prime(i))
+def prepare_fruit_plate():
+    """准备水果拼盘"""
+    print("厨师正在准备水果拼盘...")
+    time.sleep(2)  # 准备时间
+    print("水果拼盘准备好了！")
+    fruit_plate_ready.set()  # 设置事件，通知顾客
 
-def use_process_pool():
-    with ProcessPoolExecutor() as executor:
-        ranges = [(1, 25000), (25000, 50000), (50000, 75000), (75000, 100000)]
-        results = executor.map(lambda r: count_primes(*r), ranges)
-        total = sum(results)
-        print(f"总数: {total}")
+def customer(customer_id):
+    """顾客等待水果拼盘"""
+    print(f"顾客{customer_id}在等待水果拼盘")
+    fruit_plate_ready.wait()  # 等待事件
+    print(f"顾客{customer_id}开始享用水果拼盘")
+
+# 创建1个厨师线程和3个顾客线程
+chef = threading.Thread(target=prepare_fruit_plate)
+customers = [threading.Thread(target=customer, args=(i,)) 
+             for i in range(1, 4)]
+
+chef.start()
+for c in customers:
+    c.start()
+
+chef.join()
+for c in customers:
+    c.join()
+
+print("所有顾客都享用完毕！")
 \end{minted}
 
-\section{进程间通信 (IPC) 的高效实践}
+在这个例子中，当厨师调用\inlinepython{fruit\_plate\_ready.set()}设置事件后，所有正在等待该事件的顾客线程（通过\inlinepython{fruit\_plate\_ready.wait()}）都会被同时唤醒，然后继续执行各自的后续代码。
 
-多进程间需通过 IPC 机制共享数据。选择高效的 IPC 方式至关重要，否则可能抵消并行带来的性能优势。
 
-\subsection{共享内存与同步原语}
+\heading{使用条件变量实现等待/通知模式}
 
-\texttt{multiprocessing} 提供了 \texttt{Value}、\texttt{Array} 等共享内存对象：
+条件变量（Condition）允许一个或多个线程等待某个条件成立，当条件成立时，通知等待的线程继续执行。它通常与锁一起使用，适用于复杂的同步场景，如生产者-消费者模型。
+
+下面模拟水果库存管理：
+
+\begin{minted}{python}
+# file: src/fxb/ch07/thread_condition.py
+import threading
+import time
+
+
+class FruitInventory:
+    """水果库存管理"""
+
+    def __init__(self):
+        self.fruits = []
+        self.lock = threading.Lock()
+        self.has_fruits = threading.Condition(self.lock)  # 条件变量
+
+    def add_fruit(self, fruit):
+        """添加水果到库存"""
+        with self.lock:
+            self.fruits.append(fruit)
+            print(f"添加:{fruit}, 库存:{len(self.fruits)}个")
+            self.has_fruits.notify()  # 通知等待的线程
+
+    def take_fruit(self):
+        """从库存取水果"""
+        with self.lock:
+            # 如果库存为空，则等待
+            while len(self.fruits) == 0:
+                print("库存空了，等待进货...")
+                self.has_fruits.wait()
+
+            fruit = self.fruits.pop(0)
+            print(f"取出:{fruit}, 库存:{len(self.fruits)}个")
+            return fruit
+
+def supplier(inventory: FruitInventory):
+    """供应商：提供水果"""
+    for fruit in ["苹果", "香蕉", "橙子", "葡萄"]:
+        time.sleep(1)  # 进货时间
+        inventory.add_fruit(fruit)
+
+def customer(inventory: FruitInventory, customer_id:int):
+    """顾客：购买水果"""
+    for _ in range(2):
+        time.sleep(1.5)  # 购买间隔
+        fruit = inventory.take_fruit()
+        print(f"顾客{customer_id}买到了: {fruit}")
+
+# 创建库存
+inventory = FruitInventory()
+
+# 创建1个供应商线程和2个顾客线程
+supplier_thread = threading.Thread(target=supplier, args=(inventory,))
+customer_threads = [
+    threading.Thread(target=customer, args=(inventory, i)) for i in range(1, 3)
+]
+
+supplier_thread.start()
+for c in customer_threads:
+    c.start()
+
+supplier_thread.join()
+for c in customer_threads:
+    c.join()
+
+print("今日营业结束！")
+\end{minted}
+
+通过这些简单的例子可以看出：队列适合有序的数据传递，如生产者-消费者场景；事件适合简单的信号通知，一个线程通知其他线程某个事件已发生；条件变量适合复杂的协调，允许线程在特定条件下等待和唤醒。在实际开发中，应根据具体场景选择合适的通信机制，以保证线程间的正确协作和高效运行。
+
+
+\subsection{线程池}
+
+频繁创建和销毁线程会带来较大的开销。使用线程池可以复用线程，提高性能。Python 标准库提供了 \texttt{concurrent.futures.ThreadPoolExecutor}，它是一个高层级的线程池接口。
+
+\begin{minted}{python}
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+import time
+import random
+
+def download_file(url) -> tuple[str, int]:
+    """模拟下载文件"""
+    print(f"开始下载: {url}")
+    time.sleep(random.uniform(0.5, 2.0))  # 模拟下载时间
+    size = random.randint(100, 1000)  # 模拟文件大小
+    print(f"下载完成: {url}, 大小: {size}KB")
+    return url, size
+
+def demo_thread_pool():
+    urls = [
+        "https://example.com/file1.zip",
+        "https://example.com/file2.zip",
+        "https://example.com/file3.zip",
+        "https://example.com/file4.zip",
+        "https://example.com/file5.zip",
+    ]
+    
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        print("=== 方法1: submit() 每次提交单个任务 ===")
+        for url in urls:
+            future = executor.submit(download_file, url)
+            url, size = future.result()
+            print(f"单个任务结果: {url} -> {size}KB")
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        print("\n=== 方法2: map() 批量提交，按提交顺序获取结果 ===")
+        for url, size in executor.map(download_file, urls):
+            print(f"获取结果: {url} -> {size}KB")
+    
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        print("\n=== 方法3: submit()批量提交，借助as_completed按完成顺序获取结果 ===")
+        futures = {executor.submit(download_file, url): url for url in urls}
+        for future in as_completed(futures): 
+            url, size = future.result()
+            print(f"先完成的任务: {url} -> {size}KB")
+    
+if __name__ == "__main__":
+    demo_thread_pool()
+\end{minted}
+
+上面展示了线程池的使用方法，包括使用 \inlinepython{submit()} 方法提交单个任务，使用 \inlinepython{map()} 方法批量提交任务并按提交顺序获取结果，以及使用 \inlinepython{as\_completed()} 方法批量提交任务并按完成顺序获取结果。
+请注意，线程池与\inlinepython{threading}模块不同，我们无需通过列表来跟踪线程，不需要使用\inlinepython{join()}进行同步等待或在线程完成后释放资源——所有这些都由构造器自动处理，使代码更紧凑且不易出错。
+
+
+\section{适用于CPU密集型任务的多进程编程}
+
+
+对于需要大量CPU计算的任务，Python的多进程编程是绕过GIL限制、实现真正并行计算的首选方案。每个 Python进程都拥有自己独立的解释器和内存空间，因此可以充分利用多核CPU的计算能力。
+
+
+\subsection{多进程的基本使用}
+
+Python 标准库提供了\inlinepython{multiprocessing} 模块来支持多进程编程。其接口与 \inlinepython{threading} 模块类似，但底层实现完全不同。以下是一个简单的多进程示例，演示如何创建和启动进程：
+
+\begin{minted}{python}
+import multiprocessing
+import time
+import os
+
+def cpu_intensive_task(n):
+    """模拟CPU密集型任务：计算斐波那契数列"""
+    pid = os.getpid()
+    print(f"进程 {pid} 开始执行任务")
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    print(f"进程 {pid} 完成任务")
+    return a
+
+def basic_multiprocessing():
+    n = 500_000  # 一个较大的数字，模拟计算密集型任务
+    processes = []
+    start = time.time()
+
+    # 1. 创建4个进程并行执行任务
+    for i in range(4):
+        p = multiprocessing.Process(target=cpu_intensive_task, args=(n,))
+        p.start()
+        processes.append(p)
+
+    # 等待所有进程完成
+    for p in processes:
+        p.join()
+
+    print(f"多进程总耗时: {time.time() - start:.2f}秒")
+
+    # 2. 要求顺序执行4次CPU密集型任务
+    start = time.time()
+    for _ in range(4):
+        cpu_intensive_task(n)
+    print(f"顺序执行耗时: {time.time() - start:.2f}秒")
+
+if __name__ == "__main__":
+    basic_multiprocessing()
+\end{minted}
+
+与多线程不同，多进程可以真正并行执行CPU密集型任务。在笔者配备12个逻辑核心的计算机上运行上述代码，输出如下：
+
+\begin{minted}{text}
+进程 97212 开始执行任务
+进程 97214 开始执行任务
+进程 97213 开始执行任务
+进程 97215 开始执行任务
+进程 97214 完成任务
+进程 97212 完成任务
+进程 97213 完成任务
+进程 97215 完成任务
+多进程总耗时: 2.86秒
+进程 97210 开始执行任务
+进程 97210 完成任务
+进程 97210 开始执行任务
+进程 97210 完成任务
+进程 97210 开始执行任务
+进程 97210 完成任务
+进程 97210 开始执行任务
+进程 97210 完成任务
+顺序执行耗时: 10.40秒
+\end{minted}
+
+可以看到，四个进程几乎同时开始、同时结束，总耗时远低于顺序执行四次任务的时间，充分体现了多进程并行计算的优势。
+
+\subsection{进程间通信与协调}
+
+由于每个进程拥有独立的内存空间，进程间不能直接共享变量。\index{IPC}Python提供了多种\index{进程间通信}进程间通信（Inter-Process Communication，IPC）机制，包括：队列（Queue）、管道（Pipe）和共享内存（Shared Memory）。
+
+\heading{使用队列进行进程间通信}
+
+\inlinepython{multiprocessing.Queue}是一个进程安全的FIFO队列，允许多个进程安全地传递数据，注意，此处的队列不是用于线程的\inlinepython{queue.Queue}。
+
+以下示例展示如何使用进程安全的队列在水果批发商（生产者进程）和零售商（消费者进程）之间传递水果：
+
+\begin{minted}{python}
+import multiprocessing
+import time
+import random
+
+# 存入水果的仓库：采用队列方式，最多存放5个水果
+warehouse = multiprocessing.Queue(maxsize=5)
+
+def farmer(queue: multiprocessing.Queue, farmer_id:int, fruit_types:list):
+    """果农：生产水果放入队列"""
+    for fruit in fruit_types:
+        # 模拟批发准备时间
+        time.sleep(random.uniform(0.1, 0.3))
+        batch = f"果农{farmer_id}的{fruit}批次{random.randint(1, 100)}"
+        queue.put(batch)
+        print(f"{batch} 已放入仓库")
+    # 放入结束标志
+    queue.put("DONE")
+
+def clerk(queue: multiprocessing.Queue, clerk_id: int):
+    """店员：从队列取出水果销售"""
+    count = 0
+    while True:
+        # 从仓库获取水果批次
+        batch = queue.get()
+
+        if batch == "DONE":
+            # 重新放入队列，为其他零售商传递结束信号
+            queue.put("DONE")
+            break
+
+        # 模拟零售准备时间
+        time.sleep(random.uniform(0.2, 0.4))
+        count += 1
+        print(f"店员{clerk_id} 售出: {batch} (累计: {count}批)")
+
+def demo_fruit_queue():
+    # 创建水果仓库队列，最多容纳20个批次
+    warehouse = multiprocessing.Queue(maxsize=20)
+
+    # 水果种类
+    fruit_varieties = ["苹果", "香蕉", "橙子", "葡萄", "西瓜"]
+
+    # 创建2个果农进程和3个店员进程
+    farmers = [
+        multiprocessing.Process(
+            target=farmer, args=(warehouse, i, fruit_varieties)
+        )
+        for i in range(1, 3)
+    ]
+
+    clerks = [
+        multiprocessing.Process(target=clerk, args=(warehouse, i))
+        for i in range(1, 4)
+    ]
+
+    # 启动所有进程
+    for f in farmers:
+        f.start()
+    for c in clerks:
+        c.start()
+
+    for f in farmers:
+        f.join()
+    for c in clerks:
+        c.join()
+       
+    print("今日水果销售完毕！")
+
+if __name__ == "__main__":
+    demo_fruit_queue()
+\end{minted}
+
+注意，队列在进程间传递数据时会对数据进行序列化和反序列化，因此传递的对象必须是可序列化的（Picklable）。
+
+
+\heading{使用管道进行进程间通信}
+
+管道（Pipe）是一种半双工的通信机制，用于实现两个进程间的双向/单向数据传输。在Python中，\inlinepython{multiprocessing.Pipe} 提供了一个简单的管道实现，可以默认创建双向管道（两端均可读写），也可通过参数指定单向管道（仅一端写、另一端读）。
+
+以下示例展示如何使用管道在水果检测员和质量监督员之间进行双向通信：
+
+\begin{minted}{python}
+from multiprocessing import Process, Pipe
+from multiprocessing.connection import Connection
+
+# 子进程函数：通过管道读写数据
+def send_data(conn: Connection):
+    conn.send("我不是小白!")  # 发送数据（支持Python任意可序列化对象）
+    conn.close()  # 关闭连接
+
+if __name__ == "__main__":
+    # 1. 创建管道：返回两个连接对象（conn1, conn2）
+    conn1, conn2 = Pipe(duplex=True)  # duplex=True（默认）：双向；False：单向（conn1仅写，conn2仅读）
+
+    # 2. 启动子进程，传入管道一端
+    p = Process(target=send_data, args=(conn1,))
+    p.start()
+
+    # 3. 主进程通过另一端读取数据
+    print(conn2.recv())  # 输出：我不是小白!
+    p.join()
+    conn2.close()
+\end{minted}
+
+管道适用于两个进程之间的双向通信，但多个进程间通信时使用队列更为方便。
+
+
+\heading{使用共享内存进行进程间通信}
+
+共享内存是Python的\inlinepython{multiprocessing}模块中高性能的进程间通信机制之一，其核心优势在于允许多个进程直接读写同一块物理内存区域，完全避免了管道或队列所需的数据序列化和复制开销，从而成为速度最快的进程间通信方式。
+
+从实现原理看，操作系统负责在内存中开辟专门的共享区域，各进程可直接访问该区域而无需内核中转。Python通过\inlinepython{multiprocessing}模块的Value/Array（针对基础数据类型）或Manager（支持复杂结构）对此机制进行封装，底层则依赖于操作系统的共享内存实现，如Linux的shm\footnote{\url{https://www.kernel.org/doc/gorman/html/understand/understand015.html}}或Windows的CreateFileMapping\footnote{\url{https://www.jeremyong.com/winapi/io/2024/11/03/windows-memory-mapped-file-io/}}。
+
+\circled{1} 基于Value/Array的简单类型共享
+
+这是一种最快的内存共享方法。其中，Value用于在进程间共享单个基本数据类型（如整数、浮点数），而Array则用于共享数组类型的数据。这两种方式均直接映射到操作系统的共享内存区域，完全避免了数据序列化和复制的开销，因此能够实现极速的数据交换性能。
 
 \begin{minted}{python}
 from multiprocessing import Process, Value, Array
 
-def worker(v, a, i):
-    v.value += i
-    a[i] = i * i
+# 子进程修改共享内存的函数
+def modify_shared(shared_num, shared_arr):
+    shared_num.value += 10  # 修改Value需通过.value属性
+    for i in range(len(shared_arr)):
+        shared_arr[i] *= 2   # Array可直接下标修改
 
-def shared_memory_demo():
-    val = Value('i', 0)
-    arr = Array('i', 5)
-    procs = []
-    for i in range(5):
-        p = Process(target=worker, args=(val, arr, i))
-        procs.append(p)
-        p.start()
-    for p in procs:
-        p.join()
-    print(f"Value: {val.value}")
-    print(f"Array: {list(arr)}")
+if __name__ == '__main__':
+    # 1. 创建共享内存对象
+    # Value(类型码, 初始值)：i=int, f=float, b=bool, s=str（需指定长度）
+    shared_num = Value('i', 0)  # 共享整数，初始值0
+    shared_arr = Array('i', [1, 2, 3])  # 共享整数数组
+
+    # 2. 启动子进程
+    p = Process(target=modify_shared, 
+                args=(shared_num, shared_arr))
+    p.start()
+    p.join()
+
+    # 4. 主进程读取共享内存
+    print("共享整数：", shared_num.value)  # 输出：10
+    print("共享数组：", shared_arr[:])    # 输出：[2,4,6]
 \end{minted}
 
-\subsection{队列与管道}
+\circled{2} 基于Manager的复杂结构共享
 
-队列 (\texttt{Queue}) 和管道 (\texttt{Pipe}) 是进程间传递数据的常用方式：
+Manager基于独立的服务器进程实现跨进程数据共享，支持共享字典、列表等复杂可变数据结构，也支持自定义对象。由于所有操作需通过进程间通信（如网络或管道）中转，其速度通常低于 \inlinepython{multiprocessing.Value}或\inlinepython{Array}等基于内存的简单共享方式，但优点是能够支持更丰富的数据结构。
 
-\begin{minted}{python}
-from multiprocessing import Process, Queue
-
-def producer(q):
-    for i in range(5):
-        q.put(i)
-        print(f"Produced {i}")
-
-def consumer(q):
-    while True:
-        item = q.get()
-        if item is None:
-            break
-        print(f"Consumed {item}")
-
-def queue_demo():
-    q = Queue()
-    p1 = Process(target=producer, args=(q,))
-    p2 = Process(target=consumer, args=(q,))
-    p1.start()
-    p2.start()
-    p1.join()
-    q.put(None)
-    p2.join()
-\end{minted}
-
-\subsection{Manager 管理共享状态}
-
-\texttt{Manager} 可用于在多个进程间共享复杂数据结构（如字典、列表），但性能开销较大：
+下面是一个基本示例，展示如何使用Manager创建并操作共享字典与列表：
 
 \begin{minted}{python}
-from multiprocessing import Manager, Process
+from multiprocessing import Process, Manager
 
-def manager_demo():
+# 1. 定义子进程任务：修改共享数据
+def modify_manager(shared_dict, shared_list):
+    shared_dict["version"] = 3.12
+    shared_list.append(40)
+    
+def test_manager():
+    # 2. 创建 Manager 实例（启动服务器进程）
     with Manager() as manager:
-        d = manager.dict()
-        l = manager.list()
-        # 启动进程操作共享数据
-        # ...
+        # 2. 创建共享字典和列表
+        shared_dict = manager.dict({"name": "Python", "version": 3.10})
+        shared_list = manager.list([10, 20, 30])
+
+        # 3. 启动子进程并等待完成
+        p = Process(target=modify_manager, args=(shared_dict, shared_list))
+        p.start()
+        p.join()
+
+        # 4. 主进程中读取被修改后的共享数据
+        print("共享字典：", shared_dict)  # 输出：{'name': 'Python', 'version': 3.12}
+        print("共享列表：", shared_list)  # 输出：[10, 20, 30, 40]
+
+if __name__ == "__main__":
+    test_manager()
 \end{minted}
 
-\section{并发方案选型指南}
+在该示例中，Manager管理的共享对象在子进程中的修改会自动同步到主进程，实现了跨进程的复杂数据共享。
 
-在实际项目中，应根据任务类型、数据规模、系统资源等因素选择最合适的并发方案：
+\subsection{进程池}
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{Python 并发方案选型指南}
-  \label{tab:concurrency-guide}
-  \begin{tabular}{@{}>{\centering\arraybackslash}p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm}@{}}
-    \toprule
-    任务类型 & 数据规模 & 推荐方案 & 优点 & 注意事项 \\
-    \midrule
-    I/O 密集型 & 中小规模 & threading & 轻量、简单 & 注意线程安全 \\
-    I/O 密集型 & 大规模 & asyncio & 高并发、低开销 & 需异步生态支持 \\
-    CPU 密集型 & 中小规模 & multiprocessing & 真并行 & 进程开销大 \\
-    CPU 密集型 & 大规模 & 分布式计算 & 可扩展 & 架构复杂 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+与线程池类似，频繁创建和销毁进程会带来较大的系统开销。进程池通过复用进程的方式，可以有效降低这种开销，尤其适用于需要大量执行短期CPU密集型任务的场景。Python提供了两种实现：标准库中的 \inlinepython{multiprocessing.Pool} 和更高层级的 \inlinepython{concurrent.futures.ProcessPoolExecutor}。
+
+\heading{使用multiprocessing.Pool}
+
+\inlinepython{multiprocessing.Pool} 提供了丰富的进程池管理接口，支持同步和异步执行方式。以下是其核心方法：
+
+\begin{description}
+    \item[apply(func, args)] 同步执行，阻塞直到返回结果。
+    \item[apply\_async(func, args, callback)] 异步执行，立即返回 AsyncResult 对象。
+    \item[map(func, iterable)] 同步批量执行，按顺序返回结果。
+    \item[map\_async(func, iterable, callback)] 异步批量执行，返回 AsyncResult。
+    \item[imap(func, iterable)] 惰性迭代版本，按顺序逐步返回结果。
+    \item[imap\_unordered(func, iterable)] 惰性迭代，按完成顺序返回结果。
+\end{description}
+
+下面通过一个计算数字平方的示例展示其基本用法：
+
+\begin{minted}{python}
+# file: src/fxb/ch7/process_pool.py
+import multiprocessing
+import time
+
+def square(x):
+    """计算平方（模拟CPU密集型任务）"""
+    time.sleep(0.5)  # 模拟计算耗时
+    return x * x
+
+def demo_multiprocessing_pool():
+    numbers = list(range(1, 11))
+    
+    print("=== 方法1: 同步map() ===")
+    start = time.time()
+    with multiprocessing.Pool(processes=4) as pool:
+        results = pool.map(square, numbers)
+    print(f"结果: {results}")
+    print(f"耗时: {time.time() - start:.2f}秒")
+    
+    print("\n=== 方法2: 异步map_async() ===")
+    start = time.time()
+    with multiprocessing.Pool(processes=4) as pool:
+        async_result = pool.map_async(square, numbers)
+        # 可以在这里执行其他任务
+        results = async_result.get()  # 阻塞等待结果
+    print(f"结果: {results}")
+    print(f"耗时: {time.time() - start:.2f}秒")
+    
+    print("\n=== 方法3: imap_unordered()（按完成顺序）===")
+    start = time.time()
+    with multiprocessing.Pool(processes=4) as pool:
+        for result in pool.imap_unordered(square, numbers):
+            print(f"{result}", end=", ")
+    print(f"\n总耗时: {time.time() - start:.2f}秒")
+
+if __name__ == "__main__":
+    demo_multiprocessing_pool()
+\end{minted}
+
+在笔者个人计算机上运行上述代码后，结果如下：
+\begin{minted}{text}
+=== 方法1: 同步map() ===
+结果: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+耗时: 1.56秒
+
+=== 方法2: 异步map_async() ===
+结果: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+耗时: 1.56秒
+
+=== 方法3: imap_unordered()（按完成顺序）===
+4, 9, 1, 16, 49, 25, 36, 64, 81, 100, 
+总耗时: 1.55秒
+\end{minted}
+
+\heading{使用 concurrent.futures.ProcessPoolExecutor}
+
+\inlinepython{ProcessPoolExecutor}是\inlinepython{concurrent.futures}模块提供的更高层级的进程池接口，其用法与\inlinepython{ThreadPoolExecutor}几乎完全一致，只是底层使用进程而非线程。这使得在I/O密集型和CPU密集型任务之间切换实现变得非常容易。
+
+下面使用相同任务展示其用法：
+
+\begin{minted}{python}
+# file: src/fxb/ch7/process_executor.py
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import time
+
+def square(x):
+    time.sleep(0.5)
+    return x * x
+
+def demo_process_pool_executor():
+    numbers = list(range(1, 4))
+
+    print("=== 使用 submit() 和 as_completed() ===")
+    start = time.time()
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(square, num): num for num in numbers}
+        results = []
+        for future in as_completed(futures):
+            num = futures[future]
+            result = future.result()
+            results.append((num, result))
+            print(f"数字 {num} 的平方为 {result}")
+
+    # 按原顺序排序输出
+    results.sort(key=lambda x: x[0])
+    print(f"完整结果: {[r[1] for r in results]}")
+    print(f"耗时: {time.time() - start:.2f}秒")
+
+    print("\n=== 使用 map() ===")
+    start = time.time()
+    with ProcessPoolExecutor(max_workers=4) as executor:
+        results = list(executor.map(square, numbers))
+    print(f"结果: {results}")
+    print(f"耗时: {time.time() - start:.2f}秒")
+
+if __name__ == "__main__":
+    demo_process_pool_executor()
+\end{minted}
+
+在笔者个人计算机上运行上述代码后，结果如下：
+
+\begin{minted}{text}
+=== 使用 submit() 和 as_completed() ===
+数字 1 的平方为 1
+数字 3 的平方为 9
+数字 2 的平方为 4
+完整结果: [1, 4, 9]
+耗时: 0.56秒
+
+=== 使用 map() ===
+结果: [1, 4, 9]
+耗时: 0.56秒
+\end{minted}
+
+其中，采用\inlinepython{as\_completed}方式返回的结果顺序，每次运行可能会有不同，取决于计算机内部进程被调度的临时状态。
+
+\heading{进程池的最佳实践与注意事项}
+
+\begin{itemize}
+    \item {进程数量选择}：通常设置为计算机拥有的CP 核心数，过多的进程会因上下文切换和内存开销导致性能下降。
+    \item {任务粒度}：任务应足够“重”以抵消进程间通信的开销。对于非常轻量的任务，多进程可能不如单进程。
+    \item {数据序列化}：传递的参数和返回的结果必须是可序列化的（picklable）。如果涉及大量数据传递，考虑使用共享内存减少复制开销。
+    \item {资源清理}：使用\inlinepython{with}语句确保进程池正确关闭，避免僵尸进程。
+\end{itemize}
+
+进程池是多进程编程中的重要工具，合理使用可以显著提升CPU密集型任务的执行效率，同时保持代码的简洁性和可维护性。在实际项目中，应根据任务特性、数据规模和硬件条件灵活选择进程池的实现方式和参数配置。
+
 
 \section*{本章总结与进阶思考}
 
@@ -374,10 +964,10 @@ def manager_demo():
 
 \textbf{关键要点回顾：}
 \begin{itemize}
-    \item GIL 限制了多线程的并行能力，但对 I/O 密集型任务影响较小。
-    \item 多线程适用于 I/O 密集型场景，需注意线程安全。
-    \item 多进程可绕过 GIL，适用于 CPU 密集型计算，但进程间通信成本较高。
-    \item 合理选择 IPC 机制是保证多进程性能的关键。
+    \item GIL限制了多线程的并行能力，但对I/O密集型任务影响较小。
+    \item 多线程适用于I/O密集型场景，需注意线程安全。
+    \item 多进程可绕过GIL，适用于CPU密集型计算，但进程间通信成本较高。
+    \item 合理选择进程间通信机制是保证多进程性能的关键。
 \end{itemize}
 
 \textbf{实践建议：}
@@ -388,5 +978,3 @@ def manager_demo():
 \end{itemize}
 
 \textbf{进阶思考：} Python 的异步编程模型 (asyncio) 为高并发 I/O 场景提供了更轻量级的解决方案。下一章，我们将深入探讨如何使用 asyncio 构建高性能网络应用与异步任务处理系统。
-
-\end{document}
