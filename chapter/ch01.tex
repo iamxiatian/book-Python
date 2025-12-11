@@ -73,6 +73,7 @@ pip install package-a==2.0
 
 这种机制允许多个项目在同一机器上并存并独立运行，互不干扰。
 
+其中，\inlinepython{python -m venv}中的参数``-m''是Python解释器的命令行参数，表示将模块当作可执行脚本执行，此时，Python会先在系统的模块搜索路径（\inlinepython{sys.path}）中找到指定的模块（这里是venv），然后调用该模块的\inlinepython{__main__}入口或模块自身的可执行逻辑，等同于把模块当作独立脚本运行。
 
 \section{主流虚拟环境工具对比：venv与Conda}
 
