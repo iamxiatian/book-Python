@@ -128,7 +128,17 @@ if __name__ == "__main__":
     test_io()
 \end{minted}
 
-在笔者个人计算机上运行上述代码后，输出如下结果：
+上面使用了httpbin.org作为测试服务器。httpbin.org是一个开源的HTTP请求与响应测试服务，由 Kenneth Reitz发起。它自己什么都不做，只是把你发过去的HTTP请求原封不动或按特定规则反射回来，方便开发者调试客户端代码、验证库行为或写自动化测试用例。
+
+httpbin.org提供的一些常用服务有：
+
+\begin{itemize}
+    \item https://httpbin.org/ip：返回请求者的 IP 地址
+    \item https://httpbin.org/header：返回请求者的HTTP headers
+    \item https://httpbin.org/user-agent：返回请求者的user-agent
+\end{itemize}
+
+在笔者个人计算机上运行前面的代码后，输出结果如下：
 
 \begin{minted}{text}
 多线程耗时: 6.13秒
@@ -830,7 +840,7 @@ if __name__ == "__main__":
 下面通过一个计算数字平方的示例展示其基本用法：
 
 \begin{minted}{python}
-# file: src/fxb/ch7/process_pool.py
+# file: src/fxb/ch07/process_pool.py
 import multiprocessing
 import time
 
@@ -891,7 +901,7 @@ if __name__ == "__main__":
 下面使用相同任务展示其用法：
 
 \begin{minted}{python}
-# file: src/fxb/ch7/process_executor.py
+# file: src/fxb/ch07/process_executor.py
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import time
 

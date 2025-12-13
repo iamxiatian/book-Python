@@ -15,6 +15,15 @@
 \xeCJKsetup{PunctStyle=plain}   % 中文标点仍用中文，但 ASCII 字符全部回英文
 
 
+%\usepackage{draftwatermark}
+%\SetWatermarkText{Xia Tian}%设置水印文字
+%\SetWatermarkLightness{0.9}%设置水印亮度
+%\SetWatermarkScale{0.5}%设置水印大小
+
+\usepackage[bookmarks=true, bookmarksnumbered=true]{hyperref} %生成pdf索引
+\usepackage{bookmark}
+\hypersetup{colorlinks, citecolor=black,  filecolor=black, linkcolor=black,  urlcolor=black}
+
 \usepackage{fontspec, xunicode, xltxtra, fancybox, setspace}
 \usepackage[dvipsnames,table,xcdraw, svgnames]{xcolor}
 \usepackage{pifont} % special symbols like circle number etc. 
@@ -122,16 +131,6 @@
 
 \newcommand{\tab}{\phantom{o}\hspace{2ex}}
 
-
-%\usepackage{draftwatermark}
-%\SetWatermarkText{Xia Tian}%设置水印文字
-%\SetWatermarkLightness{0.9}%设置水印亮度
-%\SetWatermarkScale{0.5}%设置水印大小
-
-\usepackage[bookmarks=true, bookmarksnumbered=true]{hyperref} %生成pdf索引
-\usepackage{bookmark}
-\hypersetup{colorlinks, citecolor=black,  filecolor=black, linkcolor=black,  urlcolor=black}
-
 \usepackage{kpfonts}
 \usepackage[bf, explicit]{titlesec} %对标题的式样进行设置
 \newcommand*\chapterlabel{}
@@ -143,13 +142,6 @@
 
 \titleformat{\paragraph}[hang]{\large\bfseries}{\theparagraph}{.8em}{\hspace{1em}$\blacksquare$ #1}
 
-%\newcommand*{\hei}{\fontfamily{FZLanTingHeiS-H-GB}\selectfont}
-%\DeclareTextFontCommand{\texthei}{\hei}
-
-%\setCJKfamilyfont{SourceHanSansCN-Light.ttf}
-%\setCJKmainfont{Source Han Sans SC VF Light} %方正字体，也可以改成：微软雅黑
-%\setCJKsansfont{Source Han Sans SC VF Light}
-%\setCJKfamilyfont{SourceHanSansCN-Light}
 \setCJKmainfont{SourceHanSansCN-Light}
 
 \newenvironment{block}[2]{\color{#1} \vspace{0.3cm} #2 \vspace{0.5cm} }{}
@@ -179,7 +171,7 @@
 }{ex} % ex表示例子的label的开始字符
 
 \usepackage{minted} %compile： lualatex/xelatex -shell-escape spark.tex
-\usemintedstyle{solarized-light} % https://pygments.org/styles/
+\usemintedstyle{stata-light} % https://pygments.org/styles/
 \setminted{encoding=utf-8} %注意字体，如果设置了CJKmonofont，会出现乱码
 \setminted{linenos=true,
 		frame=none, % 单线边框:single
@@ -190,8 +182,9 @@
 		breaklines, 
 		breakanywhere
 	}
-\definecolor{bg}{rgb}{0.98,0.98,0.98}
-\setminted{bgcolor=bg, numbersep=2mm}
+%\definecolor{bg}{rgb}{0.98,0.98,0.98}
+%\setminted{bgcolor=bg}
+\setminted{numbersep=2mm}
 \setminted{fontsize=\small}
 %\setminted{fontfamily="Fira Code", fontsize=\small}
 
@@ -206,9 +199,6 @@
 %自定义的一些命令，方便使用
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
   \node[shape=circle,draw,inner sep=1.5pt] (char) {#1};}}
-
-  %加入upcite，实现上标引用文献
-%\newcommand{\upcite}[1]{\textsuperscript{\textsuperscript{\cite{#1}}}} 
 
 % 利用pifont在heading前加上方框符号
 \newcommand{\heading}[1]{  {\vspace{4pt} \color{darkgray}\ding{111} \textbf{#1}} \vspace{2pt}}
@@ -317,18 +307,18 @@
 	\include{chapter/ch06}
 	\part{并发、异步与性能优化}
 	\include{chapter/ch07}
-	% \include{chapter/ch08}
-	% \include{chapter/ch09}
-	% \part{健壮性：测试、配置与可观测性}
-	% \include{chapter/ch10}
-	% \include{chapter/ch11}
-	% \include{chapter/ch12}
-	% \part{Git与工程协作流程}
-	% \include{chapter/ch13}
-	% \include{chapter/ch14}
-	% \part{项目的交付与分发}
-	% \include{chapter/ch15}
-	% \include{chapter/ch16}
+	\include{chapter/ch08}
+	\include{chapter/ch09}
+	\part{健壮性：测试、配置与可观测性}
+	\include{chapter/ch10}
+	\include{chapter/ch11}
+	\include{chapter/ch12}
+	\part{Git与工程协作流程}
+	\include{chapter/ch13}
+	\include{chapter/ch14}
+	\part{项目的交付与分发}
+	\include{chapter/ch15}
+	\include{chapter/ch16}
 	 
     \appendix
     %\include{history}       % include first appendix

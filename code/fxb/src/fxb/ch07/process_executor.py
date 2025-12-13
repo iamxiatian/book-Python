@@ -33,6 +33,5 @@ def demo_process_pool_executor():
     print(f"结果: {results}")
     print(f"耗时: {time.time() - start:.2f}秒")
 
-
 if __name__ == "__main__":
     demo_process_pool_executor()
