@@ -1,4 +1,4 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.8 Chrome/140.0.7339.240 Electron/38.4.0 Safari/537.36" version="28.2.8" pages="4">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36" version="29.0.3" pages="5">
   <diagram name="第 1 页" id="zKAu8MMy7KoVmTnz41w_">
     <mxGraphModel dx="1486" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -222,6 +222,74 @@
         </mxCell>
         <mxCell id="LdQJwX1nZocmLKN8XCGS-4" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="1">
           <mxGeometry x="366" y="480" width="420" height="68" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="zdJ5eYfduVcBLNBqs1-V" name="Cython">
+    <mxGraphModel dx="1486" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="5i07GlCOo_zGvoteWQRk-2" value="Cython 源代码文件&lt;div&gt;&lt;br&gt;&lt;div&gt;&lt;font face=&quot;Lucida Console&quot;&gt;foo.py/&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;foo.pyx&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=14;fontFamily=宋体-简;fillColor=#cdeb8b;strokeColor=#36393d;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="70" y="40" width="150" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-3" value="C 扩展文件&lt;div&gt;&lt;br&gt;&lt;div&gt;&lt;font face=&quot;Lucida Console&quot;&gt;foo.c&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=14;fontFamily=宋体-简;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="490" y="40" width="150" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-4" value="C 扩展模块&lt;div&gt;&lt;br&gt;&lt;div&gt;&lt;font face=&quot;Lucida Console&quot;&gt;foo.so&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontSize=14;fontFamily=宋体-简;fillColor=#cce5ff;strokeColor=#36393d;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="490" y="190" width="150" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-7" value="" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=14;image=img/lib/azure2/general/Files.svg;fontFamily=宋体-简;" vertex="1" parent="1">
+          <mxGeometry x="50" y="200" width="64" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-8" value="" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=14;image=img/lib/azure2/general/Files.svg;fontFamily=宋体-简;" vertex="1" parent="1">
+          <mxGeometry x="170" y="200" width="64" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-9" value="&lt;font face=&quot;Lucida Console&quot;&gt;*.h&lt;/font&gt;文件" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=14;fontFamily=宋体-简;" vertex="1" parent="1">
+          <mxGeometry x="50" y="170" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-10" value="&lt;font face=&quot;Lucida Console&quot;&gt;*.c&lt;/font&gt;文件" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=14;fontFamily=宋体-简;" vertex="1" parent="1">
+          <mxGeometry x="170" y="170" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-11" value="依赖的其他库文件(如有）" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;fontFamily=宋体-简;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="190" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-12" value="Cython生成的文件" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=14;fontFamily=宋体-简;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="495" y="10" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-13" value="" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="260" y="72.5" as="sourcePoint" />
+            <mxPoint x="450" y="72.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-14" value="" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="270" y="222.5" as="sourcePoint" />
+            <mxPoint x="460" y="222.5" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-15" value="" style="endArrow=classic;html=1;rounded=0;strokeWidth=3;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="564.5" y="110" as="sourcePoint" />
+            <mxPoint x="564.5" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-17" value="&lt;span style=&quot;font-family: &amp;quot;Lucida Console&amp;quot;; font-size: 14px;&quot;&gt;Cythonize&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="80" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-20" value="&lt;span style=&quot;font-family: &amp;quot;Lucida Console&amp;quot;; font-size: 14px;&quot;&gt;Compile&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="580" y="130" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-21" value="&lt;span style=&quot;font-family: &amp;quot;Lucida Console&amp;quot;; font-size: 14px;&quot;&gt;Compile&lt;/span&gt;" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="320" y="226" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-22" value="用户编写的代码文件" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=14;fontFamily=宋体-简;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="70" y="10" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="5i07GlCOo_zGvoteWQRk-23" value="可被导入的已编译模块文件" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=14;fontFamily=宋体-简;fontStyle=0" vertex="1" parent="1">
+          <mxGeometry x="480" y="260" width="170" height="30" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

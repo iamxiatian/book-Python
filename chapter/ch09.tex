@@ -1042,9 +1042,17 @@ itertools模块提供的函数不仅性能优越，还能使代码更加简洁�
 
 \subsection{Cython简介与工作原理}
 
-Cython是Python的超集，不仅完整支持纯Python语法，还引入了C语言级别的类型声明能力，为追求高性能的Python开发提供了更灵活的选择。Cython支持两类文件的编译：一是``.py''文件，作为标准Python源代码，可以通过Cython编译获得性能优化；二是Cython的扩展格式``.pyx''文件，在兼容Python语法基础上新增了Cython特有的语法特性。因此，对于不需要Cython特有语法的简单优化，可以直接使用.py文件进行编译。
+Cython是Python的超集，不仅完整支持纯Python语法，还引入了C语言级别的类型声明能力，为追求高性能的Python开发提供了更灵活的选择。Cython支持两类文件的编译：一是``.py''文件，作为标准Python源代码，可以通过Cython编译获得性能优化；二是Cython的扩展格式``.pyx''文件，在兼容Python语法基础上新增了Cython特有的语法特性。因此，对于不需要Cython特有语法的简单优化，可以直接使用.py文件进行编译。Cython的整个工作流程见图\ref{fig:cython:workflow}。
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/cython.pdf}
+    \caption{Cython工作流程}
+    \label{fig:cython:workflow}
+\end{figure}
 
 与纯Python代码相比，Cython编译的代码可以获得显著的性能提升。这种提升主要源于两方面：一是减少了Python解释器的开销，二是通过静态类型声明避免了Python的动态类型检查。
+
 
 \subsection{Cython的基本使用流程}
 
@@ -1292,7 +1300,7 @@ python setup.py build_ext
 \end{minted}
 
 
-编译完成后，默认会在项目根目录下生成一个\inlinefile{build/lib.*}目录，其具体名称与操作系统及Python版本相关。例如，在笔者计算机上运行时，会生成\inlinefile{build/lib.macosx-11.0-arm64-cpython-312}目录，其中存放编译后的扩展模块文件。同时，\inlinefile{build/temp.*}目录用于存放编译过程中产生的中间文件，而由Python源代码转换生成的C代码文件则默认保存在原源代码文件所在目录中。具体结构示例如下：
+编译完成后，默认会在项目根目录下生成一个\inlinefile{build/lib.*}目录，具体名称与操作系统及Python版本相关，如\inlinefile{build/lib.macosx-11.0-arm64-cpython-312}，该目录用于存放编译后的扩展模块文件。同时，\inlinefile{build/temp.*}目录用于存放编译过程中产生的中间文件，而由Python源代码转换生成的C代码文件则默认保存在源代码文件所在目录中。具体结构示例如下：
 
 \begin{minted}{text}
 cython_demo
@@ -1322,7 +1330,7 @@ cython_demo
 └── uv.lock
 \end{minted}
 
-\inlinefile{setup.py}提供了一系列命令行参数，可用于调整上述默认行为，开发者也可通过修改 \inlinefile{setup.py}中的代码实现更复杂的编译配置。更多详细信息可参考Cython官方文档。
+\inlinefile{setup.py}提供了一系列命令行参数，可用于调整上述默认行为。开发者还可以通过修改 \inlinefile{setup.py}中的代码实现更复杂的编译配置。更多详细信息可参考Cython官方文档。
 
 
 \heading{部署和运行}
