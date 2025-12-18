@@ -15,4 +15,7 @@ uv pip install -e .
 
 # 以module方式运行脚本，如运行src/ch06/singleton.py,可以如下运行：
 uv run -m fxb.ch06.singleton
+
+# 运行src/ch09/pi_profile.py
+uv run -m  fxb.ch09.pi_profile 
 ```

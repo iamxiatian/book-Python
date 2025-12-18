@@ -9,7 +9,10 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=25.1.0",
+    "flameprof>=0.4",
     "httpx>=0.28.1",
+    "memory-profiler>=0.61.0",
+    "numpy>=2.3.5",
     "requests>=2.32.5",
 ]
 
@@ -19,3 +22,9 @@ fxb = "fxb:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "cython>=3.2.3",
+    "setuptools>=80.9.0",
+]

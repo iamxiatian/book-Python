@@ -39,6 +39,10 @@ def analyze_performance():
     print("\n=== estimate_pi()函数调用的函数 ===")
     stats.print_callees("estimate_pi")
 
+    # 保存分析结果到二进制格式的文件
+    stats.dump_stats("pi_pstats.prof")
+    # 加载并显示分析结果
+    # stats.load_stats("pi_pstats.prof")
 
 if __name__ == "__main__":
     analyze_performance()
