@@ -969,7 +969,7 @@ if __name__ == "__main__":
 进程池是多进程编程中的重要工具，合理使用可以显著提升CPU密集型任务的执行效率，同时保持代码的简洁性和可维护性。在实际项目中，应根据任务特性、数据规模和硬件条件灵活选择进程池的实现方式和参数配置。
 
 
-\section*{本章总结与进阶思考}
+\section{本章总结与进阶思考}
 
 本章系统讲解了 Python 并发模型的核心机制与实践方法：
 
@@ -981,11 +981,5 @@ if __name__ == "__main__":
     \item 合理选择进程间通信机制是保证多进程性能的关键。
 \end{itemize}
 
-\textbf{实践建议：}
-\begin{itemize}
-    \item 使用 \texttt{concurrent.futures} 模块统一线程/进程池接口。
-    \item 优先考虑共享内存而非 Manager 进行进程间数据交换。
-    \item 在 CPU 密集型任务中，可考虑使用 C 扩展或 Cython 释放 GIL。
-\end{itemize}
 
 \textbf{进阶思考：} Python 的异步编程模型 (asyncio) 为高并发 I/O 场景提供了更轻量级的解决方案。下一章，我们将深入探讨如何使用 asyncio 构建高性能网络应用与异步任务处理系统。

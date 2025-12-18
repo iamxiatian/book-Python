@@ -34,7 +34,7 @@ pip list
 pip index versions requests
 \end{minted}
 
-例如，执行\mintinline{bash}{pip index versions requests}后，会显示：
+例如，执行\inlinecmd{pip index versions requests}后，会显示：
 
 \begin{minted}{bash}
 requests (2.32.5)
@@ -66,15 +66,15 @@ pip install --user black
 
 \circled{1} 依赖冲突
 
-当不同工具需要同一依赖包的不同版本时，后安装的工具会覆盖前者的依赖版本，导致其中一个工具因版本不兼容而无法正常工作。例如，工具 A 需要 \texttt{requests==2.25.0}，而工具 B 需要 \texttt{requests==2.28.0}，无论安装顺序如何，总会有一个工具无法正常运行。这种版本冲突在复杂的开发环境中尤为常见，迫使开发者花费大量时间解决依赖兼容性问题。
+当不同工具需要同一依赖包的不同版本时，后安装的工具会覆盖前者的依赖版本，导致其中一个工具因版本不兼容而无法正常工作。例如，工具 A 需要 \inlinepython{requests==2.25.0}，而工具 B 需要 \inlinepython{requests==2.28.0}，无论安装顺序如何，总会有一个工具无法正常运行。这种版本冲突在复杂的开发环境中尤为常见，迫使开发者花费大量时间解决依赖兼容性问题。
 
 \circled{2} 环境污染
 
-随着安装的工具增多，环境中会积累大量间接依赖包，使得整个 Python 环境变得混乱且难以管理。运行 \mintinline{bash}{pip list} 命令时会发现列表中充斥着许多并不直接使用、只是作为某些工具依赖而存在的包。这种环境混乱不仅占用磁盘空间，还可能影响其他 Python 项目的正常运行，甚至导致难以排查的兼容性问题。
+随着安装的工具增多，环境中会积累大量间接依赖包，使得整个 Python 环境变得混乱且难以管理。运行 \inlinecmd{pip list} 命令时会发现列表中充斥着许多并不直接使用、只是作为某些工具依赖而存在的包。这种环境混乱不仅占用磁盘空间，还可能影响其他 Python 项目的正常运行，甚至导致难以排查的兼容性问题。
 
 \circled{3} 卸载困难
 
-当使用 \mintinline{bash}{pip uninstall} 移除某个工具时，其依赖包通常会继续残留在环境中，因为这些依赖可能被其他工具共享使用。长期积累下来，环境中会留下大量无用的依赖包，形成依赖垃圾，既占用存储空间，又增加了环境复杂度，且难以彻底清理干净。
+当使用 \inlinecmd{pip uninstall} 移除某个工具时，其依赖包通常会继续残留在环境中，因为这些依赖可能被其他工具共享使用。长期积累下来，环境中会留下大量无用的依赖包，形成依赖垃圾，既占用存储空间，又增加了环境复杂度，且难以彻底清理干净。
 
 
 \heading{虚拟环境的局限性}
@@ -151,7 +151,7 @@ pip install -r requirements.txt
 \end{minted}
 
 
-通过简单的\mintinline{bash}{pip install -r requirements.txt}命令，任何人都能快速安装所有指定的包和版本，重建项目所需的运行环境。
+通过简单的\inlinecmd{pip install -r requirements.txt}命令，任何人都能快速安装所有指定的包和版本，重建项目所需的运行环境。
 
 \inlinefile{requirements.txt}遵循标准的pip freeze输出格式，具有清晰的语法规则：
 
@@ -225,7 +225,7 @@ black==23.10.1      # 开发依赖
 
 \circled{3} 版本锁定的不完整性
 
-\inlinefile{requirements.txt}通常只记录直接依赖，而间接依赖（依赖的依赖）的版本未被锁定。这会导致不同环境下安装的间接依赖版本不一致，可能引发兼容性问题。虽然可以通过\mintinline{bash}{pip freeze}锁定所有依赖，但这种方式会使文件冗长，且难以区分直接依赖和间接依赖。
+\inlinefile{requirements.txt}通常只记录直接依赖，而间接依赖（依赖的依赖）的版本未被锁定。这会导致不同环境下安装的间接依赖版本不一致，可能引发兼容性问题。虽然可以通过\inlinecmd{pip freeze}锁定所有依赖，但这种方式会使文件冗长，且难以区分直接依赖和间接依赖。
 
 \circled{4} 缺乏依赖来源和元数据
 
@@ -275,7 +275,7 @@ test = [
 
 \section{uv：新一代极速依赖管理工具}
 
-上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具Poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\mintinline{bash}{poetry install}、\mintinline{bash}{poetry add}、\mintinline{bash}{poetry build}，来简化依赖安装、打包和发布流程。
+上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具Poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\inlinecmd{poetry install}、\inlinecmd{poetry add}、\inlinecmd{poetry build}，来简化依赖安装、打包和发布流程。
 
 \begin{figure}[h]
     \centering
@@ -331,7 +331,7 @@ uv在管理项目依赖时采用了智能化的虚拟环境策略，既保证了
 
 \heading{环境创建与存储}
 
-uv可以自动创建虚拟环境。虽然某些命令（如\mintinline{bash}{uv run --isolated}）会创建临时环境，但uv主要在项目根目录的\inlinefile{.venv}文件夹中维护一个持久化的虚拟环境。这种设计将环境直接置于\inlinefile{pyproject.toml}文件旁边，便于开发工具（如VS Code编程工具）自动发现和利用该环境，为代码补全、类型提示等功能提供支持。
+uv可以自动创建虚拟环境。虽然某些命令（如\inlinecmd{uv run --isolated}）会创建临时环境，但uv主要在项目根目录的\inlinefile{.venv}文件夹中维护一个持久化的虚拟环境。这种设计将环境直接置于\inlinefile{pyproject.toml}文件旁边，便于开发工具（如VS Code编程工具）自动发现和利用该环境，为代码补全、类型提示等功能提供支持。
 
 \heading{版本控制注意事项}
 
@@ -438,7 +438,7 @@ export UV_DEFAULT_INDEX=https://mirrors.cloud.tencent.com/pypi/simple/
 
 uv的一个重要特性是能够通过\inlinecmd{uv python install}命令，直接安装特定版本的Python解释器，无需手动下载安装包或使用复杂的版本管理工具。
 
-然而，默认情况下uv会从GitHub下载预编译的Python版本，国内网络环境可能导致下载速度缓慢。通过配置\inlinecmd{UV_PYTHON_INSTALL_MIRROR}环境变量，可以显著提升安装速度。
+然而，默认情况下uv会从GitHub下载预编译的Python版本，国内网络环境可能导致下载速度缓慢。通过配置\inlinecmd{UV\_PYTHON\_INSTALL\_MIRROR}环境变量，可以显著提升安装速度。
 
 \begin{minted}[breakanywhere]{bash}
 # 配置前：可能下载缓慢

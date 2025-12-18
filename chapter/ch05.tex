@@ -98,7 +98,7 @@ if __name__ == "__main__":
          )
 \end{minted}
 
-将上述代码保存为 \inlinefile{src/demo_black.py} 并执行：
+将上述代码保存为 \inlinefile{src/demo\_black.py} 并执行：
 
 \begin{minted}{bash}
 black src/demo_black.py
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
 \heading{在项目中配置Black}
 
-Black能够从\inlinefile{pyproject.toml}文件中读取命令行选项的项目专用默认值。这对于为项目指定自定义的\mintinline{text}{--include}和\mintinline{text}{--exclude}模式特别有用。
+Black能够从\inlinefile{pyproject.toml}文件中读取命令行选项的项目专用默认值。这对于为项目指定自定义的\variable{--include}和\variable{--exclude}模式特别有用。
 同时，如果你在思考``我到底需要配置什么吗？''，Black给出的答案是``不需要''，并建议秉承合理默认值的理念。
 
 如果你确定需要要针对项目修改Black的默认值，Black官网给出了如下一个参考示例\footnote{\url{https://ichard26-testblackdocs.readthedocs.io/en/refactor\_docs/pyproject\_toml.html}}：
@@ -819,7 +819,7 @@ def process_fruit(fruit):
 
 \heading{Ruff复杂度检查配置}
 
-Ruff在C901规则中实现了圈复杂度检查。通过在\mintinline{toml}{[tool.ruff.lint]}的select中启用C901，或者设置为包含C901的父集合规则，如"C9"、"ALL"，即可启用圈复杂度检查。同时，通过在\mintinline{toml}{[tool.ruff.lint.mccabe]}中设置max-complexity参数，可改变圈复杂度的警示阈值。
+Ruff在C901规则中实现了圈复杂度检查。通过在\variable{[tool.ruff.lint]}的\variable{select}中启用C901，或者设置为包含C901的父集合规则，如``C9''、``ALL''，即可启用圈复杂度检查。同时，通过在\variable{[tool.ruff.lint.mccabe]}中设置\variable{max-complexity}参数，可改变圈复杂度的警示阈值。
 
 \begin{minted}{toml}
 
@@ -999,16 +999,16 @@ def process_data(data):
     \item 工具链演进：从分散的传统工具到一体化的现代方案，Ruff凭借其极速性能成为新时代的标准；
     \item 配置中心化：\inlinefile{pyproject.toml} 作为配置枢纽，统一管理格式化、检查、测试等工具行为；
     \item 流程自动化：Pre-Commit 框架实现提交前自动质量门禁，确保代码库质量的一致性；
-    \item 质量深度保障：圈复杂度和代码异味检测从结构层面提升代码可维护性；
+    \item 质量深度保障：圈复杂度和代码异味检测从结构层面提升代码可维护性。
 \end{itemize}
 
-\textbf{实践建议：}
+% \textbf{实践建议：}
 
-\begin{itemize}
-    \item 采用Ruff实现自动化的代码格式化与检查，获得现代化工具的性能优势；
-    \item 在 \inlinefile{pyproject.toml} 中集中管理所有工具配置，简化项目维护；
-    \item 将Pre-Commit 检查集成到团队工作流，建立代码质量文化；
-    \item 定期进行复杂度分析和技术债评估，持续改进代码结构；
-\end{itemize}
+% \begin{itemize}
+%     \item 采用Ruff实现自动化的代码格式化与检查，获得现代化工具的性能优势；
+%     \item 在 \inlinefile{pyproject.toml} 中集中管理所有工具配置，简化项目维护；
+%     \item 将Pre-Commit 检查集成到团队工作流，建立代码质量文化；
+%     \item 定期进行复杂度分析和技术债评估，持续改进代码结构。
+% \end{itemize}
 
 \textbf{进阶思考：}即使代码通过了所有静态检查，也不意味着它能稳定运行或具有良好的架构设计。下一阶段，我们将转向软件设计原则和架构模式，探讨如何通过SOLID原则、设计模式和清晰的抽象边界，构建可扩展的软件系统。

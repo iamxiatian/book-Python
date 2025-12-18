@@ -1,0 +1,1385 @@
+\chapter{性能瓶颈的识别与突破}
+
+业界有一句经典格言：``过早的优化是万恶之源''，这并非否定性能优化的价值，而是强调优化应当基于准确的诊断而非主观猜测。下面将探讨如何通过性能剖析工具定位程序瓶颈，并提供从局部优化到加速的全方位解决方案，从而构建高效、可靠的Python应用。
+
+\section{代码性能诊断}
+
+当Python程序运行缓慢时，通常是由于少数函数消耗了不成比例的CPU时间。准确识别这些``热点函数''是性能优化的首要任务。性能优化应当始于准确的测量，而不是基于直觉的猜测。
+
+\subsection{性能分析的基本概念}
+
+性能分析（Profiling）是一种动态程序分析技术，它通过记录程序执行过程中各个函数的调用次数、执行时间等数据，帮助开发者了解程序的运行特征。与简单计时不同，Profiling能够提供函数级别的性能数据，为优化提供精准指导。
+
+在性能分析领域，有三个密切相关的英文术语：
+\begin{itemize}
+\item \textbf{Profiling}：指动态程序分析技术，用于收集程序执行过程中的统计数据。
+\item \textbf{Profile}：指性能分析数据，描述程序的各个部分执行的频率和时间等信息。
+\item \textbf{Profiler}：指性能分析器，用于收集和分析性能数据。
+\end{itemize}
+
+在Python生态中，最常用的性能分析工具是标准库中的cProfile模块，它是一个典型的Profiler。
+
+\subsection{分析案例：计算π值的性能分析}
+
+为了演示性能分析的实际应用，我们以一个计算圆周率$\pi$值的函数为例。这里采用蒙特卡洛方法估算$\pi$值，虽然这种方法在数学上不是最高效的，但可以用于展示性能分析的基本流程。蒙特卡洛方法在人工智能尤其是强化学习领域中得到了广泛应用，读者可参考文献\parencite{wangshusen2022}，了解如何利用蒙特卡洛近似计算$\pi$值、求解定积分等方法的基本思想。
+
+\begin{minted}[texcl=true, escapeinside=||]{python}
+# file: src/ch09/pi.py
+import random
+import math
+
+def estimate_pi(num_samples):
+    """使用蒙特卡洛方法估算丌值""" 
+    inside_circle = 0
+    
+    for _ in range(num_samples):
+        x = random.random()
+        y = random.random()
+        
+        # 检查点是否在单位圆内
+        if math.sqrt(x**2 + y**2) <= 1:
+            inside_circle += 1
+    
+    # 根据面积比例估算丌值
+    pi_estimate = 4 * inside_circle / num_samples
+    return pi_estimate
+
+def benchmark_pi():
+    """性能基准测试"""
+    import time
+    
+    num_samples = 6_000_000
+    start_time = time.time()
+    
+    pi_estimate = estimate_pi(num_samples)
+    
+    elapsed_time = time.time() - start_time
+    print(f"丌估算值: {pi_estimate:.6f}")
+    print(f"丌实际值: {math.pi:.6f}")
+    print(f"误差: {abs(pi_estimate - math.pi):.6f}")
+    print(f"耗时: {elapsed_time:.2f}秒")
+    print(f"每秒采样数: {num_samples/elapsed_time:,.0f}")
+
+if __name__ == "__main__":
+    benchmark_pi()
+\end{minted}
+
+在笔者计算机上执行上述代码后，输出以下结果：
+
+\begin{minted}{text}
+丌估算值: 3.140606
+丌实际值: 3.141593
+误差: 0.000986
+耗时: 0.72秒
+每秒采样数: 6,902,168
+\end{minted}
+
+运行这个程序可以得到$\pi$值的估算值和执行时间，但这只是整体计时。要了解函数内部的性能特征，找出耗时的操作以便于分析改进，还需要使用专门的性能分析工具。
+
+\subsection{cProfile：Python内置的性能分析器}
+
+
+cProfile是Python标准库中提供的性能分析工具，它以C语言实现，具有性能开销小、分析准确的特点。通过cProfile，开发者能够获得程序中每个函数的详细执行数据，包括调用次数、执行时间等关键指标，从而为性能优化提供精准的数据支持。
+
+\heading{基本使用方法}
+
+cProfile可以通过命令行直接使用，也可以通过代码集成到应用程序中。两种方式各有优势：命令行方式简单直接，适合快速分析整个脚本；代码集成方式则更灵活，允许在程序中精确控制性能分析的开始和结束位置。
+
+\circled{1} 通过命令行分析整个脚本
+
+在命令行中使用cProfile分析Python脚本非常简单。假设我们已经激活了Python虚拟环境，可以使用以下两种等效的方式进行分析：
+
+\begin{minted}{bash}
+# 方法1：使用uv执行cProfile分析
+uv run -m cProfile -o pi_analysis.prof src/fxb/ch09/pi.py
+
+# 方法2：直接使用虚拟环境中的python命令
+python -m cProfile -o pi_analysis.prof src/fxb/ch09/pi.py
+\end{minted}
+
+这两个命令都会执行相同的性能分析操作，各参数含义如下：
+\begin{itemize}
+    \item \texttt{-m cProfile}：指定使用cProfile模块进行性能分析；
+    \item \texttt{-o pi\_analysis.prof}：将分析结果输出到\texttt{pi\_analysis.prof}文件中；
+    \item \texttt{src/fxb/ch09/pi.py}：需要分析的目标脚本。
+\end{itemize}
+
+执行完成后，系统会生成一个名为\inlinefile{pi\_analysis.prof}的二进制文件，其中包含了详细的性能分析数据。这个文件可以使用后文提到的snakeviz工具进行分析和可视化展示。
+
+
+\circled{2} 在代码中集成cProfile
+
+除了命令行方式，cProfile还可以直接集成到Python代码中，这种方式提供了更高的灵活性。下面是一个在代码中使用cProfile的示例：
+
+\begin{minted}{python}
+# file: src/ch09/pi_profile.py
+import cProfile
+
+from .pi import benchmark_pi
+
+def main():
+    benchmark_pi()
+
+if __name__ == "__main__":
+    # 创建性能分析器
+    profiler = cProfile.Profile()
+
+    # 开始性能分析
+    profiler.enable()
+
+    # 运行主函数
+    main()
+
+    # 结束性能分析
+    profiler.disable()
+
+    # 输出性能分析结果，按累计时间排序
+    profiler.print_stats(sort="cumulative")
+\end{minted}
+
+由于该脚本使用了相对导入，为了避免模块导入错误，建议使用以下命令运行：
+
+\begin{minted}{bash}
+uv run -m fxb.ch09.pi_profile
+\end{minted}
+
+执行该命令后，\inlinepython{print\_stats}将输出程序的运行结果和详细的性能分析报告，这部分信息如下：
+
+\begin{minted}[fontsize=\scriptsize]{text}
+         15000012 function calls in 2.055 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    2.055    2.055 pi_profile.py:5(main)
+        1    0.000    0.000    2.055    2.055 pi.py:20(benchmark_pi)
+        1    1.387    1.387    2.055    2.055 pi.py:4(estimate_pi)
+ 10000000    0.465    0.000    0.465    0.000 {method 'random' of '_random.Random' objects}
+  5000000    0.203    0.000    0.203    0.000 {built-in method math.sqrt}
+        5    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+        2    0.000    0.000    0.000    0.000 {built-in method time.time}
+        1    0.000    0.000    0.000    0.000 {built-in method builtins.abs}
+\end{minted}
+
+cProfile输出的报告包含多个重要指标\footnote{详细说明可参考：\url{https://docs.python.org/zh-cn/3.14/library/profile.html}}， 含义如表\ref{tab:cprofile-metrics}所示。理解这些指标对于准确诊断性能问题至关重要。
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{cProfile关键性能指标}
+  \label{tab:cprofile-metrics}
+    \begin{tabular}{@{}p{3cm} p{4.5cm} p{5cm}@{}}
+        \toprule
+        指标名称 & 含义 & 诊断意义 \\
+        \midrule
+        ncalls & 函数被调用的总次数 & 过多可能存在不必要的重复计算 \\
+        tottime & 在指定函数中消耗的总时间（不包括调用子函数的时间） & 定位热点函数的关键指标，高值预示函数主要瓶颈 \\
+        percall & 每次调用的平均时间（tottime/ncalls） & 可评估单个调用的开销 \\
+        cumtime & 函数及其子函数的总执行时间 & 高值表示该函数或其调用链存在性能问题 \\
+        percall(cumtime) & 每次调用的累计平均时间（cumtime/ncalls） & 反映调用链整体开销 \\
+        filename:lineno (function) & 函数所在的文件名称、行数和函数名称 & 定位具体代码行 \\
+        \bottomrule
+  \end{tabular}
+\end{table}
+
+从cProfile的分析结果可以看出，上面计算π值的程序总共执行了1500万余次函数调用，耗时约2.055秒\footnote{注意：性能分析工具本身会占用一定时间，如果直接运行``src/fxb/ch09/pi.py''代码文件，在笔者计算机上耗时约0.7秒。}。其中，\inlinepython{estimate\_pi}函数是主要的性能瓶颈，累计耗时2.055秒。进一步分析可以发现，\inlinepython{random.random()}方法和\inlinepython{math.sqrt()}函数是程序中最耗时的两个操作，分别被调用了1000万次和500万次。这些数据为后续的性能优化提供了明确的指导方向。
+
+
+\heading{高级分析技巧}
+
+除了基本使用方法外，cProfile还支持多种高级分析技巧。使用pstats模块可以对分析结果进行更灵活的处理，包括数据过滤、多种排序方式、查看函数调用关系等高级功能。
+
+以下为pstats的使用示例：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/pi_pstats.py
+import cProfile
+import pstats
+from .pi import estimate_pi
+
+def analyze_performance():
+    # 创建性能分析器
+    profiler = cProfile.Profile()
+
+    # 开始性能分析
+    profiler.enable()
+
+    # 运行待分析的代码
+    estimate_pi(5_000_000)
+
+    # 结束性能分析
+    profiler.disable()
+
+    # 使用pstats处理分析结果
+    stats = pstats.Stats(profiler)
+
+    # 去除路径信息，简化输出
+    stats.strip_dirs()
+
+    # 按累计时间排序并输出
+    stats.sort_stats("cumulative")
+    print("=== 按累计时间排序（前10个）===")
+    stats.print_stats(10)
+
+    # 按函数内部时间排序并输出
+    print("\n=== 按函数内部时间排序（前10个）===")
+    stats.sort_stats("time")
+    stats.print_stats(10)
+
+    # 查看特定函数的调用者信息
+    print("\n=== random()函数的调用者 ===")
+    stats.print_callers("random")
+
+    # 查看特定函数调用了哪些其他函数
+    print("\n=== estimate_pi()函数调用的函数 ===")
+    stats.print_callees("estimate_pi")
+
+    # 保存分析结果到二进制格式的文件
+    stats.dump_stats("pi_pstats.prof")
+
+if __name__ == "__main__":
+    analyze_performance()
+\end{minted}
+
+执行上述代码后，可以得到详细的性能分析报告。示例输出结果如下：
+
+\begin{minted}[fontsize=\scriptsize]{text}
+=== 按累计时间排序（前10个）===
+         15000002 function calls in 2.037 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.369    1.369    2.037    2.037 pi.py:4(estimate_pi)
+ 10000000    0.472    0.000    0.472    0.000 {method 'random' of '_random.Random' objects}
+  5000000    0.197    0.000    0.197    0.000 {built-in method math.sqrt}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+
+
+=== 按函数内部时间排序（前10个）===
+         15000002 function calls in 2.037 seconds
+
+   Ordered by: internal time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    1.369    1.369    2.037    2.037 pi.py:4(estimate_pi)
+ 10000000    0.472    0.000    0.472    0.000 {method 'random' of '_random.Random' objects}
+  5000000    0.197    0.000    0.197    0.000 {built-in method math.sqrt}
+        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+
+
+
+=== random()函数的调用者 ===
+   Ordered by: internal time
+   List reduced from 4 to 1 due to restriction <'random'>
+
+Function                                       was called by...
+                                                   ncalls  tottime  cumtime
+{method 'random' of '_random.Random' objects}  <- 10000000    0.472    0.472  pi.py:4(estimate_pi)
+
+
+
+=== estimate_pi()函数调用的函数 ===
+   Ordered by: internal time
+   List reduced from 4 to 1 due to restriction <'estimate_pi'>
+
+Function              called...
+                          ncalls  tottime  cumtime
+pi.py:4(estimate_pi)  -> 5000000    0.197    0.197  {built-in method math.sqrt}
+                        10000000    0.472    0.472  {method 'random' of '_random.Random' objects}
+\end{minted}
+
+
+通过pstats模块，开发者可以根据不同的分析需求对性能数据进行灵活处理。常用的排序方式包括：
+
+\begin{itemize}
+\item {time}：按函数内部执行时间排序，适合识别最耗时的函数本身；
+\item {cumulative}：按函数累计执行时间排序，适合分析整个调用链的性能；
+\item {calls}：按函数调用次数排序，适合识别过度调用的函数。
+\end{itemize}
+
+除了排序功能外，pstats还提供了其他有用的分析功能：
+
+\begin{itemize}
+\item \inlinepython{print\_callers(function\_name)}：查看特定函数的调用者信息，帮助理解函数的调用上下文；
+\item \inlinepython{print\_callees(function\_name)}：查看特定函数调用了哪些其他函数，帮助分析函数的内部行为；
+\item \inlinepython{strip\_dirs()}：去除文件路径信息，使输出更加简洁；
+\item \inlinepython{print\_stats(filter\_pattern)}：仅输出匹配特定模式（如函数名、文件名）的性能数据。
+\item \inlinepython{dump\_stats(filename)}：将分析结果导出到一个二进制文件中加以保存。
+\item \inlinepython{load\_stats(filename)}：从文件中加载分析结果。
+\end{itemize}
+
+\subsection{可视化分析工具：火焰图与snakeviz}
+
+虽然cProfile提供了精确的数据，但对于复杂的调用关系，文本报告可读性较差。可视化工具能够更直观地展示性能特征，快速定位瓶颈位置。
+
+\heading{火焰图：直观的性能可视化}
+
+火焰图（Flame Graph）是一种直观的性能可视化工具，通过图形化方式展示函数调用栈和时间消耗。图\ref{fig:flame}展示了flameprof工具生成的火焰图示例。
+
+
+\begin{figure}[H]
+    \includegraphics[width=1.15\textwidth]{figures/flame.pdf}
+    \caption{flameprof生成的火焰图示例 \label{fig:flame}}
+\end{figure}
+
+在火焰图中，每一层代表一个函数调用栈，从顶层的当前执行函数到底层的初始调用函数；每个矩形的宽度表示该函数执行的时间占比，宽度越大表示消耗的CPU时间越多，可能是性能瓶颈。通过这种可视化方式，性能热点区域一目了然。
+
+生成火焰图的基本步骤如下：
+
+\begin{enumerate}
+    \item 安装必要工具：\inlinecmd{uv pip install flameprof}
+    \item 使用cProfile按照前文方法生成性能分析结果文件
+    \item 生成火焰图，如：\inlinecmd{uvx flameprof pi\_analysis.prof > pi\_flamegraph.svg}
+\end{enumerate}
+
+
+\heading{snakeviz：交互式性能分析}
+
+snakeviz提供了交互式的可视化界面，支持火焰图和冰柱图两种视图模式：
+
+\begin{minted}{bash}
+# 安装snakeviz
+uv pip install snakeviz
+
+# 查看剖析结果
+snakeviz pi_analysis.prof
+
+# 或者直接利用uvx运行
+uvx snakeviz pi_analysis.prof
+\end{minted}
+
+执行上述命令后，snakeviz会自动在浏览器中打开交互式图表界面。如图\ref{fig:snakeviz:1}所示，snakeviz提供了更丰富的交互功能：开发者可以点击任何部分放大查看细节，鼠标悬停会显示函数的详细性能数据；支持在火焰图和冰柱图之间切换，从不同角度分析性能特征。
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{figures/snakeviz-1.png}
+    \caption{snakeviz火焰图交互界面 \label{fig:snakeviz:1}}
+\end{figure}
+
+如图\ref{fig:snakeviz:2}所示，snakeviz还提供了搜索功能和数据列表，便于在复杂的调用关系中快速定位特定函数。
+
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{figures/snakeviz-2.png}
+    \caption{snakeviz的搜索和数据表格 \label{fig:snakeviz:2}}
+\end{figure}
+
+
+\subsection{计算π值的性能优化方法}
+
+结合cProfile的性能分析数据和snakeviz的可视化结果，可以发现计算π值的程序中存在大量循环调用，次数最多的是随机数生成函数\inlinepython{random.random()}和开根函数\inlinepython{math.sqrt()}。基于这些分析结果，我们可以采取以下优化策略：
+
+\begin{enumerate}
+    \item {减少函数调用}：在循环中减少不必要的函数调用，如去掉对\inlinepython{math.sqrt()}函数的使用。
+    \item {向量化计算}：使用NumPy等库进行向量化计算，避免Python层面的循环。
+    \item {并行处理}：对于这种可并行的计算任务，考虑使用多进程加速。
+    \item {算法优化}：考虑使用更高效的π计算算法，如马青公式（Machin's formula）或Chudnovsky算法。
+\end{enumerate}
+
+下面是针对前两点分别优化后的示例代码：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/pi_optimized.py
+import random
+import math
+import numpy as np
+import time
+
+def estimate_pi(num_samples):
+    """使用蒙特卡洛方法估算丌值"""
+    inside_circle = 0
+
+    for _ in range(num_samples):
+        x = random.random()
+        y = random.random()
+
+        # 检查点是否在单位圆内
+        if math.sqrt(x**2 + y**2) <= 1:
+            inside_circle += 1
+
+    # 根据面积比例估算丌值
+    pi_estimate = 4 * inside_circle / num_samples
+    return pi_estimate
+
+def estimate_pi_optimized(num_samples):
+    """不依赖sqrt()函数的丌值估算函数"""
+    inside_circle = 0
+
+    # 预计算循环条件
+    for _ in range(num_samples):
+        x = random.random()
+        y = random.random()
+
+        # 避免sqrt调用，使用平方比较
+        if x * x + y * y <= 1:
+            inside_circle += 1
+
+    return 4 * inside_circle / num_samples
+
+def estimate_pi_vectorized(num_samples):
+    """使用NumPy向量化计算的丌值估算函数"""
+    # 一次性生成所有随机数
+    x = np.random.random(num_samples)
+    y = np.random.random(num_samples)
+
+    # 向量化计算
+    inside_circle = np.sum(x * x + y * y <= 1)
+
+    return 4 * inside_circle / num_samples
+
+def benchmark_pi():
+    """性能基准测试"""
+    num_samples = 5_000_000
+    t1 = time.time()
+    estimate_pi(num_samples)
+    t2 = time.time()
+    estimate_pi_optimized(num_samples)
+    t3 = time.time()
+    estimate_pi_vectorized(num_samples)
+    t4 = time.time()
+
+    print(f"原方法耗时: {t2-t1:.2f}秒")
+    print(f"去掉sqrt后耗时: {t3-t2:.2f}秒")
+    print(f"采用numpy耗时: {t4-t3:.2f}秒")
+
+if __name__ == "__main__":
+    benchmark_pi()
+\end{minted}
+
+在笔者计算机上运行后，输出结果如下：
+
+\begin{minted}{text}
+原方法耗时: 0.70秒
+去掉sqrt后耗时: 0.40秒
+采用numpy耗时: 0.05秒
+\end{minted}
+
+结果表明，采用向量化计算方式，可以大大提高计算效率，比最开始的方法快了14倍！
+
+性能优化的核心原则是先测量，后优化。只有基于准确的性能数据，才能做出有效的优化决策。结合cProfile的精确数据收集和snakeviz的直观可视化，可以形成一个完整的性能分析工作流。这种从数据收集到可视化分析，再到优化实践的完整流程，特别适合探索复杂的性能问题，大大提高了性能优化的效率和准确性。
+
+\section{内存效率分析与优化}
+
+除了CPU性能，内存使用效率也是影响应用性能的关键因素。内存问题通常表现为程序运行缓慢（内存频繁的页面交换会导致速度编码）或因内存耗尽而崩溃。Python作为高级语言，其内存管理机制虽然自动化程度高，但也需要开发者关注内存使用模式，避免常见的内存问题。
+
+\subsection{内存问题的类型与影响}
+
+Python程序中的内存问题主要分为两类：内存泄漏和高内存消耗。内存泄漏指程序创建的对象在使用完毕后仍被引用，导致垃圾回收无法释放内存，内存占用持续增长。高内存消耗则指程序在短时间内加载大量数据或创建过多大型对象，导致内存占用急剧上升。
+
+这两种问题都会影响程序性能，严重时可能导致程序崩溃。特别是在长时间运行的服务中，即使是微小的内存泄漏也可能逐渐累积，最终耗尽系统内存。
+
+
+\subsection{内存泄漏示例与诊断工具}
+
+理解内存泄漏的最佳方式是通过具体示例。以下是一个典型的全局缓存导致内存泄漏的示例，我们将使用这个示例来演示不同的内存诊断工具。
+
+\begin{minted}{python}
+# file: src/fxb/ch09/memory_leak_demo.py
+import os
+
+class DataItem:
+    """数据项类，模拟占用内存的对象"""
+    def __init__(self, item_id):
+        self.item_id = item_id
+        # 模拟占用较大内存的数据
+        self.data = os.urandom(1024)  # 每个对象1KB数据
+    
+    def __del__(self):
+        print(f"数据项 {self.item_id} 被销毁")
+
+class DataProcessor:
+    """数据处理类 - 存在内存泄漏"""
+    
+    processed_items = []  # 问题：全局缓存所有处理过的数据项
+    
+    def process_item(self, item):
+        """处理数据项"""
+        item.processed = True
+        self.processed_items.append(item)  # 添加到全局列表
+        return True
+
+def demo_memory_leak():
+    """演示内存泄漏"""
+    processor = DataProcessor()
+    
+    # 处理多个数据项
+    for i in range(100):
+        item = DataItem(f"ITEM_{i}")
+        processor.process_item(item)
+    
+    print(f"\n全局缓存大小: {len(DataProcessor.processed_items)}")
+    # 问题：即使此后不再需要这些数据项，它们仍被全局列表引用，无法释放
+    # 随着时间推移，缓存会不断增长，最终导致内存耗尽
+
+if __name__ == "__main__":
+    demo_memory_leak()
+\end{minted}
+
+在这个示例中，内存泄漏的核心问题是：\inlinepython{DataProcessor.processed\_items}是一个全局列表，它持有了所有已处理数据项的引用。即使这些数据项不再需要，由于仍被全局列表引用，垃圾回收器无法及时释放它们占用的内存。
+
+
+\heading{使用gc模块检测内存问题}
+
+Python内置的gc垃圾回收模块可以帮助我们了解垃圾回收器追踪到了哪些对象。以下是使用\inlinepython{gc.get\_objects()}检测内存使用的基本方法：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/memory_gc_demo.py
+import gc
+from . memory_leak_demo import DataItem, DataProcessor
+
+def check_objects_count():
+    """检查对象数量变化"""
+    before_count = len(gc.get_objects())
+    print(f"初始对象数量: {before_count}")
+
+    # 执行可能增加对象的代码
+    processor = DataProcessor()
+    for i in range(100):
+        item = DataItem(f"TEST_{i}")
+        processor.process_item(item)
+
+    after_count = len(gc.get_objects())
+    print(f"执行后对象数量: {after_count}")
+    print(f"对象增加数量: {after_count - before_count}")
+
+    # 查看最近创建的对象类型
+    print("\n最近创建的5个对象类型:")
+    for obj in gc.get_objects()[-5:]:
+        print(f"  {type(obj).__name__}: {repr(obj)[:80]}...")
+
+if __name__ == "__main__":
+    check_objects_count()
+\end{minted}
+
+通过运行\inlinecmd{uv run -m fxb.ch09.memory\_gc\_demo}执行上述代码后，输出结果如下：
+
+\begin{minted}[fontsize=\scriptsize]{text}
+初始对象数量: 5889
+执行后对象数量: 5990
+对象增加数量: 101
+
+最近创建的5个对象类型:
+  function: <function _incompatible_extension_module_restrictions.override at 0x102fd51c0>...
+  function: <function LazyLoader.__check_eager_loader at 0x102fd5440>...
+  dict: {'__module__': 'importlib.util', '__name__': '__check_eager_loader', '__qualname...
+  function: <function LazyLoader.factory at 0x102fd54e0>...
+  dict: {'__module__': 'importlib.util', '__name__': 'factory', '__qualname__': 'LazyLoa...
+数据项 TEST_99 被销毁
+数据项 TEST_98 被销毁
+...
+\end{minted}
+
+gc模块可以告诉我们当前有哪些对象，但无法告诉我们这些对象是如何分配的。要了解内存分配的具体位置，可以使用下面提到的tracemalloc模块。
+
+\heading{使用tracemalloc进行内存分配追踪}
+
+Python 3.4新增的tracemalloc模块提供了内存分配的追踪机制，能够定位对象的内存位置、按文件按行统计内存分配情况，并对比内存快照以排查内存泄漏。以下是使用tracemalloc检测内存泄漏的示例：
+
+\begin{minted}[escapeinside=||]{python}
+# file: src/fxb/ch09/memory_tracemalloc_demo.py
+import tracemalloc
+from .memory_leak_demo import DataItem, DataProcessor
+
+def analyze_memory_allocation():
+    """分析内存分配情况"""
+    # 启动内存追踪，记录10帧的调用栈信息
+    tracemalloc.start(10)
+
+    # 拍摄第一个快照（基线）
+    snapshot1 = tracemalloc.take_snapshot()
+
+    # 执行代码
+    processor = DataProcessor()
+    for i in range(1000):
+        item = DataItem(f"ANALYZE_{i}")
+        processor.process_item(item)
+
+    # 拍摄第二个快照
+    snapshot2 = tracemalloc.take_snapshot()
+
+    # 比较快照，按代码行统计
+    stats = snapshot2.compare_to(snapshot1, "lineno") |\label{code:tracemalloc:1}|
+
+    print("内存分配最多的3个位置:")
+    for stat in stats[:3]:
+        print(f"  {stat}")
+
+    # 获取内存分配最多的位置的调用栈
+    top_stats = snapshot2.compare_to(snapshot1, "traceback") |\label{code:tracemalloc:2}|
+    if top_stats:
+        top = top_stats[0]
+        print("\n内存分配最多的调用栈:")
+        print("\n".join(top.traceback.format()))
+
+    tracemalloc.stop()
+
+if __name__ == "__main__":
+    analyze_memory_allocation()
+\end{minted}
+
+通过tracemalloc，我们可以精确地定位到内存分配最多的代码行，以及这些分配是通过什么调用路径发生的。
+
+执行上述代码后输出结果如下（为便于说明，输出结果中的文件目录用符号\texttt{...}代替）：
+
+\begin{minted}[fontsize=\scriptsize]{text}
+内存分配最多的3个位置:
+  .../memory_leak_demo.py:10: size=1032 KiB (+1032 KiB), count=1000 (+1000), average=1057 B
+  .../memory_tracemalloc_demo.py:15: size=140 KiB (+140 KiB), count=3000 (+3000), average=48 B
+  .../memory_leak_demo.py:24: size=8800 B (+8800 B), count=1 (+1), average=8800 B
+
+内存分配最多的调用栈:
+  File "<frozen runpy>", line 198
+  File "<frozen runpy>", line 88
+  File ".../memory_tracemalloc_demo.py", line 62
+    analyze_memory_allocation()
+  File ".../memory_tracemalloc_demo.py", line 15
+    item = DataItem(f"ANALYZE_{i}")
+  File ".../memory_leak_demo.py", line 10
+    self.data = os.urandom(1024)  # 每个对象1KB数据 
+    
+数据项 ANALYZE_681 被销毁
+数据项 ANALYZE_689 被销毁
+...
+\end{minted}
+
+如代码中第\ref{code:tracemalloc:1}行和第\ref{code:tracemalloc:2}行所示，tracemalloc的\inlinepython{snapshot.compare\_to()}方法提供了两种主要的统计分组模式：``lineno''模式按文件名和行号进行分组，显示每个具体代码行分配的内存块数量和总大小。这种方式能够快速定位到内存分配的热点代码行，但无法显示这些分配是通过怎样的调用路径发生的。
+``traceback''模式则按完整的函数调用栈进行分组，显示每个内存分配操作的完整调用链，包括函数之间的调用关系。这种方式虽然信息更详细，但相对复杂，适合深入分析内存分配的上下文。
+
+在实际性能优化中，通常先使用``lineno''模式快速识别出内存消耗最大的代码行，然后针对这些热点使用 ``traceback''模式进一步分析内存分配的具体调用路径。
+
+
+\heading{使用memory\_profiler进行内存分析}
+
+memory\_profiler是一个专为Python程序设计的模块，用于监控进程的内存消耗，并提供行级的内存使用分析。它是一个纯Python模块，依赖于psutil\footnote{psutil是一个专门用来获取操作系统以及CPU、磁盘、网络、内存等硬件相关信息的Python包，网址：\url{https://github.com/giampaolo/psutil}}模块来收集系统信息。
+
+可通过如下方式安装memory\_profiler：
+
+\begin{minted}{bash}
+# 在项目中添加memory_profiler的依赖
+uv add memory_profiler
+# 或者直接安装到运行环境中
+uv pip install memory-profiler
+\end{minted}
+
+安装完毕后，可以在代码中使用\texttt{@profile}装饰器标记需要分析的内存密集型函数，如下：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/memory_profiler_demo.py
+from memory_profiler import profile
+from .memory_leak_demo import DataProcessor, DataItem
+
+@profile
+def memory_intensive_operation():
+    """内存密集型操作示例"""
+    processor = DataProcessor()
+    
+    # 创建一个占用大量内存的列表
+    large_list = [DataItem(f"LIST_{i}") for i in range(10000)]
+    
+    # 处理这些数据项
+    for item in large_list:
+        processor.process_item(item)
+    
+    return len(DataProcessor.processed_items)
+
+if __name__ == "__main__":
+    memory_intensive_operation()
+\end{minted}
+
+运行程序后，memory\_profiler会输出详细的行级内存分析报告，显示每行代码执行前后的内存变化，如下所示：
+
+\begin{minted}[fontsize=\scriptsize]{text}
+Line #    Mem usage    Increment  Occurrences   Line Contents
+=============================================================
+     5     27.0 MiB     27.0 MiB           1   @profile
+     6                                         def memory_intensive_operation():
+     7                                             """内存密集型操作示例"""
+     8     27.0 MiB      0.0 MiB           1       processor = DataProcessor()
+     9                                         
+    10                                             # 创建一个占用大量内存的列表
+    11     41.6 MiB     14.6 MiB       10001       large_list = [DataItem(f"LIST_{i}") for i in range(10000)]
+    12                                         
+    13                                             # 处理这些数据项
+    14     41.7 MiB      0.0 MiB       10001       for item in large_list:
+    15     41.7 MiB      0.1 MiB       10000           processor.process_item(item)
+    16                                         
+    17     41.7 MiB      0.0 MiB           1       return len(DataProcessor.processed_items)
+\end{minted}
+
+通过分析这些数据，开发者可以识别出内存消耗最大的代码行。
+
+\subsection{利用\_\_slots\_\_优化对象内存使用}
+
+\inlinepython{\_\_slots\_\_} 是Python类中的特殊类属性，用于限制类实例可拥有的属性名称，同时能显著优化内存占用并提升属性访问速度。
+
+默认情况下，Python类实例的属性存储在动态字典\inlinepython{\_\_dict\_\_}中，这使得实例可以随时新增任意属性，提供了很大的灵活性。然而，这种灵活性也带来了额外的内存开销。当需要创建大量同类型对象时，如前面示例中的DataItem类，这种内存开销可能成为性能瓶颈。
+
+通过定义\inlinepython{\_\_slots\_\_}属性，可以告诉Python不为实例创建\inlinepython{\_\_dict\_\_}，而是预留固定空间存储指定属性。这种方式不仅减少了内存消耗，还加快了属性访问速度。需要注意的是，定义\inlinepython{\_\_slots\_\_}后，实例只能拥有其中声明的属性，尝试添加未声明的属性会抛出 \inlinepython{AttributeError}。
+
+\heading{性能对比示例}
+
+以下示例展示了使用\inlinepython{\_\_slots\_\_}前后的内存使用和性能对比：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/memory_slots_demo.py
+import tracemalloc
+import time
+
+
+class DataItemWithDict:
+    """使用默认__dict__的类"""
+    def __init__(self, id:int, data:str):
+        self.id = id
+        self.data = data
+
+
+class DataItemWithSlots:
+    """使用__slots__的类"""
+    __slots__ = ("id", "data")
+    def __init__(self, id: int, data: str):
+        self.id = id
+        self.data = data
+
+
+def measure(cls, n_objects=1_000_000):
+    """测量类创建对象的内存使用和性能"""
+    # 启动内存跟踪
+    tracemalloc.start()
+
+    # 创建对象
+    start_time = time.time()
+    items = [cls(i, "测试数据") for i in range(n_objects)]
+    creation_time = time.time() - start_time
+
+    # 测量内存
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    # 测试属性访问速度
+    start_time = time.time()
+    for item in items:
+        _ = item.id
+        _ = item.data
+    access_time = time.time() - start_time
+
+    return {
+        "内存占用(MB)": peak / 1024 / 1024,
+        "对象创建时间(秒)": creation_time,
+        "属性访问时间(秒)": access_time
+    }
+
+def main():
+    print("测试普通类（使用默认__dict__）:")
+    results1 = measure(DataItemWithDict)
+    for k, v in results1.items():
+        print(f"  {k}: {v:.6f}")
+
+    print("\n测试使用 __slots__ 的类:")
+    results2 = measure(DataItemWithSlots)
+    for k, v in results2.items():
+        print(f"  {k}: {v:.6f}")
+
+    # 计算差异百分比
+    print("\n性能提升百分比:")
+    for k in results1:
+        improvement = (results1[k] - results2[k]) / results1[k] * 100
+        print(f"  {k}: 提升 {improvement:.2f}%")
+
+    # 普通对象可以动态添加属性，背后是一个字典
+    print("\n动态属性添加演示:")
+    normal_obj = DataItemWithDict(1, "示例数据")
+    normal_obj.porcessed = True #  # 可以正常添加新属性
+    print(f"  普通对象属性字典: {normal_obj.__dict__}")
+    # 以下测试报错，读者可自行测试
+    # slots_obj = DataItemWithSlots(2, "示例数据")
+    # slots_obj.processed = True  # 抛出AttributeError：has no attribute 'processed'
+    # print(slots_obj.__dict__) # 抛出AttributeError：has no attribute '__dict__'
+
+if __name__ == "__main__":
+    main()
+\end{minted}
+
+在笔者计算机上执行上述代码后，输出结果如下：
+
+\begin{minted}{text}
+测试普通类（使用默认__dict__）:
+  内存占用(MB): 114.864029
+  对象创建时间(秒): 0.736918
+  属性访问时间(秒): 0.013662
+
+测试使用 __slots__ 的类:
+  内存占用(MB): 84.343422
+  对象创建时间(秒): 0.597605
+  属性访问时间(秒): 0.011365
+
+性能提升百分比:
+  内存占用(MB): 提升 26.57%
+  对象创建时间(秒): 提升 18.90%
+  属性访问时间(秒): 提升 16.82%
+
+动态属性添加演示:
+  普通对象属性字典: {'id': 1, 'data': '示例数据', 'porcessed': True}
+\end{minted}
+
+从测试结果可以看出，使用\inlinepython{\_\_slots\_\_}通常可以节省 20\%以上的内存，同时对象创建和属性访问速度也有明显提升。这种优化在需要创建大量对象的场景中效果尤为明显。
+
+\heading{\_\_slots\_\_ 使用注意事项}
+
+虽然\inlinepython{\_\_slots\_\_}能带来显著的性能提升，但在使用时需要注意以下几点：
+
+\begin{itemize}
+    \item {属性固定性}：使用\inlinepython{\_\_slots\_\_}后，实例无法动态添加未在\inlinepython{\_\_slots\_\_}中声明的属性。这适用于属性结构固定的场景，但不适合需要动态扩展属性的情况。
+    \item {继承影响}：如果子类未定义\inlinepython{\_\_slots\_\_}，它将继承父类的 \inlinepython{\_\_slots\_\_}，但仍会创建 \inlinepython{\_\_dict\_\_}。如果子类定义了 \inlinepython{\_\_slots\_\_}，则其\inlinepython{\_\_slots\_\_} 为父类与子类\inlinepython{\_\_slots\_\_}的并集。
+    \item {内存对齐}：\inlinepython{\_\_slots\_\_}为每个属性预留了固定大小的内存空间，这可能导致一定的内存对齐开销，但总体上仍比\inlinepython{\_\_dict\_\_}节省内存。
+\end{itemize}
+
+
+\subsection{内存优化最佳实践}
+
+以下是我们建议的内存优化最佳实践：
+
+\begin{itemize}
+    \item {避免全局长期引用}：尽量避免使用全局变量或类变量长期持有对象引用，如示例中的全局列表，这些引用会阻止垃圾回收器释放内存。
+    \item {及时释放不必要的引用}：对于不再需要的对象，及时将其从容器中移除，或使用弱引用（weakref）进行跟踪，以避免意外的内存泄漏。
+    \item {合理使用 \_\_slots\_\_}：对于需要创建大量实例且属性结构固定的类，应用该方法可以显著减少内存消耗和提升访问速度。
+    \item {使用适当的数据结构}：根据需求选择最合适的数据结构，如使用数组存储大量数值数据，或使用生成器表达式处理大数据集以避免一次性加载所有数据。
+    \item {定期监控内存使用}：结合使用 gc、tracemalloc 和memory\_profiler等工具，定期监控和分析内存使用情况，及时发现潜在的内存泄漏或高内存消耗问题。
+\end{itemize}
+
+内存泄漏的预防比修复更重要。通过遵循良好的编程实践，如及时释放不必要的引用、合理设计数据结构、使用上下文管理器等，可以显著减少内存泄漏的发生。对于长时间运行的 Python 服务，定期内存检查是保证系统稳定性的关键措施。
+
+在实际开发中，建议将性能优化视为一个迭代过程，首先使用性能分析工具准确识别瓶颈，然后有针对性地应用优化策略，最后验证优化效果，提升代码质量。
+
+
+\section{基于Python内部机制的局部提速}
+
+在准确识别性能瓶颈后，充分利用Python语言自身的优化特性往往能获得显著的性能提升，而无需改变算法或引入外部依赖。Python解释器本身使用C语言实现，许多内置函数和标准库方法都是编译过的C代码，执行速度远快于Python层面的等效实现。本节将探讨如何通过合理使用内置函数、局部变量缓存以及高效迭代器工具来提升Python程序性能。
+
+\subsection{使用内置函数替代手动循环}
+
+Python的内置函数是经过高度优化的C语言实现，通常比手动编写的Python代码快一个数量级。合理使用内置函数是提升Python程序性能的最简单有效的方法之一。
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{figures/buildins.pdf}
+    \caption{内置函数优化示例}
+    \label{fig:buildins}
+\end{figure}
+
+图\ref{fig:buildins}展示了使用内置函数替代手动循环的典型场景，包括求和\inlinepython{sum}、最大值\inlinepython{max}、任意条件满足判断\inlinepython{any}、所有条件满足判断\inlinepython{all}、与过滤\inlinepython{filter}。除此之外，还有其他许多类似的内置函数，如\inlinepython{min()}, \inlinepython{map()}, \inlinepython{reduce()}等。
+这些内置函数在Python中已经实现，并且进行了优化，因此可以直接使用它们来提高代码的效率。
+
+\subsection{使用局部变量避免属性查找}
+
+在循环体内部频繁进行属性查找会带来额外的性能开销。通过将需要频繁访问的属性缓存到局部变量，可以显著提升性能。以下示例展示了这一技巧：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/attribute_lookup_demo.py
+import time
+
+class DataProcessor:
+    def __init__(self):
+        self.items = ["item_" + str(i) for i in range(10000)]
+        self.prefix = "processed_"
+
+    def process_without_caching(self):
+        """不使用局部变量缓存"""
+        result = []
+        for i in range(len(self.items)):
+            # 每次循环都进行属性查找
+            value = self.prefix + self.items[i]
+            result.append(value)
+        return result
+
+    def process_with_caching(self):
+        """使用局部变量缓存"""
+        result = []
+        # 将属性缓存到局部变量items和prefix中，避免每次循环都进行属性查找
+        items = self.items
+        prefix = self.prefix
+        for i in range(len(items)):
+            # 使用局部变量，避免属性查找
+            value = prefix + items[i]
+            result.append(value)
+        return result
+
+def performance_test():
+    """性能对比测试"""
+    processor = DataProcessor()
+
+    # 测试不使用缓存的版本
+    start_time = time.time()
+    processor.process_without_caching()
+    time_without_caching = time.time() - start_time
+
+    # 测试使用缓存的版本
+    start_time = time.time()
+    processor.process_with_caching()
+    time_with_caching = time.time() - start_time
+
+    print(f"不使用缓存: {time_without_caching:.6f} 秒")
+    print(f"使用缓存避免属性查找: {time_with_caching:.6f} 秒")
+    print(f"性能提升: {time_without_caching / time_with_caching:.2f}倍")
+
+if __name__ == "__main__":
+    performance_test()
+\end{minted}
+
+上述代码在笔者计算机上运行后，输出结果如下：
+
+\begin{minted}{text}
+不使用缓存: 0.000549 秒
+使用缓存避免属性查找: 0.000415 秒
+性能提升: 1.32倍
+\end{minted}
+
+可见，通过简单的代码调整，在大量循环中借助局部变量缓存对象的属性值，就可以带来显著的性能提升。
+
+\subsection{使用itertools模块的高效迭代器}
+
+itertools模块提供了一系列高效、内存友好的迭代器函数，它们采用惰性求值策略，仅在需要时才计算下一个值，特别适合处理大规模数据集。使用itertools不仅可以减少内存消耗，还能使代码更加简洁优雅。
+
+\heading{常用函数及应用场景}
+
+表\ref{tab:itertools-functions}列出了itertools模块中的常用函数及其应用场景：
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{itertools常用函数}
+  \label{tab:itertools-functions}
+    \begin{tabular}{@{}p{5cm} p{3.2cm} p{4.3cm}@{}}
+        \toprule
+        函数名称 & 作用 & 性能优势 \\
+        \midrule
+        {itertools.chain()} & 串联多个可迭代对象 & 避免创建巨大的合并列表 \\
+        {itertools.islice()} & 对迭代器进行切片 & 无需将迭代器转为列表 \\
+        {itertools.groupby()} & 按照键对元素分组 & 惰性计算，节省内存 \\
+        {itertools.product()} & 计算笛卡尔积 & 比嵌套循环更简洁且高效 \\
+        {itertools.combinations()} & 计算不重复的组合 & 专门优化的组合算法 \\
+        {itertools.cycle()} & 无限循环重复元素 & 节省手动实现的逻辑开销 \\
+        \bottomrule
+  \end{tabular}
+\end{table}
+
+\heading{实际应用示例}
+
+以下示例展示了itertools在实际场景中的应用。
+
+\begin{minted}{python}
+# file: src/fxb/ch09/itertools_demo.py
+import itertools
+import sys
+
+def demonstrate_itertools():
+    # 1. chain示例：串联多个迭代器
+    list1 = ["item_a", "item_b", "item_c"]
+    list2 = ["item_d", "item_e", "item_f"]
+
+    # 传统方法：创建新列表
+    traditional_chain = list1 + list2
+
+    # itertools方法：惰性求值
+    itertools_chain = itertools.chain(list1, list2)
+
+    print(f"传统方法: {traditional_chain}")
+    print(f"itertools方法: {list(itertools_chain)}")
+
+    # 2. 内存使用对比
+    large_data = range(1000000)
+
+    # 传统方法：创建完整列表
+    traditional_list = [x * 2 for x in large_data]
+    traditional_memory = sys.getsizeof(traditional_list)
+
+    # itertools方法：使用生成器表达式
+    itertools_generator = (x * 2 for x in large_data)
+    itertools_memory = sys.getsizeof(itertools_generator)
+
+    print(f"\n传统列表内存: {traditional_memory / 1024 / 1024:.2f} MB")
+    print(f"生成器内存: {itertools_memory / 1024:.2f} KB")
+
+    # 3. 使用islice进行分页处理
+    print("\n--- 使用islice进行分页 ---")
+    all_items = [f"item_{i+1}" for i in range(10)]
+
+    page_size = 3
+    for page_num in range(4):
+        start = page_num * page_size
+        page = list(itertools.islice(all_items, start, start + page_size))
+        if page:
+            print(f"第{page_num + 1}页: {page}")
+
+if __name__ == "__main__":
+    demonstrate_itertools()
+\end{minted}
+
+运行上述代码后的输出结果如下：
+
+\begin{minted}{text}
+传统方法: ['item_a', 'item_b', 'item_c', 'item_d', 'item_e', 'item_f']
+itertools方法: ['item_a', 'item_b', 'item_c', 'item_d', 'item_e', 'item_f']
+
+传统列表内存: 8.06 MB
+生成器内存: 0.20 KB
+
+--- 使用islice进行分页 ---
+第1页: ['item_1', 'item_2', 'item_3']
+第2页: ['item_4', 'item_5', 'item_6']
+第3页: ['item_7', 'item_8', 'item_9']
+第4页: ['item_10']
+\end{minted}    
+
+itertools模块提供的函数不仅性能优越，还能使代码更加简洁、可读，尤其适合大规模数据的处理。
+
+
+
+\section{Cython编译提速}
+
+当Python层面的优化无法满足性能需求时，Cython\footnote{\url{https://cython.readthedocs.io/}}提供了一种高效的解决方案。Cython是Python的超集\footnote{注意不是第\ref{ch:python-concurrency}章所提到的Pthon的解释器CPython}，它允许在Python代码中添加静态类型声明，并将代码编译为C扩展模块，从而显著提升执行效率。同时，编译后的模块还能实现对源代码的保护，适用于对性能和安全有较高要求的场景。
+
+
+\subsection{Cython简介与工作原理}
+
+Cython是Python的超集，不仅完整支持纯Python语法，还引入了C语言级别的类型声明能力，为追求高性能的Python开发提供了更灵活的选择。Cython支持两类文件的编译：一是``.py''文件，作为标准Python源代码，可以通过Cython编译获得性能优化；二是Cython的扩展格式``.pyx''文件，在兼容Python语法基础上新增了Cython特有的语法特性。因此，对于不需要Cython特有语法的简单优化，可以直接使用.py文件进行编译。
+
+与纯Python代码相比，Cython编译的代码可以获得显著的性能提升。这种提升主要源于两方面：一是减少了Python解释器的开销，二是通过静态类型声明避免了Python的动态类型检查。
+
+\subsection{Cython的基本使用流程}
+
+\heading{编写Cython代码}
+
+以下示例展示如何使用Cython加速本章的$\pi$值计算函数：
+
+\begin{minted}{python}
+# pi_cython.pyx - Cython版本的π值计算
+import random
+
+def estimate_pi_cython(num_samples):
+    """Cython版本的丌值估算函数"""
+    cdef int inside_circle = 0
+    cdef int i
+    cdef double x, y
+    
+    for i in range(num_samples):
+        x = random.random()
+        y = random.random()
+        
+        # 避免sqrt调用，使用平方比较
+        if x * x + y * y <= 1:
+            inside_circle += 1
+    
+    return 4 * inside_circle / num_samples
+
+# 纯Python接口，保持与原始代码兼容
+def estimate_pi_python(num_samples):
+    """纯Python接口"""
+    return estimate_pi_cython(num_samples)
+\end{minted}
+
+\heading{编译配置}
+
+首先在项目中安装必要的依赖：
+
+\begin{minted}{bash}
+# 安装Cython和编译工具
+uv add cython --dev
+uv add setuptools --dev
+\end{minted}
+
+创建\texttt{setup.py}文件指导编译过程：
+
+\begin{minted}{python}
+# setup.py
+from setuptools import setup
+from Cython.Build import cythonize
+
+setup(
+ext_modules=cythonize(
+        "pi_cython.pyx",          # Cython源文件
+        compiler_directives={
+            'language_level': "3",  # 使用Python 3语法
+            'optimize.unpack_method_calls': True  # 启用优化
+        }
+    )
+)
+\end{minted}
+
+\heading{执行编译}
+
+在命令行中运行编译命令：
+
+\begin{minted}{bash}
+python setup.py build_ext --inplace
+\end{minted}
+
+编译完成后，会生成C源代码文件\inlinefile{pi\_cython.c}，以及编译后的扩展模块。在Linux/Mac系统下扩展模块以``.so''结尾，在Windows平台下以``.pyd''结尾。
+
+
+\heading{性能对比测试}
+
+创建性能对比测试脚本：
+
+\begin{minted}{python}
+# file: src/fxb/ch09/benchmark_cython.py - Cython性能对比测试
+import time
+import math
+import random
+import pi_cython  # 导入编译好的Cython模块
+
+def estimate_pi_pure(num_samples):
+    """纯Python版本的丌值计算"""
+    inside_circle = 0
+    for _ in range(num_samples):
+        x = random.random()
+        y = random.random()
+        if x * x + y * y <= 1:
+            inside_circle += 1
+    return 4 * inside_circle / num_samples
+
+
+def benchmark():
+    """性能基准测试"""
+    num_samples = 5_000_000
+    print(f"计算丌值 - 样本数: {num_samples:,}")
+    print("=" * 30)
+
+    # 纯Python版本
+    start_time = time.time()
+    pi_pure = estimate_pi_pure(num_samples)
+    time_pure = time.time() - start_time
+
+    # Cython版本
+    start_time = time.time()
+    pi_cy = pi_cython.estimate_pi_python(num_samples)
+    time_cy = time.time() - start_time
+
+    # 输出结果
+    print("纯Python版本:")
+    print(f"  估算值: {pi_pure:.8f}")
+    print(f"  实际值: {math.pi:.8f}")
+    print(f"  误差: {abs(pi_pure - math.pi):.8f}")
+    print(f"  耗时: {time_pure:.3f}秒")
+
+    print("\nCython编译版本:")
+    print(f"  估算值: {pi_cy:.8f}")
+    print(f"  耗时: {time_cy:.3f}秒")
+
+    print(f"\n性能提升: {time_pure / time_cy:.2f}倍")
+
+if __name__ == "__main__":
+    benchmark()
+\end{minted}
+
+在笔者计算机上运行测试程序，输出如下：
+
+\begin{minted}[]{text}
+计算丌值 - 样本数: 5,000,000
+==============================
+纯Python版本:
+  估算值: 3.14144880
+  实际值: 3.14159265
+  误差: 0.00014385
+  耗时: 0.393秒
+
+Cython编译版本:
+  估算值: 3.14173920
+  耗时: 0.269秒
+
+性能提升: 1.46倍
+\end{minted}
+
+结果显示，通过简单的类型声明和编译优化，Cython版本比纯Python版本快了1.46倍，性能提升显著。
+
+\subsection{源代码保护与部署}
+
+Cython编译的另一个重要优势是源代码保护。编译后的模块是机器码，用户无法直接查看和修改核心业务逻辑，为知识产权提供了一定程度的保护。这在商业软件和闭源库中特别有用。
+
+以下展示如何将Python项目编译为Cython模块并进行分发。
+
+\heading{项目初始化与项目结构}
+
+首先通过uv初始化项目并创建源代码文件：
+
+\begin{minted}{bash}
+uv init --package cython_demo
+cd cython_demo
+uv venv # 创建项目的虚拟环境
+uv add setuptools --dev # 添加依赖
+uv add cython --dev
+touch src/cython_demo/calculator.py # 创建源代码文件
+touch src/cython_demo/analyzer.py
+\end{minted}
+
+此时得到的项目结构如下：
+
+\begin{minted}{text}
+cython_demo/
+├── pyproject.toml
+├── README.md
+├── setup.py
+├── src
+│   └── cython_demo
+│       ├── __init__.py
+│       ├── analyzer.py
+│       └── calculator.py
+└── uv.lock
+\end{minted}
+
+两个源代码文件中的示例代码分别设置如下：
+
+\begin{minted}{python}
+# calculator.py
+def add(a, b):
+    return a + b
+
+# analyzer.py
+def analyze_data(data):
+    total = sum(data)
+    average = total / len(data)
+    return total, average
+\end{minted}
+
+\heading{配置编译脚本}
+
+在项目根目录下创建\inlinefile{setup.py}文件，配置Cython编译信息：
+
+\begin{minted}{python}
+from pathlib import Path
+from setuptools import Extension, find_packages, setup
+from Cython.Build import cythonize
+
+# 递归查找src目录下所有Python文件
+py_files = list(Path("./src").rglob("*.py"))
+extensions = []
+
+# 为每个Python文件创建Cython扩展配置
+for p in py_files:
+    # 生成符合Python规范的模块名（如cython_demo.calculator）
+    module_name = str(p.with_suffix("").relative_to("./src")).replace("/", ".")
+    extensions.append(
+        Extension(
+            name=module_name,  # 扩展模块名称
+            sources=[str(p)],  # 待编译的源文件
+            language="c",  # 编译语言为C
+        )
+    )
+
+# 将Python文件编译为C扩展模块
+ext_modules = cythonize(extensions, annotate=False)
+
+# 打包配置：将src下的代码编译为C扩展并构建Python包
+setup(
+    name="cython_demo",
+    version="1.0.0",
+    packages=find_packages(where="src"),  # 自动识别src下的Python包
+    package_dir={"": "src"},  # 指定源码根目录为src
+    ext_modules=ext_modules,  # 传入编译好的扩展模块
+)
+\end{minted}
+
+
+\heading{执行编译}
+
+在项目根目录执行：
+
+\begin{minted}{bash}
+# 激活项目环境
+source .venv/bin/activate
+# 编译项目，编译生成的文件会保存在build目录下
+python setup.py build_ext
+\end{minted}
+
+
+编译完成后，默认会在项目根目录下生成一个\inlinefile{build/lib.*}目录，其具体名称与操作系统及Python版本相关。例如，在笔者计算机上运行时，会生成\inlinefile{build/lib.macosx-11.0-arm64-cpython-312}目录，其中存放编译后的扩展模块文件。同时，\inlinefile{build/temp.*}目录用于存放编译过程中产生的中间文件，而由Python源代码转换生成的C代码文件则默认保存在原源代码文件所在目录中。具体结构示例如下：
+
+\begin{minted}{text}
+cython_demo
+├── build
+│   ├── lib.macosx-11.0-arm64-cpython-312
+│   │   └── cython_demo
+│   │       ├── __init__.cpython-312-darwin.so
+│   │       ├── analyzer.cpython-312-darwin.so
+│   │       └── calculator.cpython-312-darwin.so
+│   └── temp.macosx-11.0-arm64-cpython-312
+│       └── src
+│           └── cython_demo
+│               ├── __init__.o
+│               ├── analyzer.o
+│               └── calculator.o
+├── pyproject.toml
+├── README.md
+├── setup.py
+├── src
+│   └── cython_demo
+│       ├── __init__.c
+│       ├── __init__.py
+│       ├── analyzer.c
+│       ├── analyzer.py
+│       ├── calculator.c
+│       └── calculator.py
+└── uv.lock
+\end{minted}
+
+\inlinefile{setup.py}提供了一系列命令行参数，可用于调整上述默认行为，开发者也可通过修改 \inlinefile{setup.py}中的代码实现更复杂的编译配置。更多详细信息可参考Cython官方文档。
+
+
+\heading{部署和运行}
+
+编译后生成的扩展模块可直接被Python导入。例如，在\inlinefile{build/lib.*}目录下创建入口文件\inlinefile{run\_app.py}，内容如下：
+
+\begin{minted}{python}
+from cython_demo.analyzer import analyze_data
+from cython_demo.calculator import add
+
+if __name__ == "__main__":
+    data = [1, 2, 3, 4, 5]
+    data.append(add(10, 20))
+    total, average = analyze_data(data)
+    print(f"Total: {total}, Average: {average}")
+\end{minted}
+
+此时，即使删除\inlinefile{src}目录，也可正常导入模块并运行：
+
+\begin{minted}{bash}
+source.venv/bin/activate
+cd build/lib.*
+python run_app.py
+\end{minted}
+
+分发时只需提供\inlinefile{build/lib.*}目录和依赖环境，无需包含源代码，既保护了核心算法，又保证了性能。
+
+
+\subsection{Cython最佳实践与注意事项}
+
+使用Cython时需要注意以下几点：
+
+\begin{enumerate}
+    \item 类型声明是关键：Cython的性能提升主要来自静态类型声明。使用\texttt{cdef}关键字声明变量类型，特别是循环变量和频繁访问的变量。
+    \item 保持Python兼容性：Cython代码应保持与纯Python代码的接口兼容，便于集成和测试。
+    \item 充分测试验证：编译后的模块需进行完整的功能与性能测试，确保正确性和稳定性。
+    \item 考虑编译环境：Cython模块需要针对目标平台进行编译，部署时应注意环境兼容性。
+    \item 权衡使用场景：Cython适用于计算密集型任务，对于I/O密集型或已有高度优化库的任务，收益可能不明显。
+\end{enumerate}
+
+Cython是实现Python性能突破的强大工具。通过合理使用静态类型和编译优化，可获得接近原生C代码的性能，同时实现了对核心代码的保护，为高性能、高安全要求的Python应用提供了完整解决方案。
+
+
+\section*{本章总结与进阶思考}
+
+性能优化是一项系统化、科学化的工程实践。本章介绍了从诊断分析到优化实施的全套方法论，建立了完整的性能优化知识体系。
+
+\textbf{关键要点回顾：}
+\begin{itemize}
+    \item 诊断优先：使用cProfile、火焰图、memory\_profiler等工具准确定位性能瓶颈，避免盲目优化；
+    \item 局部优化：充分利用Python内置机制，如内置函数、局部变量缓存、itertools模块及 \inlinepython{\_\_slots\_\_}，以最小代价获得性能提升；
+    \item 深度加速：针对计算密集型任务，采用Cython编译技术，通过静态类型声明将关键代码编译为C扩展，实现性能飞跃；
+    \item 代码保护：Cython同时提供了源代码保护能力，适用于商业软件和需闭源分发的场景。
+\end{itemize}
+
+\textbf{进阶思考：}
+
+性能优化并非孤立的技术行为，而是需要持续实践、权衡与迭代的系统工程，开发者应学会在算法复杂度、数据结构选择、并发模型与硬件适配等多个维度进行综合考量。在真实项目中，优化决策往往需要兼顾性能、可维护性、开发成本与运行环境等多重约束。
+
+下一章我们将进入专业的单元测试与集成测试，探讨如何构建稳定可靠的软件质量保障体系。

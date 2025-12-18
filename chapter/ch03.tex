@@ -102,11 +102,11 @@ pip install -e .
 \begin{itemize}
     \item 普通安装（复制模式）
 
-    若运行 \mintinline{bash}{pip install .}（不带 \variable{-e}），pip 会将当前代码\textbf{复制}一份并拷贝到 Python 的站点目录\inlinefile{site-packages}中。这相当于建立了一个静态的快照。在开发过程中，如果你修改了手中的源代码，\inlinefile{site-packages}中的快照并不会自动更新，你必须再次安装才能看到修改效果。
+    若运行 \inlinecmd{pip install .}（不带 \variable{-e}），pip 会将当前代码\textbf{复制}一份并拷贝到 Python 的站点目录\inlinefile{site-packages}中。这相当于建立了一个静态的快照。在开发过程中，如果你修改了手中的源代码，\inlinefile{site-packages}中的快照并不会自动更新，你必须再次安装才能看到修改效果。
 
     \item 可编辑安装（快捷模式）
 
-    当运行 \mintinline{bash}{pip install -e .} 时，pip 不会复制物理文件，而是在系统的站点目录中创建一个指向你源码目录的特殊快捷方式，此时对源码的任何改动会立即生效，无需重新安装。
+    当运行 \inlinecmd{pip install -e .} 时，pip 不会复制物理文件，而是在系统的站点目录中创建一个指向你源码目录的特殊快捷方式，此时对源码的任何改动会立即生效，无需重新安装。
 \end{itemize}
 
 对于 src 布局而言，可编辑安装起到了桥梁的作用：它告诉 Python 解释器通过快捷方式去 \inlinefile{src/} 目录中查找代码。这种机制既保留了 src 布局将源码与环境隔离的安全性优势，又确保了开发者修改代码后能即时生效，无需重复安装，是现代化 Python 开发的标准工作流。
@@ -129,7 +129,7 @@ src 布局的核心价值在于消除开发环境与生产环境之间的潜在�
     \item {提供清晰的项目结构与工具链支持}：该布局实现了项目元数据（配置、文档、测试）与核心代码的逻辑分离，使项目结构更加规范，便于各类开发工具的集成与维护。
 \end{itemize}
 
-尽管采用 src 布局需要对构建配置进行相应调整（如在 \inlinefile{setuptools} 中配置 \inlinefile{package_dir}），但其为项目长期可维护性、分发可靠性以及持续集成流程的稳定性提供了重要保障。
+尽管采用 src 布局需要对构建配置进行相应调整（如在 \inlinefile{setuptools} 中配置 \variable{package\_dir}），但其为项目长期可维护性、分发可靠性以及持续集成流程的稳定性提供了重要保障。
 
 \heading{初学者的陷阱：手动修改sys.path}
 
@@ -170,7 +170,7 @@ from src import my_package #即时能导入，但这是错误的做法
     测试代码应该专注于业务逻辑的验证，而不是包含复杂的环境配置逻辑。这种代码会使得测试文件变得混乱且难以阅读。
 \end{itemize}
 
-因此，\textem{永远不要在测试代码中修改 \variable{sys.path}}。正确的做法始终是保持测试代码的纯净，并通过标准的 \mintinline{bash}{pip install -e .} 来让环境自动处理包的发现与导入。
+因此，\textem{永远不要在测试代码中修改 \variable{sys.path}}。正确的做法始终是保持测试代码的纯净，并通过标准的 \inlinecmd{pip install -e .} 来让环境自动处理包的发现与导入。
 
 
 \subsection{大型项目的结构组织：命名空间包}
@@ -179,9 +179,9 @@ from src import my_package #即时能导入，但这是错误的做法
 
 \heading{PEP 420 与隐式命名空间}
 
-在 Python 3.3 之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{__init__.py} 中使用 \inlinepython{pkgutil.extend\_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
+在 Python 3.3 之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{\_\_init\_\_.py} 中使用 \inlinepython{pkgutil.extend\_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
 
-PEP 420 允许我们将一个逻辑上的包拆分到文件系统中的不同目录下，甚至不同的发布包（Distribution Packages）中。其核心规则只有一个：在命名空间目录中不要包含 \inlinefile{__init__.py} 文件。
+PEP 420 允许我们将一个逻辑上的包拆分到文件系统中的不同目录下，甚至不同的发布包（Distribution Packages）中。其核心规则只有一个：在命名空间目录中不要包含 \inlinefile{\_\_init\_\_.py} 文件。
 
 \heading{src 布局下的命名空间结构}
 
@@ -219,9 +219,9 @@ fxb-ui/
 在使用这种结构时，必须严格遵守以下原则：
 
 \begin{itemize}
-    \item 不要创建 \inlinefile{src/fxb/__init__.py}
+    \item 不要创建 \inlinefile{src/fxb/\_\_init\_\_.py}
 
-    这是 PEP 420 生效的关键。如果 \variable{fxb} 目录下存在 \inlinefile{__init__.py}，Python 会将其视为一个普通的常规包（Regular Package）。在导入时，解释器一旦找到这个文件，就会停止搜索其他路径，导致安装在其他位置的同名空间包（如 \variable{fxb.ui}）无法被发现。
+    这是 PEP 420 生效的关键。如果 \variable{fxb} 目录下存在 \inlinefile{\_\_init\_\_.py}，Python 会将其视为一个普通的常规包（Regular Package）。在导入时，解释器一旦找到这个文件，就会停止搜索其他路径，导致安装在其他位置的同名空间包（如 \variable{fxb.ui}）无法被发现。
 
     \item 安装与合并
 
@@ -229,7 +229,7 @@ fxb-ui/
 
     \item 打包配置
 
-    在配置 \inlinefile{setup.py} 或 \inlinefile{pyproject.toml} 时，需要确保打包工具能够正确识别这种嵌套结构，自动发现不含 \inlinefile{__init__.py} 的包目录。
+    在配置 \inlinefile{setup.py} 或 \inlinefile{pyproject.toml} 时，需要确保打包工具能够正确识别这种嵌套结构，自动发现不含 \inlinefile{\_\_init\_\_.py} 的包目录。
 \end{itemize}
 
 通过结合src布局与命名空间包，我们可以构建出既模块化又具备统一命名规范的现代大型Python项目生态。
@@ -239,7 +239,7 @@ fxb-ui/
 
 在实际项目里，哪一种布局更好用往往取决于生命周期、团队规模与分发需求。
 
-对于一次性的任务，文件数量屈指可数，此时单文件或扁平布局已足够，额外加一层 src 反而显得多此一举。若代码需要被多人反复维护，或最终打包上传到 PyPI，src 布局把可安装与可测试提前绑定在一起，通常能减少后期因路径差异带来的意外。对于跨仓库共享同一顶级命名空间的框架，命名空间包则提供了一种分 库却不分前缀的折中方案，只是需要留意PEP 420对缺少\inlinefile{__init__.py}的约定。布局选用的核心考量与建议如表\ref{tab:layout-core-considerations}所示。
+对于一次性的任务，文件数量屈指可数，此时单文件或扁平布局已足够，额外加一层 src 反而显得多此一举。若代码需要被多人反复维护，或最终打包上传到 PyPI，src 布局把可安装与可测试提前绑定在一起，通常能减少后期因路径差异带来的意外。对于跨仓库共享同一顶级命名空间的框架，命名空间包则提供了一种分 库却不分前缀的折中方案，只是需要留意PEP 420对缺少\inlinefile{\_\_init\_\_.py}的约定。布局选用的核心考量与建议如表\ref{tab:layout-core-considerations}所示。
 
 \begin{table}[htbp]
     \centering
@@ -251,7 +251,7 @@ fxb-ui/
         \midrule
         扁平布局 & 一次性脚本、短期原型、团队熟悉且 CI 已覆盖 & 保持目录整洁和可读性 \\
         src 布局 & 计划发布PyPI、生命周期长、多人协作、需可靠测试 & 开发时采用可编辑安装 \\
-        命名空间包 & 多仓库共享同一顶级包名 & 各库不放\inlinefile{__init__.py} \\
+        命名空间包 & 多仓库共享同一顶级包名 & 各库不放\inlinefile{\_\_init\_\_.py} \\
         \bottomrule
     \end{tabular}
 \end{table}
@@ -291,7 +291,7 @@ uv venv --python 3.12
 
 此时，uv会在项目目录下自动生成默认的项目管理文件\inlinefile{pyproject.toml}，以及存放虚拟环境内容的目录\inlinefile{.venv}。
 
-假设\inlinefile{flatlayout_demo/calc.py}是一个简单的计算器，我们先实现特殊的加法运算，代码如下：
+假设\inlinefile{flatlayout\_demo/calc.py}是一个简单的计算器，我们先实现特殊的加法运算，代码如下：
 
 \begin{minted}{python}
 # flatlayout_demo/calc.py
@@ -339,7 +339,7 @@ dev = [
 ]
 \end{minted}
 
-正常情况下，我们应该通过测试类来测试代码，在\inlinefile{tests/test_calc.py}中，编写如下测试代码：
+正常情况下，我们应该通过测试类来测试代码，在\inlinefile{tests/test\_calc.py}中，编写如下测试代码：
 
 \begin{minted}{python}
 # tests/test_core.py
@@ -444,7 +444,7 @@ def fetch_data(endpoint):
     pass
 \end{minted}
 
-这种职责清晰的模块划分不仅提高了代码的可读性，也便于协作和维护。例如，当需要修改文件处理逻辑时，开发者只需关注 \inlinefile{file_processor.py} 模块，而不会意外影响到数据库或API相关的功能。
+这种职责清晰的模块划分不仅提高了代码的可读性，也便于协作和维护。例如，当需要修改文件处理逻辑时，开发者只需关注 \inlinefile{file\_processor.py} 模块，而不会意外影响到数据库或API相关的功能。
 
 \subsection{低耦合：减少模块依赖}
 
@@ -578,7 +578,7 @@ docs/
 \begin{itemize}
     \item {布局演进与适用场景}：从单文件、扁平布局到src布局，项目结构应随复杂度渐进演进。扁平布局适合简单脚本，src布局通过物理隔离确保测试可靠性，更适合长期维护和分发的项目。
     
-    \item {关键技术机制}：src布局需结合\inlinecmd{pip install -e .}进行可编辑安装；命名空间包（PEP 420）支持跨仓库模块化，需省略\inlinefile{__init__.py}文件。
+    \item {关键技术机制}：src布局需结合\inlinecmd{pip install -e .}进行可编辑安装；命名空间包（PEP 420）支持跨仓库模块化，需省略\inlinefile{\_\_init\_\_.py}文件。
     
     \item {模块化设计原则}：高内聚聚焦单一职责，低耦合通过依赖注入减少模块依赖，共同提升代码可维护性与可测试性。
     

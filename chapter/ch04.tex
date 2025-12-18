@@ -385,7 +385,7 @@ class Rock:
 
 \inlinepython{Protocol} 的核心价值在于它提供了显式的接口定义，使得类型检查器能够验证类是否实现了协议要求的所有方法。同时，它保持了鸭子类型的灵活性——任何实现了协议方法的类都自动符合协议，无需修改类定义。正如上面的代码中并没有采用\inlinepython{Apple(EdibleAndJuiceable)}这种继承语法明确指定继承关系，但\inlinepython{isinstance(apple, EdibleAndJuiceable)}依然返回\inlinepython{True}。
 
-通过 \mintinline{python}{Protocol}，我们最终能够实现真正的类型安全的鸭子类型，在灵活性和可靠性之间达到平衡。在实际开发中，\inlinepython{Protocol}特别适用于定义插件系统接口、为第三方库的类添加类型注解、创建可互换的组件接口等场景。它让 Python 在保持动态语言灵活性的同时，获得了静态类型语言的接口安全保证。
+通过 \inlinepython{Protocol}，我们最终能够实现真正的类型安全的鸭子类型，在灵活性和可靠性之间达到平衡。在实际开发中，\inlinepython{Protocol}特别适用于定义插件系统接口、为第三方库的类添加类型注解、创建可互换的组件接口等场景。它让 Python 在保持动态语言灵活性的同时，获得了静态类型语言的接口安全保证。
 
 \subsection{类型别名与 NewType：简化复杂声明}
 
@@ -611,7 +611,7 @@ Found 1 error in 1 file (checked 1 source file)
 
 Mypy提供了灵活的配置机制\footnote{\url{https://mypy.readthedocs.io/en/stable/config\_file.html}}，用于更改默认的类型检查行为，并支持多种配置文件格式，如：\inlinefile{mypy.ini}、\inlinefile{setup.cfg}、\inlinefile{pyproject.toml}等。
 
-对于采用\inlinefile{pyproject.toml}管理的项目，推荐在的\inlinepython{[tool.mypy]} 节中进行配置。例如，Mypy对于未指定返回类型的函数，默认不会给出类型检查报错信息，但通过指定\mintinline{toml}{disallow_untyped_defs = true}，可以强制要求函数必须指定返回类型。
+对于采用\inlinefile{pyproject.toml}管理的项目，推荐在的\inlinepython{[tool.mypy]} 节中进行配置。例如，Mypy对于未指定返回类型的函数，默认不会给出类型检查报错信息，但通过指定\variable{disallow\_untyped\_defs = true}，可以强制要求函数必须指定返回类型。
 
 以下列出若干关键配置选项及其作用：
 
@@ -918,7 +918,7 @@ uv add "fastapi[all]" uvicorn
 uv tool install httpie
 \end{minted}
 
-将上面的代码保存为 \inlinefile{demo_pydantic.py}，然后启动服务：
+将上面的代码保存为 \inlinefile{demo\_pydantic.py}，然后启动服务：
 
 \begin{minted}{bash}
 # 启动开发服务器

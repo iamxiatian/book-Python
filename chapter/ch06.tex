@@ -81,7 +81,7 @@ print(result_fp)   # 输出: [4, 8]
 
 \subsection{高阶函数：map、filter与推导式}
 
-高阶函数是函数式编程的核心工具。Python内置了\mintinline{python}{map}、\mintinline{python}{filter}等函数，同时提供了推导式语法，为函数式编程提供了多种表达方式。
+高阶函数是函数式编程的核心工具。Python内置了\inlinepython{map}、\inlinepython{filter}等函数，同时提供了推导式语法，为函数式编程提供了多种表达方式。
 
 \heading{基础应用}
 
@@ -107,7 +107,7 @@ print(evens_comprehension)    # 输出: [2, 4]
 
 \heading{惰性求值优势}
 
-\mintinline{python}{map}和\mintinline{python}{filter}返回的是迭代器，支持惰性求值，这在处理大数据时可以显著节省内存。
+\inlinepython{map}和\inlinepython{filter}返回的是迭代器，支持惰性求值，这在处理大数据时可以显著节省内存。
 
 \begin{minted}[escapeinside=||]{python}
 # 生成大量数据
@@ -154,7 +154,7 @@ print(flattened)  # 输出: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 \begin{itemize}
     \item {列表推导式}：代码简洁直观，适合中小规模数据的立即处理。
     
-    \item {map/filter}：适合处理流式数据或大数据集，如\mintinline{python}{map(process, large_dataset)}，利用惰性求值节省内存。
+    \item {map/filter}：适合处理流式数据或大数据集，如\inlinepython{map(process, large\_dataset)}，利用惰性求值节省内存。
     
     \item {字典/集合推导式}：创建映射或去重集合时的首选工具。
     
@@ -170,7 +170,7 @@ print(flattened)  # 输出: [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 \heading{偏函数的基本使用}
 
-Python通过 \mintinline{python}{functools.partial} 函数支持偏函数功能，让我们通过一个实际场景来理解其应用。
+Python通过 \inlinepython{functools.partial} 函数支持偏函数功能，让我们通过一个实际场景来理解其应用。
 
 假设我们有一个水果处理函数，它需要多个参数来描述处理方式：
 
@@ -415,9 +415,9 @@ config = AppConfig()
 # print(config.settings['debug'])
 \end{minted}
 
-\heading{方法二：基于\mintinline{python}{__new__}方法实现}
+\heading{方法二：基于\inlinepython{\_\_new\_\_}方法实现}
 
-这是最常见的单例实现方式，通过重写类的 \mintinline{python}{__new__} 方法来控制实例的创建过程。
+这是最常见的单例实现方式，通过重写类的 \inlinepython{\_\_new\_\_} 方法来控制实例的创建过程。
 
 \begin{minted}{python}
 class SingletonByNew:
@@ -1124,7 +1124,7 @@ test_dip()
 
 依赖反转原则彻底解耦了高层策略与底层细节，使系统核心业务逻辑独立于任何具体的技术选型。这极大提升了代码的可测试性（可通过Mock实现测试）、可维护性和可扩展性。
 
-\section*{本章总结与进阶思考}
+\section{本章总结与进阶思考}
 
 设计模式和编程范式并非银弹，而是经验的结晶与沟通的桥梁。通过掌握Python独特的函数式特性、领悟经典设计模式的精髓、并运用SOLID原则进行持续重构，你将能够超越实现功能的层面，步入设计系统的领域。
 
@@ -1136,8 +1136,5 @@ test_dip()
     \item SOLID 原则：让每个类/模块只做一件事，职责清晰（SRP）；通过抽象和多态对扩展开放，对修改封闭（OCP）；确保子类能够无缝替换父类，保证继承关系的合理性（LSP）；设计精炼的接口，避免客户端依赖不需要的方法（ISP）；依赖抽象而非具体实现，并通过依赖注入管理依赖关系（DIP）。
 \end{itemize}
 
-\textbf{实践建议：}
-
-Python 是一门多范式语言。在追求函数式纯度或严格OO设计时，应权衡可读性、团队习惯和项目需求。通常，混合范式能产生最佳实践。此外，设计模式为解决特定问题提供了模板，但生搬硬套会导致过度设计。理解其意图和适用场景比记住实现细节更重要。
 
 \textbf{进阶思考：}在构建大型、高并发的应用时，仅有良好的静态设计是不够的。性能、并发与异步处理常常成为新的瓶颈与挑战。我们已经建立了清晰的代码结构与设计规范，下一阶段，我们将深入 Python 的运行时机制，探索如何利用并发、异步编程以及底层性能优化技巧，使我们的系统不仅在结构上优雅，在运行时也能高效、稳健。
