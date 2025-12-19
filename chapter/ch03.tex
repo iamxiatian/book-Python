@@ -1,8 +1,9 @@
 \chapter{项目结构的规范化组织}
-
+\label{ch:project:structure}
 清晰一致的项目结构是工程可维护性的基石。杂乱无章的文件布局会严重拖慢新成员的上手速度，并增加长期维护的复杂性。Python语法规范严格，但项目结构却十分灵活。这种灵活性虽然便于针对不同场景设计项目，但也容易让新手感到困惑\citep{kyle2023layouts}。因此，本章将介绍现代Python项目的几种主流结构，并探讨模块化设计的基本原则。
 
 \section{项目结构的组织方式}
+\label{ch:project:structure:way}
 
 在Python发展的早期阶段，项目结构往往较为随意，开发者通常将源代码直接放置在项目根目录下。随着Python生态的成熟和项目复杂度的增加，这种简单的方式逐渐暴露出诸多问题，促使社区形成了更加规范化的项目组织方式。理解这一演进历程，有助于我们更好地把握当前最佳实践背后的设计哲学。
 
@@ -170,8 +171,7 @@ from src import my_package #即时能导入，但这是错误的做法
     测试代码应该专注于业务逻辑的验证，而不是包含复杂的环境配置逻辑。这种代码会使得测试文件变得混乱且难以阅读。
 \end{itemize}
 
-因此，\textem{永远不要在测试代码中修改 \variable{sys.path}}。正确的做法始终是保持测试代码的纯净，并通过标准的 \inlinecmd{pip install -e .} 来让环境自动处理包的发现与导入。
-
+因此，\textem{永远不要在测试代码中修改 \variable{sys.path}}。正确的做法始终是保持测试代码的纯净，并通过标准的 \inlinecmd{pip install -e .} 来让环境自动处理包的发现与导入。关于测试文件在src布局下的具体组织方式，包括测试文件与源代码的对应关系等详细内容，请参见第\ref{subsec:testing-organization}节。
 
 \subsection{大型项目的结构组织：命名空间包}
 
@@ -216,7 +216,7 @@ fxb-ui/
 \end{minted}
 
 
-在使用这种结构时，必须严格遵守以下原则：
+在使用这种结构时，必须严格遵循以下原则：
 
 \begin{itemize}
     \item 不要创建 \inlinefile{src/fxb/\_\_init\_\_.py}
@@ -511,25 +511,122 @@ my-project/
 \end{minted}
 
 \subsection{测试文件的专业组织}
+\label{subsec:testing-organization}
 
-测试文件的规范化组织对于保证测试的可维护性和可执行性至关重要。Python社区的测试实践主要受到JUnit和xUnit模式的影响，逐渐形成了清晰的约定。
+测试文件是项目结构的重要组成部分，其规范化组织对项目的可维护性和测试的可执行性至关重要。本节重点介绍测试目录在项目中的基本组织原则，关于测试框架、Mocking、覆盖率等具体技术细节将在第\ref{ch:testing}章中详细探讨。
 
-推荐的测试目录组织结构如下：
+\heading{测试目录的基本组织结构}
+
+在Python项目中，测试文件通常统一放置在项目根目录下的 \inlinefile{tests/} 目录中。这种集中管理的方式便于开发工具和CI/CD流程的自动发现和处理。根据项目规模和复杂度，可以选择以下两种基本结构：
+
+\circled{1} 扁平结构：所有测试文件直接放在 \inlinefile{tests/} 目录下。
+
+\begin{minted}{text}
+my_project/
+├── src/
+│   └── my_package/
+│       └── module.py
+└── tests/
+    ├── test_module.py
+    └── test_another.py
+\end{minted}
+
+\circled{2} 镜像结构：测试文件目录结构完全镜像源代码结构。
+
+\begin{minted}{text}
+my_project/
+├── src/
+│   └── my_package/
+│       ├── subpackage/
+│       │   └── module.py
+│       └── utils.py
+└── tests/
+    └── my_package/
+        ├── subpackage/
+        │   └── test_module.py
+        └── test_utils.py
+\end{minted}
+
+结构选择建议：
+
+\begin{itemize}
+    \item 小型项目：可直接使用扁平结构，简单直观。
+    \item 中大型项目：建议采用镜像结构，便于维护和避免命名冲突。
+\end{itemize}
+
+\heading{大型项目的分层目录组织结构}
+
+测试领域有一个测试金字塔（Test Pyramid）理念（详细内容见第\ref{subsec:test-pyramid}节），为匹配该理念，还可以按照如下方式建立分层子目录，对测试相关文件进行分类组织：
 
 \begin{minted}{text}
 tests/
-├── unit/                 # 单元测试
-│   ├── test_models.py
-│   ├── test_services.py
-│   └── test_utils.py
-├── integration/          # 集成测试
-│   ├── test_api.py
-│   └── test_database.py
-├── conftest.py           # 配置
-└── __init__.py
+├── unit/           # 单元测试（快速、隔离）
+├── integration/    # 集成测试（组件交互）
+└── e2e/           # 端到端测试（用户工作流）
 \end{minted}
 
-测试文件应该统一放置在根目录的\inlinefile{tests/}目录中，遵循\inlinefile{test\_*.py}的命名规范，便于测试框架自动发现。合理的测试目录结构应该区分单元测试和集成测试，为不同类型的测试提供独立的运行环境。如果项目比较简单，也可以直接将测试文件放在\inlinefile{tests/}目录下。
+这种分层组织既有助于开发人员快速定位问题的具体类型，清晰区分是单元逻辑错误还是系统集成问题；也能够优化测试执行策略，例如在日常开发阶段仅需运行单元测试即可满足基础验证需求；同时还能对不同层次的测试依赖关系以及对应的环境配置进行系统化管理。
+
+不过，测试金字塔这种分层测试策略，更适配模块划分清晰、耦合度低的大型复杂结构化项目或者重视代码质量与可维护性的长期协作项目；而对于生命周期短的小型一次性项目、高度依赖前端交互的展示类应用，或是需求频繁变更且模块边界不稳定的项目，测试金字塔的适配性则较低，投入产出比不高。
+
+\heading{测试文件命名约定}
+
+遵循一致的命名约定是测试可维护性的基础：
+\begin{itemize}
+    \item 测试文件：应以\inlinefile{test\_} 开头，如\inlinefile{test\_module.py}；
+    \item 测试函数：应以\inlinepython{test\_} 开头，描述测试目的，如\inlinepython{test\_add\_numbers()}；
+    \item 测试类：应以\inlinepython{Test} 开头，如\inlinepython{TestStringUtil}。
+\end{itemize}
+
+\heading{导入路径的最佳实践}
+
+在测试文件中，应使用绝对导入方式引用被测试模块，如：
+
+\begin{minted}{python}
+from my_package.module import some_function
+
+def test_some_function():
+    result = some_function()
+    assert result == expected_value
+\end{minted}
+
+这种方式要求项目已通过 \inlinecmd{pip install -e .} 以可编辑模式安装，确保Python解释器能够正确找到源代码模块。
+
+\heading{配置文件的基本设置}
+
+为确保测试能够正确运行，应在项目根目录配置测试运行环境。以下是最基本的 \inlinefile{pytest.ini} 配置示例：
+
+\begin{minted}{ini}
+# pytest.ini
+[pytest]
+testpaths = tests
+pythonpath = src
+\end{minted}
+
+或通过\inlinefile{pyproject.toml} 配置：
+
+\begin{minted}{toml}
+# pyproject.toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+\end{minted}
+
+\heading{测试文件组织的原则}
+
+测试文件组织是项目结构设计的重要环节，在实践中可参考如下原则：
+
+\begin{itemize}
+    \item {集中管理}：将所有测试文件统一集中管理，放置在tests/目录下；
+    \item {结构清晰}：根据项目规模灵活选择扁平或镜像的目录结构，确保整体架构清晰有序；
+    \item {分层组织}：大型复杂项目可以按照测试类型划分出unit、integration、e2e等子目录，实现分层组织；
+    \item {命名规范}：遵循一致的命名约定；
+    \item {配置简洁}：通过配置文件设置基本测试路径，简化后续的测试配置流程。
+\end{itemize}
+
+关于测试框架的高级用法（如固件管理、参数化测试、Mocking、覆盖率分析等）将在第\ref{ch:testing}章详细展开。在实际项目中，建议团队根据项目规模和协作需求，制定并遵循统一的测试组织规范。
+
+
 
 \subsection{文档的持续维护策略}
 
@@ -555,19 +652,19 @@ docs/
 
 \section{项目结构的实践建议}
 
-在实际项目开发中，项目结构的选择应该基于项目的生命周期、团队规模和分发需求，可遵循以下原则：
-
-\begin{itemize}
-    \item {渐进式演进}：项目结构不是一锤子买卖，而应跟着项目成长曲线动态调整。起步阶段只保留最简骨架，能跑通代码和测试即可；当功能膨胀、团队协作人数上升，再逐步拆分层次、划定边界，避免在项目初期过度设计。
-    \item {团队一致性}：无论多少人参与，团队先得把目录怎么起名、模块怎么引用、文档放哪里等问题形成共识，避免每人按自己习惯命名，统一项目结构规范，确保协作效率。
-    \item {工具适配性}：选择适合团队技术栈和工具链的项目结构，如采用uv作为构建工具，支持Makefile、Docker等，确保项目结构与工具链无缝集成。
-    \item {持续优化}：定期评审项目结构，根据实际需求变化进行调整，保持项目结构的灵活性和可扩展性。
-\end{itemize}
-
 初学者在构建 Python 项目时，常会踩中过早优化结构的坑：还没写几行代码就急着把目录拆成深层级的 src、core、utils，结果每次新建文件都要在多层文件夹里来回跳转，反而拖慢开发节奏。最简单的办法是只用一级或两级目录把当前功能放下即可，等真正出现文件太多不好查找的情况再进行拆分。
 
 导入路径混乱也是初学者常遇到的问题，一会儿\inlinepython{from ..utils import foo}，一会儿\inlinepython{from src.utils import foo}，路径混乱，换台机器或跑个 pytest就报ImportError。解决这一问题的简单办法是采用\inlinefile{pyproject.toml}和uv等工具，把包安装到虚拟环境，采用\inlinepython{from my\_project.utils import foo}这种形式的绝对导入方式。
 
+在实际项目开发中，项目结构的选择应该基于项目的生命周期、团队规模和分发需求，可遵循以下原则：
+
+一是采取渐进式演进策略。项目结构不是一锤子买卖，而应跟着项目成长曲线动态调整。起步阶段只保留最简骨架，能跑通代码和测试即可；当功能膨胀、团队协作人数上升，再逐步拆分层次、划定边界，避免在项目初期过度设计。
+
+二是确保团队一致性。无论多少人参与，团队先得把目录怎么起名、模块怎么引用、文档放哪里等问题形成共识，避免每人按自己习惯命名，统一项目结构规范，确保协作效率。
+
+三是选择合适的工具。选择适合团队技术栈和工具链的项目结构，如采用uv作为构建工具，支持Makefile、Docker等，确保项目结构与工具链无缝集成。
+
+最后，践行持续优化理念。定期评审项目结构，根据实际需求变化进行调整，保持项目结构的灵活性和可扩展性。
 
 \section{本章总结与进阶思考}
 
