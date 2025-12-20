@@ -1,0 +1,909 @@
+\chapter{专业的单元测试与集成测试}
+\label{ch:testing}
+
+测试是软件工程中确保代码质量、验证系统行为并驱动设计优化的重要实践。在Python生态中，测试不仅是开发流程中的验证环节，更是提升代码可维护性、促进团队协作的关键手段。本章将探讨Python测试的核心概念、主流工具与高级实践，构建清晰、高效且可维护的测试体系。
+
+\section{测试的价值与层次化测试策略}
+
+软件测试在传统认知中常被视为开发完成后的验证环节，如同制造流程中的质量检验。然而，现代软件工程实践已将其提升至更为核心的地位——测试不仅是发现缺陷的工具，更是驱动设计、规范行为、构建信心的系统工程方法。
+
+\subsection{测试的多维价值}
+
+要真正理解测试的重要性，我们可以借鉴其他工程领域的实践。在桥梁建设中，工程师不仅会在完工后进行载荷测试，更会在设计阶段通过模拟计算验证结构强度。这种验证前置的理念同样适用于软件开发。测试的价值体现在四个关键维度：
+
+首先，测试是设计验证工具。当编写测试时，开发者必须明确回答一个基本问题：``这段代码应该如何工作？''这种思考迫使开发者从接口而非实现的角度考虑问题，往往能催生出更清晰、更合理的API设计。
+
+其次，测试是行为规范文档。相比于易过时的文字文档，测试代码始终与实现保持同步，是系统行为的活文档。新加入项目的开发者可以通过阅读测试代码快速理解系统的预期行为。
+
+第三，测试是变更安全网。在持续演进的系统中，修改代码往往伴随着引入新风险的可能。完善的测试套件能够及时捕捉到行为偏差，为重构和功能扩展提供信心保障。
+
+最后，测试是进度度量工具。测试覆盖率、通过率等指标为项目进展提供了客观的测量维度。当所有测试通过时，开发者可以确信现有功能完好；当需要添加新功能时，测试驱动的方法能够清晰界定完成的标准。
+
+\subsection{测试驱动开发理念}
+
+测试驱动开发（Test-Driven Development, TDD）颠覆了传统的先实现后测试的工作流程，倡导测试先行的哲学。TDD遵循``红--绿--重构''的循环（Red -- Green -- Refactor），即：首先编写一个失败的测试（红），然后实现最简单的代码使测试通过（绿），最后优化代码结构而不改变其行为（重构）。
+
+例如，在实现一个字符串反转功能时，TDD的循环可如下展开：
+
+\begin{minted}{python}
+# 红阶段：编写一个尚未实现的测试
+def test_reverse_string():
+    assert reverse_string("非小白") == "白小非"
+
+# 绿阶段：实现最简单方案
+def reverse_string(s):
+    return s[::-1]
+
+# 重构阶段：优化代码质量
+def reverse_string(s):
+    """反转字符串，支持空字符串和None"""
+    if s is None:
+        return None
+    return s[::-1]
+\end{minted}
+
+TDD不仅适用于单元测试，也可用于集成测试与验收测试。其关键不是"先写测试"，而是让测试引导你写代码。每一次红绿重构循环，都是对系统设计的一次演进。
+
+\subsection{测试金字塔：构建分层质量保障}
+\label{subsec:test-pyramid}
+
+由Mike Cohn提出的测试金字塔（Test Pyramid）是一个经典的分层测试模型\citep{Cohn2009}。如图\ref{fig:test-pyramid}所示，测试金字由底层的单元测试、中层的集成测试和顶层的端到端测试构成。该模型强调测试数量应随层次升高而递减，以保证测试套件的执行效率与维护性。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/test_pyramid.pdf}
+\caption{测试金字塔模型}
+\label{fig:test-pyramid}
+\end{figure}
+
+从现代视角来看，测试金字塔在命名和某些理念层面过于简化，但其核心思想仍然具有重要指导意义，其精髓在于两条核心要义：编写不同粒度的测试，以及层次越高，测试数量应越少。
+
+\heading{单元测试：质量的基石}
+
+位于金字塔底层的单元测试数量最多、执行最快。它们验证独立代码单元在隔离环境中的行为，如同制造业中的零部件检验。单元测试的特点在于其聚焦性，每个测试仅关注一个特定的行为或逻辑路径，这使得失败时能够精确定位问题源头。
+
+优秀的单元测试应遵循如下FIRST原则\citep{first2025}：
+
+\begin{itemize}
+    \item Fast（快速）：毫秒级执行时间，支持频繁运行；
+    \item Isolated（隔离）：不依赖外部环境或执行顺序；
+    \item Repeatable（可重复）：在任何环境中结果一致；
+    \item Self-validating（自验证）：自动判断通过与否；
+    \item Timely（及时）：与实现代码同步编写。
+\end{itemize}
+
+在测试驱动开发中，单元测试通常是红绿重构循环的直接产物。它们为开发者提供即时反馈，是保证代码质量的第一道防线。
+
+\heading{集成测试：验证协作接口}
+
+集成测试位于金字塔中层，验证多个组件协同工作的正确性。这类测试关注接口契约、数据流和控制流，确保组件集成后能够按设计协作。
+
+\heading{端到端测试：验证用户价值}
+
+金字塔顶层的端到端测试从用户视角验证完整业务流程。这类测试模拟真实用户操作，遍历关键路径，确保系统作为一个整体交付了预期价值。
+
+如测试金字塔的形状所示，有效的测试策略应遵循70/20/10原则：70\%的测试资源投入单元测试，20\%投入集成测试，10\%投入端到端测试。这种分层结构既保证了测试覆盖率，又控制了测试执行时间。
+
+
+\section{测试的基本元素}
+
+无论使用何种测试框架，测试的核心都由断言（Assertion）和测试用例（Test Case）构成。理解这两个基本元素是编写任何测试的前提。
+
+\subsection{断言：自动化的验证机制}
+
+断言是测试中用于验证条件是否为真的语句。Python使用\inlinepython{assert} 关键字实现断言，若条件为假则抛出\inlinepython{AssertionError}。断言取代了人工检查输出结果的方式，实现了验证过程的自动化。
+
+\begin{minted}{python}
+# 断言的基本语法
+assert 条件, "可选的错误信息"
+
+# 示例
+x = 5
+y = 10
+assert x < y, f"预期{x}小于{y}，但实际并非如此"
+\end{minted}
+
+断言的工作原理可以理解为：
+\begin{enumerate}
+    \item 评估条件表达式
+    \item 如果条件为真，程序继续正常执行
+    \item 如果条件为假，抛出 AssertionError 并停止当前测试
+\end{enumerate}
+
+\heading{断言的常见用法}
+
+\begin{minted}{python}
+# 1. 相等性断言
+result = calculate_something()
+assert result == expected_value
+
+# 2. 真实性断言（检查是否为真）
+is_valid = validate_input(user_input)
+assert is_valid
+
+# 3. 包含性断言
+data = [1, 2, 3, 4, 5]
+assert 3 in data
+
+# 4. 类型断言
+value = get_value()
+assert isinstance(value, int)
+
+# 5. 异常断言（检查是否抛出特定异常）,pytest的详细信息见下文
+import pytest
+def test_divide_by_zero():
+    with pytest.raises(ZeroDivisionError):
+        result = 1 / 0
+\end{minted}
+
+\heading{为什么使用断言而不是 print 语句？}
+
+初学者常常会问：为什么不能直接使用 print 语句来检查代码是否正确？比较以下两种方式：
+
+\begin{minted}{python}
+# 方式1：使用print语句（不推荐）
+def add(a, b):
+    return a + b
+
+result = add(2, 3)
+print(f"结果是: {result}")  # 需要人工检查输出是否正确
+# 输出: 结果是: 5
+
+# 方式2：使用断言（推荐）
+def add(a, b):
+    return a + b
+
+result = add(2, 3)
+assert result == 5  # 自动检查，失败时会报错
+\end{minted}
+
+可见，断言的优点在于：
+\begin{itemize}
+    \item 自动化验证：无需人工检查输出结果
+    \item 快速失败：一旦发现错误立即停止，避免继续执行错误的代码
+    \item 明确意图：断言清晰地表达了"这个结果应该是..."的预期
+\end{itemize}
+
+\subsection{测试用例：组织测试的基本单元}
+
+测试用例（Test Case）是一组相关的测试，用于验证某个特定功能或行为。在Python测试中，测试用例通常以函数或类的形式组织。
+
+\heading{测试函数：最简单的测试用例}
+
+最简单的测试用例就是一个以 \inlinepython{test\_} 开头的普通函数：
+
+\begin{minted}{python}
+# 测试函数示例
+def test_addition():
+    """测试加法功能"""
+    # 准备测试数据
+    a = 1
+    b = 2
+    
+    # 执行被测代码
+    result = a + b
+    
+    # 验证结果
+    assert result == 3
+\end{minted}
+
+\heading{测试类：组织相关测试}
+
+当需要测试一个类的多个方法或多个相关功能时，可以使用测试类来组织测试用例：
+
+\begin{minted}{python}
+# 被测试的类
+class Calculator:
+    def add(self, a, b):
+        return a + b
+    
+    def subtract(self, a, b):
+        return a - b
+
+# 测试类示例
+class TestCalculator:
+    """测试计算器类的功能"""
+    
+    def test_add_positive_numbers(self):
+        """测试正数加法"""
+        calc = Calculator()
+        result = calc.add(2, 3)
+        assert result == 5
+    
+    def test_add_negative_numbers(self):
+        """测试负数加法"""
+        calc = Calculator()
+        result = calc.add(-2, -3)
+        assert result == -5
+    
+    def test_subtract_numbers(self):
+        """测试减法"""
+        calc = Calculator()
+        result = calc.subtract(10, 3)
+        assert result == 7
+\end{minted}
+
+\subsection{测试用例的命名规范}
+
+良好的命名规范可以让测试代码更易读、易维护。以下是推荐的命名约定：
+
+\begin{minted}{python}
+# 测试文件命名
+# 文件应放在 tests/ 目录下，以 test_ 开头或 _test 结尾
+# tests/test_calculator.py
+# tests/calculator_test.py
+
+# 测试函数命名
+def test_addition():           # 测试某个功能
+def test_add_positive_numbers():  # 更具体地描述测试场景
+def test_add_with_zero():      # 描述边界条件
+def test_add_raises_error():   # 测试异常情况
+
+# 测试类命名
+class TestCalculator:          # 测试某个类
+class TestStringMethods:       # 测试某个模块的方法
+class TestUserAuthentication:  # 测试某个功能模块
+\end{minted}
+
+\subsection{测试的"三段式"结构}
+
+良好的测试用例通常遵循"准备-执行-验证"的三段式结构，也称为"Arrange-Act-Assert"模式：
+
+\begin{minted}{python}
+def test_user_registration():
+    """测试用户注册功能"""
+    # 1. 准备阶段 (Arrange)
+    username = "test_user"
+    email = "user@example.com"
+    password = "secure_password123"
+    
+    # 2. 执行阶段 (Act)
+    user = register_user(username, email, password)
+    
+    # 3. 验证阶段 (Assert)
+    assert user.username == username
+    assert user.email == email
+    assert user.is_active is True
+    assert user.registered_date is not None
+\end{minted}
+
+这种结构的好处是：
+\begin{itemize}
+    \item \textbf{清晰分离}：每个阶段职责明确，代码易于理解
+    \item \textbf{易于调试}：当测试失败时，可以快速定位问题出现在哪个阶段
+    \item \textbf{可维护性高}：修改测试时，只需关注相关阶段
+\end{itemize}
+
+\subsection{测试覆盖率与测试质量}
+
+编写测试时，不仅要考虑代码是否被测试，还要考虑测试的质量。以下是提高测试质量的几个要点：
+
+\begin{minted}{python}
+# 1. 测试正常路径
+def test_add_normal():
+    assert add(2, 3) == 5
+
+# 2. 测试边界条件
+def test_add_edge_cases():
+    assert add(0, 0) == 0      # 零值
+    assert add(-5, 5) == 0     # 正负抵消
+    assert add(1.5, 2.5) == 4  # 浮点数
+
+# 3. 测试异常情况
+def test_add_with_invalid_input():
+    with pytest.raises(TypeError):
+        add("2", 3)  # 类型错误
+\end{minted}
+
+\subsection{从零开始编写你的第一个测试}
+
+让我们通过一个完整的例子，看看如何从零开始编写测试：
+
+\begin{minted}{python}
+# 第一步：编写要测试的代码
+# calculator.py
+def divide(a, b):
+    """安全的除法函数，处理除零错误"""
+    if b == 0:
+        raise ValueError("除数不能为零")
+    return a / b
+
+# 第二步：编写测试
+# test_calculator.py
+import pytest
+
+def test_divide_normal():
+    """测试正常除法"""
+    result = divide(10, 2)
+    assert result == 5
+
+def test_divide_by_one():
+    """测试除以1"""
+    result = divide(7, 1)
+    assert result == 7
+
+def test_divide_zero_by_number():
+    """测试0除以某个数"""
+    result = divide(0, 5)
+    assert result == 0
+
+def test_divide_negative_numbers():
+    """测试负数除法"""
+    result = divide(-10, 2)
+    assert result == -5
+
+def test_divide_by_zero():
+    """测试除零异常"""
+    with pytest.raises(ValueError) as exc_info:
+        divide(10, 0)
+    assert "除数不能为零" in str(exc_info.value)
+
+def test_divide_floats():
+    """测试浮点数除法"""
+    result = divide(5.5, 2.2)
+    assert abs(result - 2.5) < 0.0001  # 使用容差比较浮点数
+\end{minted}
+
+\subsection{小结：测试思维的核心要点}
+
+理解断言和测试用例后，你已经掌握了测试的核心思维。记住以下几个关键点：
+
+\begin{itemize}
+    \item \textbf{测试即验证}：测试的本质是验证代码行为是否符合预期
+    \item \textbf{断言是核心}：使用断言来自动化验证过程
+    \item \textbf{结构要清晰}：遵循"准备-执行-验证"的三段式结构
+    \item \textbf{命名要明确}：测试名称应该清晰描述测试目的
+    \item \textbf{覆盖要全面}：不仅要测试正常情况，还要考虑边界条件和异常情况
+\end{itemize}
+
+掌握了这些基本概念后，你将能够理解任何测试框架的工作原理，并开始编写自己的测试代码。测试框架（如pytest）只是提供了更强大的工具来组织、运行和管理这些测试用例，但其核心仍然是断言和测试用例这两个基本元素。
+
+
+
+
+\section{测试框架}
+
+Python测试生态系统经历了从unittest到nose，再到pytest的演进过程。这一演进反映了社区对更高效、更优雅测试实践的追求。如今，pytest以其简洁的设计和强大的扩展能力，已成为现代Python项目测试的事实标准。
+
+\subsection{测试框架的演进脉络}
+
+\heading{unittest：Python标准库的基础支持}
+
+Python标准库中的unittest模块为测试提供了基础支持，其设计深受Java的JUnit框架影响。unittest采用基于类的组织方式，要求测试用例必须继承\inlinepython{unittest.TestCase}类。
+
+\begin{minted}{python}
+# unittest示例：必须继承TestCase类
+import unittest
+
+class TestMath(unittest.TestCase):
+    def test_addition(self):
+        self.assertEqual(1 + 1, 2)
+    
+    def test_subtraction(self):
+        self.assertEqual(3 - 1, 2)
+\end{minted}
+
+unittest的主要价值在于作为Python标准库的一部分，无需额外安装即可使用。然而，其语法相对繁琐，需要继承特定类并使用\inlinepython{assertEqual}、\inlinepython{assertTrue}等专门的断言方法，不如Python原生的\inlinepython{assert}语句直观。
+
+
+\heading{nose与nose2：简化的测试运行器}
+
+随着unittest的使用日益广泛，社区开发了nose框架，旨在提供更简洁的测试发现和运行体验。nose通过插件机制增强了测试框架的可扩展性，允许使用简单函数作为测试用例：
+
+\begin{minted}{python}
+# nose/nose2支持使用简单函数作为测试用例
+def test_addition():
+    assert 1 + 1 == 2  # 可以直接使用assert语句
+
+def test_subtraction():
+    assert 3 - 1 == 2
+\end{minted}
+
+随着nose项目在2015年后逐渐停止活跃维护，其继任者nose2随之诞生。nose2扩展了unittest以改善测试体验，但它与nose并不完全兼容，且主要作为unittest的增强版而非全新框架。尽管nose2仍在维护，但其社区规模和插件生态相对有限，大部分项目已转向更加现代化和功能丰富的测试框架。
+
+\heading{pytest：现代测试框架的集大成者}
+
+pytest在吸收前代框架优点的基础上，进行了全面的重新设计，确立了现代Python测试框架的新标准。它不仅支持使用原生的assert语句，还引入了固件（Fixture）系统、参数化测试等创新特性，极大地提升了测试的编写效率和可维护性。
+
+
+\subsection{pytest的核心特性与使用方法}
+
+\heading{简洁的语法设计}
+
+pytest最大的优势在于其极简的语法设计。与unittest相比，pytest允许使用普通的Python函数编写测试用例，直接使用原生的\inlinepython{assert}语句进行断言。
+
+\begin{minted}{python}
+# unittest方式 - 需要继承TestCase，使用专用断言方法
+import unittest
+
+class TestMath(unittest.TestCase):
+    def test_add(self):
+        self.assertEqual(1 + 1, 2)  # 必须使用assertEqual方法
+
+# pytest方式 - 更简洁直观，使用原生assert
+def test_add():
+    assert 1 + 1 == 2  # 直接用Python的assert语句
+\end{minted}
+
+
+\heading{强大的固件系统}
+
+pytest的固件（Fixture）系统为测试环境的准备和清理提供了优雅的解决方案。固件支持函数、类、模块、会话等不同的作用域，开发者可根据资源初始化成本和测试需求选择合适的作用域，实现高效的资源管理。
+
+\begin{minted}{python}
+import pytest
+
+# 定义一个固件，用于准备测试数据
+@pytest.fixture
+def sample_data():
+    # 准备阶段：创建测试数据
+    data = [1, 2, 3, 4, 5]
+    return data
+
+# 测试函数可以通过参数声明需要使用哪些固件
+def test_sum(sample_data):  # pytest会自动注入sample_data固件
+    # 执行阶段：计算总和
+    result = sum(sample_data)
+    # 断言阶段：验证结果
+    assert result == 15
+\end{minted}
+
+
+\heading{参数化测试}
+
+pytest内置的参数化测试功能允许开发者使用同一测试逻辑验证多组输入数据，极大提升了测试的覆盖效率与代码复用率。
+
+\begin{minted}{python}
+import pytest
+
+@pytest.mark.parametrize("input_a,input_b,expected", [
+    (1, 2, 3),      # 测试用例1：1+2=3
+    (0, 0, 0),      # 测试用例2：0+0=0
+    (-1, 1, 0),     # 测试用例3：-1+1=0
+    (100, 200, 300),# 测试用例4：大数相加
+])
+def test_addition_multiple_cases(input_a, input_b, expected):
+    result = input_a + input_b
+    assert result == expected
+\end{minted}
+
+
+\subsubsection{丰富的插件生态系统}
+
+pytest拥有活跃的插件生态系统，覆盖了测试开发的各个方面，例如：
+
+\begin{itemize}
+    \item {测试覆盖率：} pytest-cov插件支持生成详细的覆盖率报告
+    \item {并行执行：} pytest-xdist支持多进程/多线程并行测试
+    \item {Mocking支持：} pytest-mock简化了模拟对象的创建和管理
+\end{itemize}
+
+这种模块化设计使得开发者可以根据项目需求灵活组合功能，无需重新发明轮子。
+
+
+\heading{优秀的测试发现与执行能力}
+
+pytest的智能测试发现机制能自动识别并运行测试代码，支持多种测试组织结构。pytest会自动查找文件名以\inlinepython{test\_}开头或结尾的文件，以及函数名以\inlinepython{test\_}开头的测试函数：
+
+\begin{minted}{bash}
+# 自动发现并运行所有测试
+pytest
+
+# 运行特定测试文件
+pytest tests/test_core.py
+
+# 运行特定测试函数
+pytest tests/test_core.py::test_addition
+
+# 按标记运行测试
+pytest -m "integration"
+\end{minted}
+
+\heading{良好的向后兼容性}
+
+pytest保持了良好的向后兼容性，可以无缝运行现有的unittest测试代码，降低了框架切换的成本。
+
+\begin{minted}{python}
+# pytest可以正常运行unittest风格的测试
+import unittest
+
+class TestLegacyCode(unittest.TestCase):
+    def test_old_style(self):
+        self.assertEqual(1, 1)
+
+# 无需修改即可用pytest运行
+# 命令行: pytest test_legacy.py
+\end{minted}
+
+
+
+\subsection{实践建议}
+
+pytest通过简洁的语法设计、强大的固件系统、灵活的参数化测试、丰富的插件生态、智能的测试发现、良好的兼容性以及与现代开发流程的深度集成，确立了其作为现代Python测试框架的主流地位。
+
+与unittest、nose等测试框架相比，pytest提供了更现代化的测试体验：更少的样板代码、更强大的功能、更活跃的社区和更广阔的发展前景。对于追求高质量代码和高效开发流程的Python项目，pytest已成为不可或缺的基础设施。
+
+无论你是测试新手还是经验丰富的开发者，pytest都能为你提供适合的工具和模式，帮助你构建可靠、可维护的测试套件，从而打造更高质量的Python应用程序。
+
+
+
+在现代Python项目中，pytest不仅是测试运行工具，更是测试驱动开发（TDD）和持续集成（CI）流程的核心组成部分：
+
+\begin{itemize}
+    \item \textbf{开发流程集成：} 与编辑器和IDE深度集成，支持实时测试反馈
+    \item \textbf{CI/CD流水线：} 提供详细的测试报告和覆盖率分析，便于质量监控
+    \item \textbf{团队协作标准：} 成为团队测试规范的共同基础，降低协作成本
+\end{itemize}
+
+
+
+
+\section{编写高质量测试}
+
+高质量的测试不仅要求功能正确，还应具备良好的可维护性、可读性和执行效率。下面将探讨如何使用Mock技术隔离外部依赖、如何构建可维护的测试套件，以及如何通过设计模式提升代码的可测试性。
+
+\subsection{使用Mock隔离外部依赖}
+
+在实际软件系统中，代码单元往往依赖于数据库、API服务或文件系统等外部资源。单元测试的核心目标是验证当前代码的逻辑正确性，而非测试外部依赖的可用性，因此必须隔离这些不稳定的外部依赖——这既能保证测试结果的确定性，即不因外部资源变化而失败，也能提升测试执行速度。
+
+\heading{unittest.mock模块与patch()函数}
+
+Python标准库中的\inlinepython{unittest.mock}模块提供了模拟（Mock）对象的能力，其核心设计思想是``用可控的模拟对象替代真实依赖''，让单元测试能够专注于验证业务逻辑的正确性，而不受外部依赖的不确定性影响。该模块中最核心、最常用的工具是\inlinepython{patch()}函数，它允许在测试的作用域内，临时将目标对象（函数、方法或类）替换为模拟对象，测试结束后自动恢复原对象，确保测试之间的独立性。
+
+\circled{1} 示例：模拟天气API调用
+
+下面以调用第三方天气API获取城市温度为例，展示\inlinepython{patch()}的用法。创建文件\inlinefile{weather.py}，并编写{get\_weather()}函数，用于调用天气API获取指定城市的温度：
+
+\begin{minted}{python}
+# file: src/fxb/ch10/weather.py （保存文件路径）
+import requests
+
+def get_weather(city):
+    """调用天气API获取指定城市的温度，失败时返回None"""
+    try:
+        url = f"https://api.weather.com/city/{city}"
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            return response.json().get("temperature") 
+        else:
+            return None
+    except requests.exceptions.RequestException as e:
+        return None
+\end{minted}
+
+在测试中，我们需要模拟API调用的行为而非实际发送网络请求，此时可以使用\inlinepython{patch()}实现对\inlinepython{get\_weather}中\inlinepython{requests.get}的模拟：
+
+\begin{minted}{python}
+# file: tests/fxb/ch10/test_weather.py
+import unittest
+from unittest.mock import patch
+import requests
+from fxb.ch10.weather import get_weather
+
+class TestWeatherAPI(unittest.TestCase):
+    @patch("requests.get")  # 临时替换requests.get为模拟对象
+    def test_get_weather_success(self, mock_get):
+        """测试场景1：API调用成功，返回正确温度"""
+        # 1. 配置模拟对象的行为：模拟成功响应
+        mock_response = (
+            mock_get.return_value
+        )  # 模拟requests.get返回的Response对象
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"temperature": 25.5}
+
+        # 2. 调用被测函数
+        result = get_weather("北京")
+
+        # 3. 验证核心逻辑与依赖调用
+        self.assertEqual(result, 25.5)  # 验证温度计算正确
+        # 验证requests.get被调用时传入了正确的参数
+        mock_get.assert_called_once_with(
+            "https://api.weather.com/city/北京", timeout=5
+        )
+
+    @patch("requests.get")
+    def test_get_weather_failure(self, mock_get):
+        """测试场景2：API返回非200状态码，返回None"""
+        # 配置模拟对象：模拟404失败响应
+        mock_response = mock_get.return_value
+        mock_response.status_code = 404
+
+        result = get_weather("不存在的城市")
+        self.assertEqual(result, None)  # 验证异常场景处理正确
+
+    @patch("requests.get")
+    def test_get_weather_network_error(self, mock_get):
+        """测试场景3：网络超时异常，返回None"""
+        # 配置模拟对象：模拟网络超时异常
+        mock_get.side_effect = requests.exceptions.Timeout
+
+        result = get_weather("上海")
+        self.assertEqual(result, None)  # 验证异常捕获逻辑正确
+
+if __name__ == "__main__":
+    unittest.main()
+\end{minted}
+
+运行测试：
+
+\begin{minted}{shell}
+# 激活虚拟环境
+source .venv/bin/activate
+
+# 运行测试
+python tests/fxb/ch10/test_weather.py
+\end{minted}
+
+测试结果：
+
+\begin{minted}{text}
+get_weather
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+\end{minted}
+
+
+测试结果表明，通过使用\inlinepython{patch()}装饰器，我们成功将\inlinepython{get\_weather()}函数中实际调用的\inlinepython{requests.get}方法替换为模拟对象，并设置了预设的返回值，从而验证了不同场景下的业务逻辑正确性。
+
+\circled{2} 核心用法解析
+
+\begin{itemize}
+    \item 装饰器路径指定： \inlinepython{@patch("模块路径.目标对象")}装饰器是\inlinepython{patch()}最常用的形式。参数需传入被测代码中实际引用目标对象的完整路径。如示例中的\inlinepython{@patch("requests.get")}，表示模拟了requests的get请求函数。
+    
+    \item 模拟对象注入： 测试函数的第一个参数会自动接收\inlinepython{patch()}创建的模拟对象（如示例中的\inlinepython{mock\_get}）。通过该对象可配置返回值、异常等行为。
+    
+    \item 行为配置方式：
+    \begin{itemize}
+        \item \inlinepython{mock\_obj.return\_value}：设置模拟对象被调用时的返回值。如示例中模拟\inlinepython{requests.get}返回的\inlinepython{Response}对象。
+        \item \inlinepython{mock\_obj.side\_effect}：设置模拟对象被调用时的附加行为，如抛出异常。示例中模拟了网络超时异常。
+    \end{itemize}
+    
+    \item 调用验证： 模拟对象提供了丰富的断言方法，如\inlinepython{assert\_called\_once\_with()}，用于验证依赖是否被正确调用（包括参数、调用次数等），确保业务逻辑的完整性。
+\end{itemize}
+
+使用\inlinepython{unittest.mock.patch()}进行Mocking测试具有多方面的核心优势：首先，其出色的隔离性确保了测试不依赖真实的网络或API服务，即使外部服务不可用，测试仍能稳定执行；其次，它能够轻松模拟``成功、失败、异常''等各种边界场景，覆盖真实环境中难以复现的情况，实现全面测试；再次，由于无需等待实际网络请求或I/O操作，测试执行效率得到大幅提升；最后，它有效避免了测试过程中调用真实API可能导致的扣费、数据污染等实际问题。通过上述示例可以看出，\inlinepython{unittest.mock.patch()}是单元测试中隔离外部依赖的强有力工具，使测试更加可靠、高效且易于维护。
+
+
+\heading{使用pytest-mock简化Mocking}
+
+虽然Python标准库的unittest.mock功能完整，但在使用pytest时，直接使用\inlinepython{patch()}装饰器会存在一些不便，例如：装饰器嵌套层级深、模拟对象参数顺序易混淆、手动管理上下文繁琐等。pytest-mock是pytest的官方扩展插件，它对unittest.mock进行了轻量级封装，提供了更简洁、更符合pytest风格的Mocking方式，核心优势是无需手动导入patch、无需处理装饰器嵌套、通过fixture统一管理模拟对象。
+
+\circled{1} 安装pytest-mock插件
+
+可通过如下命令安装：
+
+\begin{minted}{bash}
+# 使用uv管理依赖
+uv add pytest-mock --dev
+
+# 或使用uv pip
+uv pip install pytest-mock
+\end{minted}
+
+\circled{2} 使用pytest-mock重构天气API测试
+
+基于上文的天气API业务代码，使用pytest-mock重写测试用例，对比其简洁性：
+
+\begin{minted}{python}
+# 无需导入unittest.mock.patch，仅需导入pytest和业务依赖
+import pytest
+import requests
+from your_module import get_weather  # 假设业务代码在your_module.py中
+
+def test_get_weather_success(mocker):
+    """测试场景1：API调用成功（使用pytest-mock）"""
+    # 1. 通过mocker.patch创建模拟对象（替代unittest的@patch装饰器）
+    mock_get = mocker.patch("your_module.requests.get")
+    
+    # 2. 配置模拟对象行为（逻辑与unittest.mock完全一致）
+    mock_response = mock_get.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"temperature": 25.5}
+    
+    # 3. 调用被测函数并验证
+    result = get_weather("北京")
+    assert result == 25.5
+    mock_get.assert_called_once_with("https://api.weather.com/city/北京", timeout=5)
+
+def test_get_weather_failure(mocker):
+    """测试场景2：API返回404（使用pytest-mock）"""
+    mock_get = mocker.patch("your_module.requests.get")
+    mock_response = mock_get.return_value
+    mock_response.status_code = 404
+    
+    result = get_weather("不存在的城市")
+    assert result is None
+
+def test_get_weather_network_error(mocker):
+    """测试场景3：网络超时（使用pytest-mock）"""
+    mock_get = mocker.patch("your_module.requests.get")
+    mock_get.side_effect = requests.exceptions.Timeout
+    
+    result = get_weather("上海")
+    assert result is None
+\end{minted}
+
+\circled{3} 核心优势与用法解析
+
+\begin{itemize}
+    \item mocker fixture：pytest-mock提供了内置的mocker fixture，无需手动导入任何Mock相关类，直接在测试函数参数中声明即可使用；
+    \item \inlinepython{mocker.patch()}：功能等价于\inlinepython{unittest.mock.patch}，但无需使用装饰器/上下文管理器，代码层级更清晰，尤其适合多模拟对象场景（避免装饰器嵌套）；
+    \item 完全兼容unittest.mock：mocker创建的模拟对象与unittest.mock的Mock对象完全一致，支持\inlinepython{return\_value}、\inlinepython{side\_effect}、\inlinepython{assert\_called\_once\_with()}等所有方法，学习成本极低；
+    \item 更灵活的模拟对象管理：mocker还提供了\inlinepython{mocker.Mock()}、\inlinepython{mocker.MagicMock()}等快捷方法，可直接创建模拟对象，替代手动导入unittest.mock的对应类；
+    \item 自动清理：pytest-mock会在测试结束后自动清理所有模拟对象，无需手动恢复，避免测试用例之间的副作用。
+\end{itemize}
+
+
+\subsection{通过参数化测试减少重复代码}
+
+当需要对同一功能测试多组输入数据时，参数化测试可以显著减少代码重复。pytest的\texttt{@pytest.mark.parametrize}装饰器支持这一功能：
+
+\begin{minted}{python}
+import pytest
+
+def safe_divide(a, b):
+    """安全除法函数，处理除零异常"""
+    if b == 0:
+        raise ValueError("除数不能为零")
+    return a / b
+
+# 测试正常除法场景
+@pytest.mark.parametrize("a, b, expected", [
+    (10, 2, 5),
+    (9, 3, 3),
+    (0, 5, 0),
+])
+def test_divide_normal(a, b, expected):
+    assert safe_divide(a, b) == expected
+
+# 测试异常场景
+@pytest.mark.parametrize("a, b", [
+    (1, 0),
+    (5, 0),
+])
+def test_divide_by_zero(a, b):
+    with pytest.raises(ValueError) as exc_info:
+        safe_divide(a, b)
+    assert "除数不能为零" in str(exc_info.value)
+\end{minted}
+
+\subsection{分析测试覆盖率}
+
+测试覆盖率是衡量测试完备性的重要指标，它反映了有多少源代码在测试执行过程中被实际运行。pytest通过\texttt{pytest-cov}插件支持覆盖率分析：
+
+\begin{minted}{bash}
+# 安装覆盖率插件
+pip install pytest-cov
+
+# 运行测试并生成覆盖率报告
+pytest --cov=src --cov-report=term-missing --cov-report=html
+\end{minted}
+
+其中\texttt{--cov=src}指定要分析覆盖率的源代码目录，\texttt{--cov-report=term-missing}在终端输出未覆盖的代码行，\texttt{--cov-report=html}生成HTML格式的详细报告。
+
+需要强调的是，高覆盖率并不等同于高质量的测试。覆盖率只能说明代码被执行过，但不能保证所有边界条件和异常场景都得到了充分测试。因此，覆盖率应作为测试质量的参考指标之一，而非唯一目标。
+
+\subsection{依赖注入模式提升可测试性}
+
+最易于测试的代码往往在设计阶段就考虑了可测试性。依赖注入（Dependency Injection）是一种重要的设计模式，它通过将依赖关系从代码内部移至外部，显著提高了代码的可测试性。
+
+\subsubsection{依赖注入的基本原理}
+
+依赖注入的核心思想是：组件不应该自己创建它所依赖的对象，而是应该由外部提供这些依赖。最常见的实现方式是构造函数注入：
+
+\begin{minted}{python}
+# 未使用依赖注入的设计
+class OrderProcessor:
+    def __init__(self):
+        # 内部直接创建依赖
+        self.payment_gateway = PaymentGateway()
+        self.inventory_system = InventorySystem()
+    
+    def process_order(self, order):
+        # 使用内部依赖处理订单
+        self.payment_gateway.charge(order.total)
+        self.inventory_system.update_stock(order.items)
+
+# 使用依赖注入的设计
+class OrderProcessor:
+    def __init__(self, payment_gateway, inventory_system):
+        # 依赖通过参数传入
+        self.payment_gateway = payment_gateway
+        self.inventory_system = inventory_system
+    
+    def process_order(self, order):
+        self.payment_gateway.charge(order.total)
+        self.inventory_system.update_stock(order.items)
+\end{minted}
+
+\subsubsection{pytest固件作为依赖注入容器}
+
+pytest的固件系统天然支持依赖注入模式。测试函数通过参数声明所需的依赖，pytest会自动解析并提供相应的固件实例：
+
+\begin{minted}{python}
+import pytest
+from unittest.mock import Mock
+
+@pytest.fixture
+def mock_payment_gateway():
+    gateway = Mock()
+    gateway.charge.return_value = True
+    return gateway
+
+@pytest.fixture
+def mock_inventory_system():
+    system = Mock()
+    system.update_stock.return_value = True
+    return system
+
+def test_order_processing(mock_payment_gateway, mock_inventory_system):
+    """使用模拟依赖测试订单处理"""
+    processor = OrderProcessor(mock_payment_gateway, mock_inventory_system)
+    test_order = Order(total=100, items=["item1", "item2"])
+    
+    result = processor.process_order(test_order)
+    
+    # 验证依赖被正确调用
+    mock_payment_gateway.charge.assert_called_once_with(100)
+    mock_inventory_system.update_stock.assert_called_once_with(["item1", "item2"])
+\end{minted}
+
+\subsection{集成测试}
+
+与单元测试关注隔离环境中的单个组件不同，集成测试验证多个组件协同工作的正确性。在pytest中，可以通过组合真实依赖或使用更高级的测试替身来实现集成测试。
+
+\subsubsection{使用真实依赖进行集成测试}
+
+对于某些组件，使用真实依赖进行集成测试是必要的。例如，测试数据库访问层时，可能需要连接到一个测试数据库：
+
+\begin{minted}{python}
+import pytest
+import sqlite3
+
+@pytest.fixture(scope="module")
+def test_database():
+    """创建测试数据库连接"""
+    conn = sqlite3.connect(":memory:")
+    # 初始化测试数据
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)")
+    conn.execute("INSERT INTO users (name) VALUES ('Alice'), ('Bob')")
+    conn.commit()
+    yield conn
+    conn.close()
+
+def test_user_count(test_database):
+    """集成测试：验证数据库查询"""
+    cursor = test_database.cursor()
+    cursor.execute("SELECT COUNT(*) FROM users")
+    count = cursor.fetchone()[0]
+    assert count == 2
+\end{minted}
+
+\subsubsection{集成测试与单元测试的平衡}
+
+在实践中，合理的测试策略需要在单元测试和集成测试之间取得平衡。单元测试应该覆盖大部分业务逻辑，因为它们执行快、隔离性好，能够快速反馈问题。集成测试则专注于验证组件间的关键交互，确保系统作为一个整体能够正常工作。
+
+一个好的经验法则是遵循"测试金字塔"原则：大量快速的单元测试构成基础，中等数量的集成测试作为中间层，少量端到端测试位于顶层。这种结构能够在保证测试质量的同时，最大化测试套件的执行效率。
+
+
+
+
+
+\section{本章总结}
+
+本章系统探讨了Python测试领域的核心概念与实践方法。我们首先明确了单元测试与集成测试的本质差异：单元测试关注隔离环境下单个组件的正确性，而集成测试验证多个组件协同工作的效果。
+
+在测试方法论方面，我们介绍了测试驱动开发（TDD）的红-绿-重构循环，以及测试金字塔模型的分层策略。这些方法论为测试实践提供了理论指导。
+
+在测试工具方面，我们深入分析了pytest框架的设计哲学及其相较于传统unittest框架的优势。pytest的简洁语法、强大的固件系统和丰富的插件生态使其成为现代Python项目的首选测试框架。
+
+针对测试文件组织，我们重点从pytest框架的角度探讨了测试金字塔理念的实现、固件的组织与管理，以及pytest配置优化。关于项目结构中测试文件的组织原则已在第\ref{ch:project:structure}章详细讨论。
+
+针对测试依赖管理，我们介绍了Mocking技术和依赖注入模式。通过unittest.mock或更简洁的pytest-mock，可以有效地隔离外部依赖，编写快速、稳定的单元测试。依赖注入则从设计层面提高了代码的可测试性，使得测试更加灵活和可维护。
+
+在测试质量提升方面，参数化测试减少了重复代码，测试覆盖率分析提供了量化指标。最后，我们探讨了集成测试的策略与实践，强调了在单元测试与集成测试之间取得平衡的重要性。
+
+专业的测试不仅是技术实践，更是一种思维方式和设计导向。通过将测试思维融入开发全过程，我们不仅能构建更加可靠的软件系统，还能推动代码设计走向更高的模块化、更低的耦合度。希望本章的内容能够帮助读者建立完整的测试知识体系，并在实际项目中应用这些专业的测试方法与工具。

@@ -142,7 +142,7 @@
 
 \titleformat{\paragraph}[hang]{\large\bfseries}{\theparagraph}{.8em}{\hspace{1em}$\blacksquare$ #1}
 
-\setCJKmainfont{SourceHanSansCN-Light}
+%\setCJKmainfont{STSong}
 
 \newenvironment{block}[2]{\color{#1} \vspace{0.3cm} #2 \vspace{0.5cm} }{}
 
@@ -197,11 +197,11 @@
 \setdescription{itemsep=0pt,partopsep=0pt,parsep=\parskip,topsep=0pt}
 
 %自定义的一些命令，方便使用
-\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+\newcommand*\circled[1]{\vspace{3pt}\tikz[baseline=(char.base)]{
   \node[shape=circle,draw,inner sep=1.5pt] (char) {#1};}}
 
 % 利用pifont在heading前加上方框符号
-\newcommand{\heading}[1]{  {\vspace{4pt} \color{darkgray}\ding{111} \textbf{#1}} \vspace{2pt}}
+\newcommand{\heading}[1]{  {\vspace{5pt} \color{darkgray}\noindent ~~ \ding{111} \textbf{#1}} \vspace{3pt}}
 
 \newcommand{\inlinecmd}[1]{ \colorbox{blue!5}{#1} }
 \newcommand{\inlinefile}[1]{ \colorbox{orange!10}{#1} }
@@ -299,22 +299,22 @@
 			\vspace{4em}
 	  	}
 	\normalsize{}
-	\part{环境与依赖管理}
-	\include{chapter/ch01}
-	\include{chapter/ch02}
+	% \part{环境与依赖管理}
+	% \include{chapter/ch01}
+	% \include{chapter/ch02}
 	\include{chapter/ch03}
-	\part{类型、质量与设计模式}
-	\include{chapter/ch04}
- 	\include{chapter/ch05}
-	\include{chapter/ch06}
-	\part{并发、异步与性能优化}
-	\include{chapter/ch07}
-	\include{chapter/ch08}
-	\include{chapter/ch09}
-	\part{测试、配置与可观测性}
+	% \part{类型、质量与设计模式}
+	% \include{chapter/ch04}
+ 	% \include{chapter/ch05}
+	% \include{chapter/ch06}
+	% \part{并发、异步与性能优化}
+	% \include{chapter/ch07}
+	% \include{chapter/ch08}
+	% \include{chapter/ch09}
+	% \part{测试、配置与可观测性}
 	\include{chapter/ch10}
-	\include{chapter/ch11}
-	\include{chapter/ch12}
+	% \include{chapter/ch11}
+	% \include{chapter/ch12}
 	% \part{Git与工程协作流程}
 	% \include{chapter/ch13}
 	% \include{chapter/ch14}
