@@ -517,29 +517,38 @@ my-project/
 
 \heading{测试目录的基本组织结构}
 
-在Python项目中，测试文件通常统一放置在项目根目录下的 \inlinefile{tests/} 目录中。这种集中管理的方式便于开发工具和CI/CD流程的自动发现和处理。根据项目规模和复杂度，可以选择以下两种基本结构：
+在Python项目中，测试文件通常统一放置在项目根目录下的 \inlinefile{tests/} 目录中。这种集中管理的方式便于开发工具和CI/CD流程的自动发现和处理。根据项目规模和复杂度，常见的测试目录结构可分为以下几种：
 
-\circled{1} 扁平结构：所有测试文件直接放在 \inlinefile{tests/} 目录下。
+\circled{1} 扁平结构
+
+所有测试文件直接放在 \inlinefile{tests/} 目录下，适用于小型项目，简单直观。
 
 \begin{minted}{text}
 my_project/
 ├── src/
 │   └── my_package/
+│       ├── __init__.py
 │       └── module.py
 └── tests/
     ├── test_module.py
     └── test_another.py
 \end{minted}
 
-\circled{2} 镜像结构：测试文件目录结构完全镜像源代码结构。
+\circled{2} 完全的镜像结构
+
+测试文件的目录层级与源代码结构保持一致，便于中大型项目的维护与模块对应。
+
+完整的镜像组织方式如下：
 
 \begin{minted}{text}
 my_project/
 ├── src/
 │   └── my_package/
-│       ├── subpackage/
-│       │   └── module.py
-│       └── utils.py
+│       ├── __init__.py
+│       ├── utils.py
+│       └── subpackage/
+│           ├── __init__.py
+│           └── module.py
 └── tests/
     └── my_package/
         ├── subpackage/
@@ -547,12 +556,29 @@ my_project/
         └── test_utils.py
 \end{minted}
 
-结构选择建议：
+注意：若在\inlinefile{tests/}下完整复制源码的包结构，并包含\inlinefile{__init__.py}，则可能因\inlinefile{tests/}与\inlinefile{src/}目录下的包名冲突导致\inlinepython{ModuleNotFoundError}。
 
-\begin{itemize}
-    \item 小型项目：可直接使用扁平结构，简单直观。
-    \item 中大型项目：建议采用镜像结构，便于维护和避免命名冲突。
-\end{itemize}
+\circled{3} 精简的镜像结构
+
+基于完全镜像存在包名冲突的风险以及信息过于冗余两方面的考虑，笔者建议采用一种精简的镜像结构，即：
+仅镜像源码的模块与子包层级，省略顶层包目录。示例结构如下：
+
+\begin{minted}{text}
+my_project/
+├── src/
+│   └── my_package/
+│       ├── __init__.py
+│       ├── utils.py
+│       └── subpackage/
+│           ├── __init__.py
+│           └── module.py
+└── tests/
+    ├── subpackage/
+    │   └── test_module.py
+    └── test_utils.py
+\end{minted}
+
+本书后续示例将默认使用上述推荐的精简镜像结构进行项目组织。
 
 \heading{大型项目的分层目录组织结构}
 
