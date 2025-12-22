@@ -556,7 +556,7 @@ my_project/
         └── test_utils.py
 \end{minted}
 
-注意：若在\inlinefile{tests/}下完整复制源码的包结构，并包含\inlinefile{__init__.py}，则可能因\inlinefile{tests/}与\inlinefile{src/}目录下的包名冲突导致\inlinepython{ModuleNotFoundError}。
+注意：若在\inlinefile{tests/}下完整复制源码的包结构，并包含\inlinefile{\_\_init\_\_.py}，则可能因\inlinefile{tests/}与\inlinefile{src/}目录下的包名冲突导致\inlinepython{ModuleNotFoundError}。因此，在\inlinefile{tests/my\_package}下不要加入\inlinefile{\_\_init\_\_.py}，避免测试框架运行时出错。
 
 \circled{3} 精简的镜像结构
 
@@ -578,7 +578,7 @@ my_project/
     └── test_utils.py
 \end{minted}
 
-本书后续示例将默认使用上述推荐的精简镜像结构进行项目组织。
+此时，在\inlinefile{tests/subpackage}中是否加入\inlinefile{\_\_init\_\_.py}，都不会带来包名冲突问题。本书后续示例将默认使用上述推荐的精简镜像结构进行项目组织。
 
 \heading{大型项目的分层目录组织结构}
 
@@ -588,7 +588,7 @@ my_project/
 tests/
 ├── unit/           # 单元测试（快速、隔离）
 ├── integration/    # 集成测试（组件交互）
-└── e2e/           # 端到端测试（用户工作流）
+└── e2e/            # 端到端测试（用户工作流）
 \end{minted}
 
 这种分层组织既有助于开发人员快速定位问题的具体类型，清晰区分是单元逻辑错误还是系统集成问题；也能够优化测试执行策略，例如在日常开发阶段仅需运行单元测试即可满足基础验证需求；同时还能对不同层次的测试依赖关系以及对应的环境配置进行系统化管理。
