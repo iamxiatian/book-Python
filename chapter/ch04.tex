@@ -422,7 +422,7 @@ Python 3.10 引入了更现代化的类型别名语法，使用内置类型和 `
 \inlinepython{NewType}用于创建语义上不同的类型，防止逻辑错误的赋值，例如：
 
 \begin{minted}{python}
-# demo_newtype.py
+# file: newtype_demo.py
 from typing import NewType
 
 # 创建语义不同的类型
@@ -454,12 +454,12 @@ print(user_data)
 
 \begin{minted}{bash}
     # 直接运行，可以运行
-    python demo_newtype.py
+    python newtype_demo.py
     # 输出：{'user_id': 123, 'name': '小白'}
 
     # 使用mypy进行静态检查，会报错，可用于确定错误，提高代码健壮性
-    mypy demo_newtype.py
-    # demo_newtype.py:24: error: Argument 1 to "get_user_profile" has incompatible type "PostId"; expected "UserId"  [arg-type]
+    mypy newtype_demo.py
+    # newtype_demo.py:24: error: Argument 1 to "get_user_profile" has incompatible type "PostId"; expected "UserId"  [arg-type]
 \end{minted}
 
 这种机制特别适用于那些底层类型相同但语义不同的场景，如各种ID、邮箱地址、URL等。它能够在编译期提前捕获潜在的类型混淆错误，提高代码的可靠性和可维护性，同时\inlinepython{NewType} 创建的类型在运行时不会产生额外性能损耗，保持运行时的零开销。
@@ -522,7 +522,7 @@ def good_api() -> dict[str, str | int]:
 以下是\inlinepython{\# type: ignore}的一个使用示例：
 
 \begin{minted}{python}
-# demo_typeignore.py
+# file: typeignore_demo.py
 from typing import List
 
 # 创建一个整数列表的类型注解
@@ -918,11 +918,11 @@ uv add "fastapi[all]" uvicorn
 uv tool install httpie
 \end{minted}
 
-将上面的代码保存为 \inlinefile{demo\_pydantic.py}，然后启动服务：
+将上面的代码保存为 \inlinefile{pydantic\_demo.py}，然后启动服务：
 
 \begin{minted}{bash}
 # 启动开发服务器
-uv run uvicorn demo_pydantic:app --reload
+uv run uvicorn pydantic_demo:app --reload
 \end{minted}
 
 服务启动后，在{http://127.0.0.1:8000} 运行。现在可以使用 httpie 测试各个接口：
