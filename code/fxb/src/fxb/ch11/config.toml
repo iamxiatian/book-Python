@@ -1,0 +1,8 @@
+[database]
+url = "mysql://user:password@localhost:3306/mydb"
+timeout = 30
+
+[logging]
+level = "INFO"
+format = "%(asctime)s - %(levelname)s - %(message)s"
+handlers = ["console", "file"]

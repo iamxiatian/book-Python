@@ -1,0 +1,11 @@
+database:
+  url: "mysql://user:password@localhost:3306/mydb"
+  timeout: 30        # 超时时间（秒）
+
+# 日志配置
+logging:
+  level: "INFO"      # 日志级别
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  handlers:
+    - console
+    - file

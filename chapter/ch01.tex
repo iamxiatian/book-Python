@@ -145,7 +145,7 @@ source vllm/bin/activate
 \end{itemize}
 
 
-\section{本章总结与进阶思考}
+\section*{本章总结与进阶思考}
 
 理解虚拟环境的本质是掌握工程化的第一步。通过本章的学习，你应能清晰地解释venv和Conda的区别，并理解为什么环境隔离是构建健壮系统的前提。
 
@@ -158,4 +158,6 @@ source vllm/bin/activate
     \item {跨平台一致性}：使用现代化工具和环境标记解决平台差异。
 \end{itemize}
 
-\textbf{进阶思考：}即使使用了虚拟环境，如果依赖的版本号没有被精确锁定（例如只写\inlinepython{requests}而非\inlinepython{requests==2.31.0}），环境仍可能不一致。这正是下一章，现代依赖管理工具链和依赖锁定文件的核心价值所在。
+\textbf{进阶思考：}
+
+即使使用了虚拟环境，如果依赖的版本号没有被精确锁定（例如只写\inlinepython{requests}而非\inlinepython{requests==2.31.0}），环境仍可能不一致。这正是下一章，现代依赖管理工具链和依赖锁定文件的核心价值所在。

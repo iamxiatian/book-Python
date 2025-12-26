@@ -306,8 +306,7 @@ def main():
     print("环境配置完成，应用准备启动")
     print(f"调试模式: {debug_mode}")
 
-    # 这里可以继续启动应用逻辑
-    return True
+    # 这里可以继续启动应用逻辑...
 
 if __name__ == "__main__":
     main()
@@ -818,16 +817,15 @@ docker run -d \
   myapp:latest
 \end{minted}
 
-\heading{Kubernetes 中的配置管理}
+\heading{Kubernetes中的配置管理}
 
-Kubernetes 提供了更为完善的配置抽象：
+Kubernetes提供了更为完善的配置抽象，旨在将应用的配置与容器镜像解耦，实现配置的集中化管理、动态更新和安全隔离。Kubernetes提供了ConfigMap和Secret两种核心的配置抽象。
 
-\begin{itemize}
-    \item \variable{ConfigMap}：用于存储非敏感的配置数据，如日志级别、服务端点等。
-    \item \variable{Secret}：用于存储敏感信息，自动进行 Base64 编码，支持以环境变量或文件卷形式挂载至容器。
-\end{itemize}
+ConfigMap用于管理非敏感配置数据，它以键值对的形式存储应用运行所需的各类配置信息，比如日志级别、服务访问端点、配置文件内容、环境变量参数等，实现了应用配置与容器镜像的解耦，使得相同的镜像可以在开发、测试、生产等不同环境中通过挂载不同的ConfigMap实现差异化部署，同时支持以环境变量或存储卷的方式挂载到Pod容器内，方便应用读取，还能通过更新ConfigMap并联动Pod滚动更新实现配置的动态调整，无需重新构建和推送容器镜像。
 
-Kubernetes的配置管理更接近运维领域，Python初学者可以先了解其基本能力，具体操作可在需要时结合运维流程实现。
+Secret主要用于存放密码、OAuth 令牌、SSH 密钥、数据库访问凭证等不宜明文暴露的内容。它默认会对存储的数据进行Base64编码处理，提供基础的安全防护，同时在API层面具备更严格的访问控制和审计机制。与ConfigMap类似，Secret也支持以环境变量或存储卷的方式挂载到Pod容器中供应用使用，既保证了敏感信息的安全存储与传递，又维持了配置使用方式的一致性，避免了敏感信息硬编码到镜像或配置文件中带来的安全风险。
+
+Kubernetes的配置管理通常由运维或DevOps工程师负责，Python初学者可以了解其基本能力，需要时再结合工具来实现具体的配置管理。
 
 
 \subsection{配置验证与监控}
@@ -851,21 +849,108 @@ class AppSettings(BaseSettings):
 
 \heading{运行时监控与热重载}
 
-对于需要动态更新的配置，可引入热重载机制，在不重启应用的情况下更新配置。例如，使用 \variable{watchdog}库监听配置文件变化：
+在生产环境中，配置可能因业务需求或运维调整而发生变更。传统的做法是重启应用以加载新配置，但这会导致服务中断，影响用户体验与系统可用性。为避免因配置更新而频繁重启，可以引入热重载（Hot Reload）机制，使应用在运行时动态加载更新的配置，实现无缝切换。
+
+热重载不仅能提升系统的持续可用性，还能减少因误操作或测试配置而反复重启所浪费的时间，尤其适合需要高可用性的在线服务。
+
+以下是一个基于前文介绍的Pydantic Settings 配置类的热重载示例。该示例使用watchdog库监听配置文件变化，并在文件被修改时自动重新加载配置：
 
 \begin{minted}{python}
-# file: src/fxb/ch11/watch_demo.py
+# file: src/fxb/ch11/config_hot_reload.py
+import time
+from threading import Lock
+from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, MySQLDsn
 
-class ConfigReloadHandler(FileSystemEventHandler):
+MY_ENV_DIR = Path(".") # 监控的环境变量所在目录
+MY_ENV_FILES = [
+    (MY_ENV_DIR / ".env.pydantic").resolve(strict=False),
+    (MY_ENV_DIR / ".env.private").resolve(strict=False),
+]
+
+class DatabaseSettings(BaseSettings):
+    url: MySQLDsn = Field(...)
+    timeout: int = Field(30, ge=1)
+
+class AppSettings(BaseSettings):
+    database: DatabaseSettings
+    debug: bool = Field(False)
+    host: str = Field("0.0.0.0")
+    port: int = Field(8000, ge=1, le=65535)
+
+    model_config = SettingsConfigDict(
+        env_prefix="MYAPP_",
+        env_file=MY_ENV_FILES,
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
+
+class ConfigManager:
+    """配置管理器，支持热重载"""
+    def __init__(self):
+        self._settings = None
+        self._lock = Lock() # 线程安全锁
+        self._load_config()
+
+        # 设置文件监视
+        self.observer = Observer()
+        event_handler = ConfigFileHandler(self)
+        self.observer.schedule(event_handler, path=MY_ENV_DIR)
+        self.observer.start()
+
+    def _load_config(self):
+        """加载或重新加载配置"""
+        with self._lock:
+            try:
+                self._settings = AppSettings()
+                print("配置重新加载成功")
+            except Exception as e:
+                print(f"配置加载失败: {e}")
+
+    @property
+    def settings(self) -> AppSettings:
+        """获取当前配置（线程安全）"""
+        with self._lock:
+            return self._settings
+
+    def stop(self):
+        """停止文件监视"""
+        self.observer.stop()
+        self.observer.join()
+
+class ConfigFileHandler(FileSystemEventHandler):
+    """配置文件变更处理器"""
+    def __init__(self, config_manager: ConfigManager):
+        self.config_manager = config_manager
+
     def on_modified(self, event):
-        if event.src_path.endswith(".env"):
-            reload_config() # 配置重载
+        if Path(event.src_path).resolve(strict=False) in MY_ENV_FILES:
+            print(f"检测到配置文件变更: {event.src_path}")
+            self.config_manager._load_config()
+            # 输出最新配置
+            settings = self.config_manager.settings
+            print(f"[热重载] 端口: {settings.port}, 调试模式: {settings.debug}")
+
+if __name__ == "__main__":
+    manager = ConfigManager()
+
+    try:
+        # 模拟应用运行，每5秒打印当前配置
+        while True:
+            s = manager.settings
+            print(f"端口: {s.port}, 超时: {s.database.timeout}, 调试: {s.debug}")
+            time.sleep(5)
+    except KeyboardInterrupt:
+        manager.stop()
+        print("配置管理器已停止")
 \end{minted}
 
-此外，可在配置访问层加入日志或指标采集，记录配置项的读取情况、变更时间等，便于事后审计与问题追踪。
-
+该设计延续了前面已建立的Pydantic Settings配置模式，同时增强了配置的运行时灵活性，可作为生产环境配置模板供开发者参考。
 
 \subsection{配置管理最佳实践}
 
@@ -904,14 +989,17 @@ class ConfigReloadHandler(FileSystemEventHandler):
 
 \section*{本章总结与进阶思考}
 
-配置管理是生产级应用的基础设施，它决定了应用程序的灵活性、安全性和可维护性。本章从配置分离的重要性出发，系统介绍了环境变量、\texttt{.env}文件、结构化格式以及Pydantic Settings等核心工具与最佳实践。
+配置管理是生产级应用的基础设施，它决定了应用程序的灵活性、安全性和可维护性。本章从配置分离的重要性出发，系统介绍了环境变量、\variable{.env}文件、结构化格式以及Pydantic Settings等核心工具与最佳实践。在实际项目中，配置管理不仅仅是技术选择，更是团队协作和工程文化的体现。建立清晰的配置管理规范，培养团队成员的安全意识，将配置管理纳入开发流程和质量保证体系，这些都是构建可靠软件系统的重要组成部分。
 
 \textbf{关键要点回顾：}
-
-配置与代码分离是提升可移植性和安全性的基石。环境变量是实现配置外置化的标准方式，配合\texttt{.env}文件可在本地安全管理敏感信息。结构化配置格式（如YAML、TOML）适用于复杂配置，应根据团队习惯选择。Pydantic Settings提供了类型安全、多源加载的配置管理方案，极大提升了配置的可靠性和可维护性。生产环境应通过安全的机制注入配置，避免硬编码和明文存储。
+\begin{itemize}
+\item 配置与代码分离是提升可移植性和安全性的基石。
+\item 环境变量是实现配置外置化的标准方式，配合\variable{.env}文件可在本地安全管理敏感信息。\item 结构化配置格式（如YAML、TOML）适用于复杂配置，应根据团队习惯选择。
+\item Pydantic Settings提供了类型安全、多源加载的配置管理方案，极大提升了配置的可靠性和可维护性。
+\item 生产环境应通过安全的机制注入配置，避免硬编码和明文存储，并支持热加载功能。
+\end{itemize}
 
 \textbf{进阶思考：}
 
 随着微服务和云原生架构的普及，配置管理正朝着动态化、中心化的方向发展。如何利用配置中心实现配置的实时更新与分发？如何在多环境、多地域的部署中保证配置的一致性与安全性？配置如何与特性标志（Feature Flags）系统集成，实现渐进式交付和快速回滚？对这些问题的探索将引领我们进入更高级的配置管理实践。
 
-在实际项目中，配置管理不仅仅是技术选择，更是团队协作和工程文化的体现。建立清晰的配置管理规范，培养团队成员的安全意识，将配置管理纳入开发流程和质量保证体系，这些都是构建可靠软件系统的重要组成部分。
