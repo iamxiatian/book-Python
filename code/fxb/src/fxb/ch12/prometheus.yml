@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s  # 默认抓取间隔
+
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  
+  # 添加Python应用的抓取配置
+  - job_name: 'python_fastapi_app'
+    scrape_interval: 5s  # 每5秒抓取一次
+    static_configs:
+      # 目标地址：Python应用的地址（在Docker容器中访问宿主机）
+      - targets: ['host.docker.internal:5000']
