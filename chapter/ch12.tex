@@ -550,33 +550,7 @@ def setup_env_aware_logging():
     \item 生产环境：仅输出WARNING及以上级别日志，只记录到文件，采用JSON格式便于日志采集和分析，同时避免控制台输出带来的性能开销
 \end{itemize}
 
-以下是对应的使用示例：
-
-\begin{minted}{python}
-# file: src/fxb/main.py
-import os
-import structlog
-from fxb.ch12.env_aware_logging import setup_env_aware_logging
-
-if __name__ == "__main__":
-    # 设置环境变量（在实际项目中通过外部配置）
-    os.environ["APP_MODE"] = "dev"  # 或者：test, production
-
-    # 初始化日志配置
-    setup_env_aware_logging()
-    logger = structlog.get_logger(__name__)
-    # 测试不同级别的日志
-    logger.debug("Debug text", extra={"extra_key": "extra_value"})
-    logger.info("Info text")
-    logger.warning("Warning text", ip="192.168.1.100")
-
-    try:
-        1 / 0  # 故意引发除零错误
-    except ZeroDivisionError as e:
-        logger.error("Error text", exc_info=True, msg=str(e))
-\end{minted}
-
-在实际部署中，可以通过环境变量、配置文件、命令行参数或容器编排系统的配置机制，指定具体的运行环境。这种环境感知的配置策略确保了日志系统既能提供足够的调试信息，又能满足生产环境对性能和安全性的要求。
+综上，在实际部署中，可以通过环境变量、配置文件、命令行参数或容器编排系统的配置机制，指定具体的运行环境。这种环境感知的配置策略确保了日志系统既能提供足够的调试信息，又能满足生产环境对性能和安全性的要求。
 
 
 \subsection{日志框架选用建议}
