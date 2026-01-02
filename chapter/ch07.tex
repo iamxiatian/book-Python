@@ -34,7 +34,7 @@ GIL确保同一时刻只有一个线程执行Python代码，其释放时机包�
 
   \begin{tabular}{@{}>{\centering\arraybackslash}p{2.2cm} p{3cm} p{2.5cm} p{2.5cm}@{}}
     \toprule
-    任务类型 & 是否受GIL限制 & 并发推荐方案 & 性能表现 \\
+    \textbf{任务类型} & \textbf{是否受GIL限制} & \textbf{并发推荐方案} & \textbf{性能表现} \\
     \midrule
     I/O 密集型 & 否 & 多线程 & 高吞吐 \\
     CPU 密集型 & 是 & 多进程 & 真正并行 \\
@@ -243,7 +243,7 @@ if __name__ == "__main__":
   \label{tab:thread-sync}
     \begin{tabular}{@{}>{\centering\arraybackslash}p{2.2cm} p{6.5cm} p{4cm}@{}}
         \toprule
-        同步原语 & 特点 & 适用场景 \\
+        \textbf{同步原语} & \textbf{特点} & \textbf{适用场景} \\
         \midrule
         Lock & 互斥锁，同一时刻只能有一个线程获取锁 & 共享资源的互斥访问 \\
         RLock & 可重入锁，同一个线程可以多次获取锁 & 同一线程中需要多次加锁 \\

@@ -171,7 +171,7 @@ cProfile输出的报告包含多个重要指标\footnote{详细说明可参考�
   \label{tab:cprofile-metrics}
     \begin{tabular}{@{}p{3cm} p{4.5cm} p{5cm}@{}}
         \toprule
-        指标名称 & 含义 & 诊断意义 \\
+        \textbf{指标名称} & \textbf{含义} & \textbf{诊断意义} \\
         \midrule
         ncalls & 函数被调用的总次数 & 过多可能存在不必要的重复计算 \\
         tottime & 在指定函数中消耗的总时间（不包括调用子函数的时间） & 定位热点函数的关键指标，高值预示函数主要瓶颈 \\
@@ -951,7 +951,7 @@ itertools模块提供了一系列高效、内存友好的迭代器函数，它�
   \label{tab:itertools-functions}
     \begin{tabular}{@{}p{5cm} p{3.2cm} p{4.3cm}@{}}
         \toprule
-        函数名称 & 作用 & 性能优势 \\
+        \textbf{函数名称} & \textbf{作用} & \textbf{性能优势} \\
         \midrule
         {itertools.chain()} & 串联多个可迭代对象 & 避免创建巨大的合并列表 \\
         {itertools.islice()} & 对迭代器进行切片 & 无需将迭代器转为列表 \\

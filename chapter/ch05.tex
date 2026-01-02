@@ -20,7 +20,7 @@ Python生态中的代码质量工具经历了从分散到统一、从缓慢到�
   \label{ch5:tab:tool-evolution}
   \begin{tabular}{@{}>{\centering\arraybackslash}p{2.5cm} p{3cm} p{3cm} p{3cm}@{}}
     \toprule
-    特性 & \makecell{传统工具链\\(2010-2020)} & 过渡期工具 & \makecell{现代工具链\\(2020+)}  \\
+    \textbf{特性} & \makecell{\textbf{传统工具链}\\\textbf{(2010-2020)}} & \textbf{过渡期工具} & \makecell{\textbf{现代工具链}\\\textbf{(2020+)}}  \\
     \midrule
     格式化工具 & autopep8, yapf & Black & Black + Ruff 格式化 \\
     代码检查 & Flake8 + 插件 & Flake8 + Pylint & Ruff \\
@@ -335,7 +335,7 @@ target-version = "py312"
     \caption{EditorConfig常用属性}\label{tab:editorconfig-properties}
     \begin{tabular}{@{}>{\centering\arraybackslash}p{4cm} p{5cm} p{3cm}@{}}
     \toprule
-        {属性名} & {说明} & {常见取值} \\
+        \textbf{属性名} & \textbf{说明} & \textbf{常见取值} \\
     \midrule
         indent\_style & 缩进类型 & tab 或 space \\
         indent\_size & 缩进大小（空格数或 tab 宽度） & 数字，如 2、4 \\
@@ -707,7 +707,7 @@ git commit --no-verify -m "my commit message"
   \label{tab:cyclomatic-complexity}
   \begin{tabular}{@{}>{\centering\arraybackslash}p{2cm} p{3cm} p{3cm} p{3cm}@{}}
     \toprule
-    复杂度范围 & 可维护性 & 测试难度 & 重构建议 \\
+    \textbf{复杂度范围} & \textbf{可维护性} & \textbf{测试难度} & \textbf{重构建议} \\
     \midrule
     1-10 & 优秀 & 简单 & 保持现状 \\
     11-20 & 中等 & 中等 & 考虑拆分 \\

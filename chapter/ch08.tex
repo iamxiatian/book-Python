@@ -246,7 +246,7 @@ A 工作完成
   \label{tab:async-error-handling}
     \begin{tabular}{@{}>{\centering\arraybackslash}p{2cm} p{3cm} p{7cm}@{}}
         \toprule
-        问题类型 & 表现 & 处理策略 \\
+        \textbf{问题类型} & \textbf{表现} & \textbf{处理策略} \\
         \midrule
         超时 & 任务执行时间过长 & 使用asyncio.wait\_for() 设置超时 \\
         取消 & 任务需要被中断 & 捕获asyncio.CancelledError \\
@@ -499,7 +499,7 @@ if __name__ == "__main__":
   \label{tab:async-libraries}
     \begin{tabular}{@{}>{\centering\arraybackslash}p{2cm} p{4cm} p{6cm}@{}}
         \toprule
-        库名 & 类型 & 主要用途 \\
+        \textbf{库名} & \textbf{类型} & \textbf{主要用途} \\
         \midrule
         HTTPX & HTTP 客户端 & 支持HTTP/2的异步HTTP请求 \\
         FastAPI & Web 框架 & 异步Web框架 \\

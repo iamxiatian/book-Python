@@ -251,10 +251,9 @@ cut_apple(fruit_cutter, apple)
   \small
   \caption{协变与逆变核心特性对比}
   \label{ch2:tab:covariance:vs:contravariance}
-  %\begin{tabular}{@{}>{\texttt}p{2.0cm} p{5cm} p{5cm}@{}}
   \begin{tabular}{@{}>{\centering\arraybackslash\texttt}p{2.0cm} p{5cm} p{5cm}@{}}
     \toprule
-    特性   & 协变 (Covariance)    & 逆变 (Contravariance)                        \\
+    \textbf{特性}   & \textbf{协变 (Covariance)}    & \textbf{逆变 (Contravariance)}  \\
     \midrule
     定义 & $A <: B$ 蕴含 $Gen[A] <: Gen[B]$ & $A <: B$ 蕴含 $Gen[B] <: Gen[A]$\\
     通俗理解 & 子类的容器 $\approx$ 父类的容器  & 父类的处理器 $\approx$ 子类的处理器\\

@@ -655,7 +655,7 @@ uv pip install pytest-cov
 pytest --cov=src --cov-report=term-missing --cov-report=html
 \end{minted}
 
-其中，参数``--cov=src''指定要分析覆盖率的源代码目录，``--cov-report=term-missing''在终端输出未覆盖的代码行，``--cov-report=html''生成HTML格式的详细报告。
+其中，命令行参数``-{}-cov''指定了要分析覆盖率的源代码目录；``-{}-cov-report''用来指定覆盖率报告的输出格式与目的地，可以指定多个值，上例中``term-missing''表示在终端输出未覆盖的代码行，``html''表示生成HTML格式的详细报告。
 
 执行完毕后，在命令行会输出如下格式的分析结果：
 
