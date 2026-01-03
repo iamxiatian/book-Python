@@ -1,10 +1,10 @@
 \chapter{结构化日志、调试与可观测性}
 
-随着系统复杂度的提高，开发者面临着如何快速定位问题、理解系统运行状态以及保障系统稳定性的挑战。本章将探讨Python应用的可观测性（Observability）体系，内容侧重于开发者日常工作中最直接相关的日志记录与交互式调试技术，并对指标监控与分布式追踪的基本思想作初步阐述，帮助读者逐步建立系统的可观测能力。
+随着系统复杂度的提高，开发者面临着如何快速定位问题、理解系统运行状态以及保障系统稳定性的挑战。本章将探讨Python应用的可观测性体系，内容侧重于开发者日常工作中最直接相关的日志记录与交互式调试技术，并对指标监控与分布式追踪的基本思想作初步阐述，帮助读者逐步建立系统的可观测能力。
 
 \section{可观测性基础}
 
-传统软件开发多依赖简单的打印输出来理解程序行为，但随着系统规模扩大，这种方式已远不能满足需求。\textbf{可观测性（Observability）}\citep{observability2025}应运而生，它指的是通过系统外部输出来推断其内部状态的能力。与传统的监控（Monitoring）相比，可观测性更强调从系统外部视角主动发现问题，而非被动地等待警报。
+开发者常依赖简单的print语句来理解程序行为，但随着系统规模扩大，这种方式已远不能满足需求。\index{可观测性}\textbf{可观测性（observability）}\citep{observability2025}应运而生，它指的是通过系统外部输出来推断其内部状态的能力。与传统的监控相比，可观测性更强调从系统外部视角主动发现问题，而非被动地等待警报。
 
 \begin{figure}[htbp!]
     \centering
@@ -13,20 +13,20 @@
     \label{fig:observability}
 \end{figure}
 
-可观测性体系由图\ref{fig:observability}所示的三大支柱构成：
+可观测性体系包含如图\ref{fig:observability}所示的三大支柱，具体如下：
 
 \begin{itemize}
-    \item \textbf{日志（Logs）}：记录离散事件，描述``在某个时间点，系统发生了什么事情''。日志通常是结构化的文本或二进制记录，包含时间戳、日志级别、事件描述、上下文信息等。例如用户登录、数据库查询失败、异常堆栈信息等。日志是事后分析的主要依据，但通常不具备实时性。
-    \item \textbf{指标（Metrics）}：表示聚合的、可量化的数据，用于衡量``系统运行得如何''。指标通常是数值型的，如CPU使用率、请求响应时间、错误计数、队列长度等。指标支持实时聚合和可视化，适合用于监控面板、警报和趋势分析。
-    \item \textbf{追踪（Traces）}：记录单个请求在分布式系统中多个服务间的流转路径，描述``一个操作是如何发生的''。追踪通过唯一的Trace ID将跨服务边界的多个操作串联起来，形成调用链（Call Chain），常用于性能瓶颈分析和请求生命周期追踪。
+    \item \textbf{日志（Logs）}： \index{日志}\index{Logs}记录离散事件，描述``在某个时间点，系统发生了什么事情''。日志通常是结构化的文本或二进制记录，包含时间戳、日志级别、事件描述、上下文信息等。例如用户登录、数据库查询失败、异常堆栈信息等。日志是事后分析的主要依据，但通常不具备实时性。
+    \item \textbf{指标（Metrics）}： \index{指标}\index{Metrics}表示聚合的、可量化的数据，用于衡量``系统运行得如何''。指标通常是数值型的，如CPU使用率、请求响应时间、错误计数等。指标支持实时聚合和可视化，适合用于监控面板、警报和趋势分析。
+    \item \textbf{追踪（Traces）}：\index{追踪}\index{Traces}记录单个请求在分布式系统中多个服务间的流转路径，描述``一个操作是如何发生的''。追踪通过唯一的Trace ID将跨服务边界的多个操作串联起来，形成调用链（call chain），常用于性能瓶颈分析和请求生命周期追踪。
 \end{itemize}
 
-三者在系统中相辅相成：日志提供事件详情，指标提供系统健康状态，追踪提供请求执行路径。构建可观测性体系的目标是将这三者有机结合，实现从发生了什么到为什么会发生的全面掌控。
+总体而言，日志提供事件详情，指标提供系统健康状态，追踪提供请求执行路径。\index{遥测数据}\index{telemetry data}这三类数据在可观测性领域被统称为遥测数据（telemetry data）。
 
 
 \section{日志记录}
 
-在Python应用开发中，日志记录不仅是简单的输出工具，更是系统可观测性的基础组件。与简单的print语句相比，专业的日志系统提供了结构化输出、分级控制、环境感知等关键能力。本节将系统介绍Python的两种主流日志方案：标准库logging模块、第三方Loguru库以及专为结构化日志设计的structlog库，帮助读者根据项目需求选择合适的工具。
+在Python应用开发中，日志记录不仅是简单的输出工具，更是系统可观测性的基础组件。与简单的print语句相比，专业的日志系统提供了结构化输出、分级控制、环境感知等关键能力。本节将系统介绍Python的三种主流日志方案：标准库logging模块、第三方Loguru库以及专为结构化日志设计的structlog库，帮助读者根据项目需求选择合适的工具。
 
 \subsection{为何print无法胜任日志记录}
 
@@ -49,7 +49,7 @@ Python的logging模块是官方推荐的日志记录工具库，作为标准库�
 
 \heading{logging模块的核心架构}
 
-Python的logging模块采用了职责分离的模块化设计，构建了一个由四个核心组件组成的灵活体系：Logger（记录器）、Handler（处理器）、Formatter（格式化器）和Filter（过滤器）。这些组件通过一个标准化的数据载体LogRecord（日志记录对象）协同工作，形成完整的日志处理流水线。
+\index{logging}Python的logging模块采用了职责分离的模块化设计，构建了一个由四个核心组件组成的灵活体系：Logger（记录器）、Handler（处理器）、Formatter（格式化器）和Filter（过滤器）。这些组件通过一个标准化的数据载体LogRecord（日志记录对象）协同工作，形成完整的日志处理流水线。
 
 图\ref{fig:log:workflow}展示了从日志调用到最终输出的完整数据流转路径。
 
@@ -119,7 +119,7 @@ LogRecord在整个流程中扮演着核心载体角色。作为``标准化的信
 
 \heading{日志级别}
 
-logging模块定义了5个标准日志级别，每个级别都有明确的语义和使用场景。表\ref{tab:log:levels}展示了这些级别及其对应的数值和常见使用场景。
+\index{日志级别}logging模块定义了5个标准日志级别，每个级别都有明确的语义和使用场景。表\ref{tab:log:levels}展示了这些级别及其对应的数值和常见使用场景。
 
 \begin{table}[h]
     \centering
@@ -211,21 +211,7 @@ logging模块的主要优势在于它的标准库支持，确保了无需额外�
 
 \subsection{Loguru：简洁易用的现代化日志库}
 
-Loguru是一款专为简化Python日志记录流程设计的第三方库，以开箱即用为核心特点，通过优雅的API设计和约定优于配置的理念，降低日志配置的复杂度。相比标准库logging需手动构建Logger、Handler、Formatter等组件，Loguru摒弃了繁琐的配置流程，提供零配置启动的便捷体验，同时原生支持日志着色、文件轮转、异常追溯等实用功能，在不牺牲核心灵活性的前提下，大幅降低了使用门槛。
-
-
-% \heading{Loguru的特性}
-
-% Loguru的典型特性如下：
-
-% \begin{itemize}
-%     \item 零配置启动：无需复杂初始化，导入后即可直接使用；
-%     \item 内置处理器：支持文件、控制台、邮件等多种输出方式，内置轮转、压缩等管理功能；
-%     \item 自动异常捕获：可自动记录未捕获异常的完整堆栈信息；
-%     \item 结构化输出：支持 JSON 格式和自定义格式化，便于日志分析；
-%     \item 异步支持：提供异步日志记录能力，减少I/O阻塞；
-%     \item 上下文感知：可轻松添加和绑定上下文信息，支持日志字段的灵活扩展。
-% \end{itemize}
+\index{Loguru}Loguru是一款专为简化Python日志记录流程设计的第三方库，以开箱即用为核心特点，通过优雅的API设计和约定优于配置的理念，降低日志配置的复杂度。相比标准库logging需手动构建Logger、Handler、Formatter等组件，Loguru摒弃了繁琐的配置流程，提供零配置启动的便捷体验，同时原生支持日志着色、文件轮转、异常追溯等实用功能，在不牺牲核心灵活性的前提下，大幅降低了使用门槛。
 
 \heading{配置与使用}
 
@@ -264,7 +250,7 @@ except ZeroDivisionError as e:
     logger.error("发生除零错误", exc_info=e)
 \end{minted}
 
-使用Loguru时，无需显式获取和命名logger，只需\inlinepython{from loguru import logger}。每次使用这个导入的logger时，都会创建一个记录，并自动包含上下文\inlinepython{\_\_name\_\_}值，其他使用方式则与标准的logging相似。
+使用Loguru时，无需显式获取和命名\inlinepython{logger}，只需\inlinepython{from loguru import logger}。每次使用这个导入的\inlinepython{logger}时，都会创建一个记录，并自动包含上下文\inlinepython{\_\_name\_\_}值，其他使用方式则与标准的logging相似。
 
 从以上代码可以看出，相比logging模块的繁琐配置，Loguru的配置更简单，并且支持更丰富的色彩、压缩等功能。
 
@@ -276,7 +262,7 @@ Loguru以其简洁易用的特性，特别适合对日志系统要求快速上�
 
 \subsection{structlog：现代化的结构化日志库}
 
-structlog是一款专注于结构化日志记录的第三方库，其核心理念是将日志视作数据结构而非纯文本。相较于Python标准库logging，它提供了更灵活、强大且现代化的日志处理能力，特别适合需要结构化输出、复杂上下文管理和高性能日志处理的现代应用场景。凭借处理器管道的设计模式，每条日志记录都会依次经过事件绑定、处理器转换和格式化输出的完整流程，这也让structlog能够轻松实现结构化日志、上下文自动注入等高级功能。
+\index{结构化日志}\index{structlog}structlog是一款专注于结构化日志记录的第三方库，其核心理念是将日志视作数据结构而非纯文本。相较于Python标准库logging，它提供了更灵活、强大且现代化的日志处理能力，特别适合需要结构化输出、复杂上下文管理和高性能日志处理的现代应用场景。凭借处理器管道的设计模式，每条日志记录都会依次经过事件绑定、处理器转换和格式化输出的完整流程，这也让structlog能够轻松实现结构化日志、上下文自动注入等高级功能。
 
 \heading{配置与使用}
 
@@ -568,12 +554,11 @@ Python提供了多种交互式调试工具，从标准库内置的pdb调试器�
 
 \subsection{标准pdb调试器}
 
-Python标准库自带的pdb（Python Debugger）调试器采用了命令行交互模式，不仅提供了无需额外依赖的可靠调试能力，还能帮助开发者深入理解代码的执行机制。在图形界面不可用或IDE支持受限的场景中，pdb更是进行问题排查的关键工具。
-
+\index{pdb}Python标准库自带的pdb（Python Debugger）调试器采用了命令行交互模式，不仅提供了无需额外依赖的可靠调试能力，还能帮助开发者深入理解代码的执行机制。在图形界面不可用或IDE支持受限的场景中，pdb更是进行问题排查的关键工具。
 
 \heading{pdb调试器使用方法}
 
-以下示例展示了pdb调试器的基本使用方法和高级特性：
+以下示例展示了pdb调试器的基本使用方法：
 
 \begin{minted}[escapeinside=||]{python}
 # file: src/fxb/ch12/pdb_demo.py
@@ -651,16 +636,7 @@ if __name__ == "__main__":
     \end{tabular}
 \end{table}
 
-pdb还支持许多高级功能，包括：
-
-\begin{itemize}
-    \item 条件断点：仅在特定条件满足时暂停，避免频繁的手动干预
-    \item 断点命令列表：在断点触发时自动执行一系列PDB命令
-    \item 临时断点：仅生效一次的断点，适合调试循环中的特定迭代
-    \item 异常断点：在特定异常被抛出时自动暂停
-\end{itemize}
-
-更多信息可参考官方网页：\url{https://docs.python.org/3/library/pdb.html}。
+pdb还支持许多高级功能，包括条件断点、断点命令列表、临时断点、异常断点等。更多信息可参考官方文档：\url{https://docs.python.org/3/library/pdb.html}。
 
 
 \subsection{增强型pdb调试器}
@@ -669,7 +645,7 @@ pdb还支持许多高级功能，包括：
 
 \heading{ipdb：增强的交互式调试器}
 
-ipdb（IPython-enabled pdb）是pdb的增强版，提供了IPython的增强功能，如自动补全、语法高亮、更好的回溯显示等。ipdb的使用方式与pdb相同，在安装了ipdb之后，可以在代码中添加\inlinepython{ipdb.set\_trace()}来暂停执行并进入交互式调试模式，或者通过\inlinepython{import ipdb as pdb}来导入pdb，如上文pdb示例代码中注释掉的代码行所示。
+\index{ipdb}ipdb（IPython-enabled pdb）是pdb的增强版，提供了IPython的增强功能，如自动补全、语法高亮、更好的回溯显示等。ipdb的使用方式与pdb相同，在安装了ipdb之后，可以在代码中添加\inlinepython{ipdb.set\_trace()}来暂停执行并进入交互式调试模式，或者通过\inlinepython{import ipdb as pdb}来导入pdb，如上文pdb示例代码中注释掉的代码行所示。
 
 \heading{PuDB：全屏终端调试器}
 
@@ -680,12 +656,12 @@ ipdb（IPython-enabled pdb）是pdb的增强版，提供了IPython的增强功�
     \label{fig:pudb}
 \end{figure}
 
-如图\ref{fig:pudb}所示，PuDB是一个基于控制台的全屏可视化调试器，它把现代图形界面调试器的调试功能，打包进一个更轻量、且全程可用键盘操作的终端工具里，提供了类似IDE的调试体验，适合在远程服务器上进行调试。集成到代码中的方式与ipdb相同，不再赘述。
+如图\ref{fig:pudb}所示，\index{PuDB}PuDB是一个基于控制台的全屏可视化调试器，它把现代图形界面调试器的调试功能，打包进一个更轻量、且全程可用键盘操作的终端工具里，提供了类似IDE的调试体验，适合在远程服务器上进行调试。集成到代码中的方式与ipdb相同，不再赘述。
 
 
 \subsection{breakpoint()函数}
 
-\heading{breakpoint()引入的原因}
+\heading{引入的原因}
 
 pdb调试器虽然功能强大，但其传统的断点设置方式\inlinepython{pdb.set\_trace()}在实际使用中存在明显不足。
 
@@ -695,12 +671,12 @@ pdb调试器虽然功能强大，但其传统的断点设置方式\inlinepython{
 
 此外，灵活性不足。这种方式将调试器硬编码为pdb，切换调试器必须直接修改源代码中的断点语句。同时，它无法根据开发、测试、生产等不同运行环境动态调整调试策略，容易导致调试逻辑意外泄露至非开发环境，引入不必要的风险。
 
-为此，PEP 553提出了\inlinepython{breakpoint()}函数，并于Python 3.7中正式引入。相较于传统方法，\inlinepython{breakpoint()}不仅语法简洁，更具备高度可配置性，能够优雅地解决上述问题，是现代Python调试的首选方式。
+为此，\index{breakpoint}PEP 553提出了\inlinepython{breakpoint()}函数，并于Python 3.7中正式引入。相较于传统方法，\inlinepython{breakpoint()}不仅语法简洁，更具备高度可配置性，能够优雅地解决上述问题，是现代Python调试的首选方式。
 
 
 \heading{基本用法}
 
-\inlinepython{breakpoint()}的使用方式极其简单，直接将原有的\inlinepython{pdb.set\_trace()}替换为\inlinepython{breakpoint()}即可。例如，将前面\inlinefile{pdb\_demo.py}文件中的断点设置行更改为\inlinepython{breakpoint()}，程序执行到该行时会自动暂停并进入调试模式，无需任何额外的导入语句。
+\inlinepython{breakpoint()}的使用方式极其简单，直接将原有的\inlinepython{pdb.set\_trace()}替换为\inlinepython{breakpoint()}即可。例如，将前面\inlinefile{pdb\_demo.py}文件中的断点设置行更改为\inlinepython{breakpoint()}，程序执行到该行时会自动暂停并进入调试模式，无需任何额外的导入包语句。
 
 \heading{工作原理}
 
@@ -741,11 +717,11 @@ export PYTHONBREAKPOINT=
 
 当应用运行于远程服务器、Docker容器或复杂的本地开发环境时，传统的交互式调试器使用不便。远程调试技术允许开发者从本地的集成开发环境（IDE）安全地连接并控制这些远程进程，进行实时的断点、单步、变量检查等操作，极大地提升了诊断复杂环境问题的效率。
 
-Python生态中，debugpy库是实现远程调试的官方推荐工具。它实现了Debug Adapter Protocol (DAP)，是VS Code Python扩展的调试后端，同时也被其他主流IDE广泛支持。
+\index{DAP}Python生态中，\index{debugpy}debugpy库是实现远程调试的官方推荐工具。它实现了Debug Adapter Protocol (DAP)，是VS Code Python扩展的调试后端，同时也被其他主流IDE广泛支持。
 
 \heading{远程调试的组成}
 
-远程调试通常涉及两个服务器与客户端两个部分。其中，调试服务器 (Debug Server)运行在需要被调试的Python进程（即远程端）中，它监听一个网络端口，等待调试客户端连接，并执行其下发的调试指令，如设置断点、单步执行等。调试客户端 (Debug Client)运行在开发者的本地IDE中。它连接到调试服务器，将开发者的调试操作（点击断点、查看变量）转换为操作指令发送给服务器，并展示服务器返回的程序状态。
+\index{远程调试}远程调试通常涉及两个服务器与客户端两个部分。其中，调试服务器 (Debug Server)运行在需要被调试的Python进程（即远程端）中，它监听一个网络端口，等待调试客户端连接，并执行其下发的调试指令，如设置断点、单步执行等。调试客户端 (Debug Client)运行在开发者的本地IDE中。它连接到调试服务器，将开发者的调试操作（点击断点、查看变量）转换为操作指令发送给服务器，并展示服务器返回的程序状态。
 
 连接建立后，开发者可以在本地IDE中看到远程进程的源代码、实时变量、调用栈等信息，并进行完整的调试操作。
 
@@ -807,7 +783,6 @@ if __name__ == "__main__":
 
 
 \heading{IDE远程连接配置 (以VS Code为例)}
-
 
 首先确保本地与远程的源代码版本一致。随后在VS Code中配置远程调试：
 
@@ -888,6 +863,7 @@ ssh -L 5678:localhost:5678 user@remote-server
 
 通过上述步骤，开发者可以灵活地在各种环境中进行远程调试，无论是通过代码嵌入还是命令行启动，都能获得与本地调试一致的体验，从而高效定位和解决复杂问题。
 
+
 \subsection{交互式调试策略建议}
 
 调试不仅是定位错误的技术，更是一种系统化的思维方式。采用合理的策略和习惯能显著提升问题排查效率。
@@ -927,26 +903,63 @@ ssh -L 5678:localhost:5678 user@remote-server
 
 \section{指标监控}
 
-在可观测性体系中，指标（Metrics）是数值化的系统状态数据，用于回答``系统运行得如何''这一问题。与记录离散事件的日志不同，指标以连续数值形式存在，更适合实时监控（如当前系统是否过载）和趋势分析（如近1小时请求量变化趋势）。
+\index{指标}在可观测性体系中，指标（Metrics）是数值化的系统状态数据，用于回答``系统运行得如何''这一问题。与记录离散事件的日志不同，指标以连续数值形式存在，更适合实时监控（如当前系统是否过载）和趋势分析（如近1小时请求量变化趋势）。
 
-Python生态中，prometheus-client库是实现指标监控的核心工具。它的主要作用有两个：一是让Python应用能够定义和更新符合Prometheus规范的指标；二是将这些指标通过HTTP端点（通常为``/metrics''）暴露出去，供监控系统抓取。Prometheus作为开源的监控解决方案，会定期访问这些端点收集指标数据，进而实现监控面板的创建和异常告警。
+\subsection{Prometheus简介}
 
-\subsection{核心指标类型及其应用}
+\index{Prometheus}Prometheus是一款开源的由社区独立维护的系统监控和警报工具包，最初由SoundCloud开发，现已成为云原生计算基金会（CNCF）的毕业项目。它采用拉取（pull）模式从配置的目标中收集指标数据，并支持多维度数据模型和强大的查询语言PromQL，能够灵活地聚合和查询监控数据。
 
-Prometheus定义了三种核心指标类型，每种类型都有特定的使用场景：
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/prometheus_architecture.pdf}
+    \caption{Prometheus官网提供的架构示意图}
+    \label{fig:prometheus:architecture}
+\end{figure}
 
-Prometheus\footnote{\url{https://prometheus.io/}}提供了如下三种指标类型：
+Prometheus的整体架构如图\ref{fig:prometheus:architecture}所示。其中，开发者所关心的部件有：
 
 \begin{itemize}
-    \item 计数器（Counter）：只增不减的累计值，适用于记录请求总数、错误次数等。在Python中使用\inlinepython{Counter}类定义。Prometheus中常用它计算速率，如每秒请求数。
-    \item 仪表盘（Gauge）：可增可减的瞬时值，适用于记录CPU使用率、内存占用、活跃连接数等实时状态。在Python中使\inlinepython{Gauge}类定义。Prometheus中可直接查询其当前值或分析变化趋势。
-    \item 直方图（Histogram）：对观测值进行采样并统计分布，适用于记录请求延迟、响应大小等需要分析分布的指标。在Python中使用\inlinepython{Histogram}类定义。Prometheus中可通过它计算分位数（如95\%的请求延迟）。
+    \item 数据采集：通过HTTP端点定期抓取目标应用暴露的指标数据。
+    \item 时间序列数据库：高效存储采集到的指标数据，支持按时间序列组织。
+    \item 查询与告警：通过PromQL进行数据查询和聚合，并可配置灵活的告警规则。
+    \item 可视化：内置表达式浏览器，也可与Grafana等可视化工具集成。
 \end{itemize}
 
+Prometheus的生态系统中，应用通过暴露标准的HTTP端点（通常为\inlineurl{/metrics}）来提供指标数据，这些端点返回纯文本格式的指标，供Prometheus服务器抓取。这种设计使得各种语言的应用都能轻松集成监控能力。
 
-\subsection{在Python应用中集成Prometheus指标}
+\subsection{Prometheus-client库介绍}
 
-以下示例展示如何在FastAPI应用中定义和暴露Prometheus指标。
+Python生态中，\index{prometheus-client}prometheus-client库是实现与Prometheus集成的核心工具。它提供了简洁的API，让Python应用能够定义和更新符合Prometheus规范的指标，并将这些指标通过HTTP端点暴露出去。
+
+该库的主要功能包括：
+\begin{itemize}
+    \item 指标定义：支持Counter、Gauge、Histogram等Prometheus标准指标类型。
+    \item 指标暴露：自动创建HTTP端点（默认为\inlineurl{/metrics}），以Prometheus规定的文本格式返回当前指标数据。
+    \item 与Web框架集成：可轻松与FastAPI、Flask等主流Web框架集成。
+    \item 多进程支持：提供了在多进程环境（如Gunicorn）下收集指标的能力。
+\end{itemize}
+
+使用prometheus-client的基本流程是：在应用中定义需要的指标，在业务代码中更新这些指标，然后通过HTTP端点暴露指标数据。Prometheus服务器会定期访问这些端点抓取指标数据，进而实现监控面板的创建和异常告警。
+
+
+\subsection{监控指标的常见类型}
+
+Prometheus提供的指标类型主要有如下四种：
+
+\begin{itemize}
+    \item 计数器（Counter）：\index{计数器}只增不减的累计值，适用于记录请求总数、错误次数等。在Python中使用\inlinepython{Counter}类定义。Prometheus中常用它计算速率，如每秒请求数。
+    \item 仪表盘（Gauge）：\index{仪表盘}可增可减的瞬时值，适用于记录CPU使用率、内存占用、活跃连接数等实时状态。在Python中使\inlinepython{Gauge}类定义。Prometheus中可直接查询其当前值或分析变化趋势。
+    \item 直方图（Histogram）：\index{直方图}对观测值进行采样并统计分布，适用于记录请求延迟、响应大小等需要分析分布的指标。在Python中使用\inlinepython{Histogram}类定义。Prometheus中可通过它计算分位数（如95\%的请求延迟）。
+    \item 摘要（Summary）：\index{摘要}与直方图类似，但直接在客户端计算分位数。在Python中使用\inlinepython{Summary}类定义。适用于需要预先计算分位数并直接暴露的场景，与直方图的选择需根据具体需求权衡。
+\end{itemize}
+
+这些指标类型为监控系统提供了丰富的数据采集能力，开发者可以根据具体监控需求选择合适的指标类型。
+
+\subsection{监控指标数据的集成示例}
+
+以下示例展示如何在FastAPI应用中定义和暴露Prometheus指标，如歌配置Prometheus捕获数据并进行查看。
+
+\heading{在Python应用中集成Prometheus指标}
 
 首先安装示例需要的三个依赖：
 
@@ -1004,7 +1017,6 @@ async def get_data():
     
     # ========== 更新Prometheus指标 ==========
     # 1. 更新请求计数器：为"/api/data"端点的计数器加1
-    #    .labels()方法使用标签区分不同端点的请求
     REQUEST_COUNT.labels(endpoint='/api/data').inc()  
 
     # 2. 记录请求处理耗时：将本次请求的处理时间记录到直方图中
@@ -1012,8 +1024,6 @@ async def get_data():
     REQUEST_DURATION.observe(time.time() - start_time) 
     
     # 3. 更新活跃会话数：随机设置一个模拟值
-    #    .set()方法直接设置仪表盘的当前值
-    #    在实际应用中，这里可能是从共享状态或数据库中获取的真实值
     ACTIVE_SESSIONS.set(random.randint(10, 100))  # 设置活跃会话数
     
     return {'status': 'ok', 'data': 'sample'}
@@ -1025,8 +1035,6 @@ async def metrics():
     这是Python应用与Prometheus监控系统集成的关键
     """
     # generate_latest()：生成Prometheus格式的指标数据
-    #   该函数会将所有已注册的指标转换为Prometheus可识别的文本格式
-    # Response：返回HTTP响应，指定内容类型为纯文本
     return Response(content=generate_latest(), media_type='text/plain')
 
 if __name__ == '__main__':
@@ -1038,16 +1046,13 @@ if __name__ == '__main__':
 
 \begin{enumerate}
     \item 启动应用：\inlinecode{bash}{uv run python -m fxb.ch12.metrics_demo}
-    \item 触发指标变化：多次访问\inlineurl{http://localhost:5000/api/data}，模拟用户请求
-    \item 查看指标端点：访问\inlineurl{http://localhost:5000/metrics}，应能看到\variable{http\_requests\_total}、\variable{active\_sessions}等指标数据
+    \item 触发指标变化：多次访问\inlineurl{http://localhost:5000/api/data}，模拟用户请求。
+    \item 查看指标端点：访问\inlineurl{http://localhost:5000/metrics}，应能看到\variable{http\_requests\_total}、\variable{active\_sessions}等指标数据。
 \end{enumerate}
 
-\subsection{配置Prometheus抓取Python应用指标}
+\heading{设置Prometheus的配置文件}
 
-要使Prometheus能够定期抓取上述应用暴露的指标，需要进行相应配置。以下是使用Docker快速部署和配置Prometheus的步骤。
-
-
-创建Prometheus配置文件\inlinefile{prometheus.yml}，添加监控系统对Python应用的抓取配置：
+创建Prometheus配置文件\inlinefile{prometheus.yml}，指定对应用暴露的指标进行抓取。
 
 \begin{minted}{yaml}
 global:
@@ -1067,7 +1072,9 @@ scrape_configs:
       - targets: ['host.docker.internal:5000']
 \end{minted}
 
-Prometheus在启动时，会读取\inlinefile{/etc/prometheus/prometheus.yml}文件作为配置文件使用，将容器外的配置文件挂载到容器并启动Prometheus：
+\heading{利用Docker启动Prometheus}
+
+Prometheus在启动时，会读取\inlinefile{/etc/prometheus/prometheus.yml}文件作为配置文件使用。此处采用Docker，将容器外的配置文件挂载到容器并启动Prometheus：
 
 \begin{minted}{bash}
 # 拉取Prometheus镜像
@@ -1079,16 +1086,25 @@ docker run -d --name prometheus -p 9090:9090 \
   prom/prometheus:main
 \end{minted}
 
+\heading{验证联动效果}
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/prometheus_ui.jpg}
+    \caption{利用Prometheus UI查看http\_requests\_total的请求量变化 \label{fig:prometheus:ui}}
+\end{figure}
 
 配置完成后，可通过以下方式验证联动效果：
+
 \begin{enumerate}
     \item 查看抓取状态：访问\inlineurl{http://localhost:9090/targets}，若python\_fastapi\_app任务状态为UP，说明Prometheus已成功连接Python应用
     \item 查询指标：访问\inlineurl{http://localhost:9090/graph}，在查询框中输入\variable{http\_requests\_total}等指标名称，即可看到Python应用的指标变化曲线
+    \item 验证联动效果：不同时间多次访问\inlineurl{http://localhost:5000/api/data}，在Prometheus UI中查看指标变化曲线，如图\ref{fig:prometheus:ui}所示。
 \end{enumerate}
 
-\subsection{监控集成实践与建议}
+\subsection{监控集成实践建议}
 
-在Python应用中集成指标监控时，遵循一些关键实践原则能确保监控数据的质量和系统的可维护性。开发者应在应用启动时统一定义指标，避免重复创建导致的混乱，并合理使用标签（如按接口端点、部署环境分类）以便在Prometheus中进行多维度聚合分析。定期评估和优化指标定义、在开发测试环境提前接入监控以早期发现问题，以及确保\inlinefile{/metrics}端点访问安全（如限制为内网或添加认证），也是构建有效监控体系的重要环节。
+在Python应用中集成指标监控时，遵循一些关键实践原则能确保监控数据的质量和系统的可维护性。开发者应在应用启动时统一定义指标，避免重复创建导致的混乱，并合理使用标签（如按接口端点、部署环境分类）以便在Prometheus中进行多维度聚合分析。定期评估和优化指标定义、在开发测试环境提前接入监控以早期发现问题，以及确保\inlineurl{/metrics}端点访问安全（如限制为内网或添加认证），也是构建有效监控体系的重要环节。
 
 完整的指标监控链路通常包含三个核心环节的联动：Python应用通过prometheus-client库定义并暴露指标，Prometheus服务器定期抓取和存储这些时间序列数据，最后由Grafana等可视化工具进行分析和展示。这种集成机制为开发者提供了强大的系统洞察力，使其能实时掌握应用性能，及时发现诸如接口延迟突增、错误率上升等问题，从而构建出更加稳定可靠的服务。
 
@@ -1097,192 +1113,184 @@ docker run -d --name prometheus -p 9090:9090 \
 
 \section{分布式追踪}
 
-随着微服务、云原生架构的普及，单一请求往往需要在多个服务之间流转，传统的日志和指标难以完整还原请求的完整执行路径。分布式追踪（Distributed Tracing）应运而生，它通过唯一的Trace ID 将跨越服务边界的多个操作串联起来，形成完整的调用链，从而回答``一个请求是如何被处理的''这一关键问题。
+随着微服务、云原生架构的普及，单一请求往往需要在多个服务之间流转，传统的日志和指标难以完整还原请求的完整执行路径。\index{分布式追踪}分布式追踪（distributed tracing）应运而生，它通过唯一的Trace ID 将跨越服务边界的多个操作串联起来，形成完整的调用链，从而回答``一个请求是如何被处理的''这一关键问题。
 
-分布式追踪的核心价值在于：
-
-\begin{itemize}
-    \item 全链路可视化：展示请求从入口到出口经过的所有服务与组件；
-    \item 性能瓶颈定位：识别跨服务调用的延迟热点，优化系统性能；
-    \item 故障根因分析：当请求失败时，快速定位是哪个服务或调用环节出现问题；
-    \item 依赖关系梳理：通过实际调用路径，理解服务间的依赖与调用拓扑。
-\end{itemize}
 
 \subsection{OpenTelemetry：分布式追踪的事实标准}
 
-OpenTelemetry（简称 OTEL）是一套跨语言、跨平台的遥测数据采集标准，支持日志、指标与追踪三大可观测性支柱。其中，其分布式追踪实现已成为云原生生态中的事实标准，被各大云服务商、APM 系统广泛支持。
+\index{OpenTelemetry}OpenTelemetry是一套跨语言、跨平台的遥测数据采集标准，支持日志、指标与追踪三大可观测性支柱。作为可观测性框架和工具包，OpenTelemetry专注于遥测数据的生成、采集、管理和导出，对供应商和工具保持中立，可以与各种可观测性后端（如Prometheus、Jaeger）以及商业产品无缝集成。
 
-OTEL 的核心概念包括：
+\heading{OpenTelemetry的核心概念}
 
 \begin{itemize}
-    \item \textbf{Trace}：一个完整的请求链路，由多个 Span 组成；
-    \item \textbf{Span}：代表一个操作单元，如一次函数调用、一次 RPC 请求等；
-    \item \textbf{Trace ID}：全局唯一的追踪标识，贯穿整个请求链路；
-    \item \textbf{Span Context}：用于在服务间传递追踪上下文，包含 Trace ID、Span ID、采样标志等。
+    \item \variable{Span}：代表一个操作单元，如一次函数调用、一次RPC请求等，并可设置由键值对构成的属性以方便查询和过滤；
+    \item \variable{Trace}：由多个\variable{Span}组成的完整请求链路；
+    \item \variable{Trace ID}：全局唯一的追踪标识，贯穿整个请求链路；
+    \item \variable{Span Context}：用于在服务间传递追踪上下文，包含\variable{Trace ID}、\variable{Span ID}、采样标志等。
 \end{itemize}
 
-以下示例展示如何在 Python 应用中集成 OpenTelemetry 进行分布式追踪：
+\heading{安装OpenTelemetry依赖}
+
+在Python应用中使用OpenTelemetry，需要安装相应的SDK包。根据不同的导出需求，可选择安装不同的导出器：
+
+\begin{minted}{bash}
+# 基础SDK包（必需）
+uv add opentelemetry-sdk
+
+# Jaeger导出器（可选，用于对接Jaeger后端）
+uv add opentelemetry-exporter-jaeger-thrift
+\end{minted}
+
+\heading{在Python应用中集成OpenTelemetry}
+
+以下示例展示如何在Python应用中集成OpenTelemetry进行调用链追踪：
 
 \begin{minted}{python}
-# file: src/fxb/ch12/tracing_simple.py
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
+# file: src/fxb/ch12/tracing_demo.py
+"""
+OpenTelemetry分布式追踪示例，同时输出追踪数据到控制台和Jaeger后端
+"""
+from opentelemetry import trace 
+from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider  
+from opentelemetry.sdk.trace.export import (
+    BatchSpanProcessor,  # 批量处理器（提升性能）
+    ConsoleSpanExporter,  # 控制台输出导出器（用于调试）
+)
 
-# 1. 设置追踪提供者
-trace.set_tracer_provider(TracerProvider())
+# 1. 配置服务资源信息
+resource = Resource.create(
+    {
+        SERVICE_NAME: "order-service",  # 服务名称
+        "deployment.environment": "production",  # 环境标识
+    }
+)
 
-# 2. 添加控制台导出器（实际项目中可替换为 Jaeger、Zipkin 等）
+# 设置全局追踪提供者
+trace.set_tracer_provider(TracerProvider(resource=resource))
+
+# 2. 配置导出器
+# 控制台导出器：开发环境调试使用
 console_exporter = ConsoleSpanExporter()
-span_processor = BatchSpanProcessor(console_exporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
 
-# 3. 获取 Tracer
+# Jaeger导出器：生产环境使用，需确保Jaeger服务已启动
+jaeger_exporter = JaegerExporter(
+    agent_host_name="localhost",  # Jaeger Agent地址
+    agent_port=6831,  # Jaeger Agent端口
+)
+
+# 3. 注册处理器（支持多路输出）
+trace.get_tracer_provider().add_span_processor(
+    BatchSpanProcessor(console_exporter)  # 输出到控制台
+)
+trace.get_tracer_provider().add_span_processor(
+    BatchSpanProcessor(jaeger_exporter)  # 输出到Jaeger
+)
+
+# 4. 获取Tracer实例
 tracer = trace.get_tracer(__name__)
 
 def process_order(order_id: str) -> str:
     """模拟订单处理流程，展示跨函数追踪"""
+
+    # 创建并启动一个新的Span，命名为"process_order"
     with tracer.start_as_current_span("process_order") as span:
-        # 为当前 Span 添加属性（键值对），便于后续过滤与查询
-        span.set_attribute("order.id", order_id)
-        span.set_attribute("service.name", "order_service")
-        
-        # 模拟子操作：验证
-        with tracer.start_as_current_span("validate"):
-            # 实际验证逻辑...
-            span.set_attribute("validation.status", "passed")
-        
-        # 模拟子操作：支付
-        with tracer.start_as_current_span("payment"):
-            # 实际支付逻辑...
-            span.set_attribute("payment.method", "credit_card")
-        
+        # 为Span添加自定义属性，会在追踪后端（如Jaeger）中显示，便于查询和过滤
+        span.set_attribute("order.id", order_id)  # 订单ID
+        span.set_attribute("service.name", "order_service")  # 服务名称
+
+        # ==================== 子操作1：验证 ====================
+        # 创建子Span（自动建立父子关系），父子关系形成了调用链的层次结构
+        with tracer.start_as_current_span("validate") as validate_span:
+            # 放置实际的验证逻辑，如检查订单状态、验证用户权限等
+
+            # 为验证Span添加相关属性
+            validate_span.set_attribute("validation.status", "passed")
+
+        # ==================== 子操作2：支付 ====================
+        # 创建另一个子Span（与验证Span是兄弟关系，都是process_order的子节点）
+        with tracer.start_as_current_span("payment") as payment_span:
+            # 放置实际的支付逻辑，如调用支付网关、扣款等
+
+            payment_span.set_attribute("payment.method", "credit_card")
+            payment_span.set_attribute("payment.amount", "100.00")
+
+        # 注意：所有Span会在with块结束时自动结束，并记录时间、状态等相关元数据
         return f"Order {order_id} processed"
 
-# 使用示例
 if __name__ == "__main__":
     result = process_order("12345")
     print(result)
 \end{minted}
 
-执行上述代码，控制台将输出结构化的追踪信息，包含每个 Span 的开始/结束时间、属性、父子关系等，形成清晰的调用树状图。
+上面示例引入了JaegerExporter， 它将Span数据发送给Jaeger追踪后端。因此在运行之前，需要进一步安装Jaeger追踪后端进行对接。
 
-\subsection{配置与导出：对接追踪后端}
+\subsection{OpenTelemetry对接Jaeger}
 
-在生产环境中，追踪数据通常需要发送到专业的追踪后端进行存储与查询，如 Jaeger、Zipkin、AWS X-Ray 或 Elastic APM。以下示例展示如何配置 OpenTelemetry 将数据导出到 Jaeger：
+在生产环境中，追踪数据通常需要发送到专业的追踪后端进行存储与查询。\index{Jaeger}Jaeger是一个开源的端到端分布式追踪系统，由Uber开发并开源。
 
-\begin{minted}{python}
-# file: src/fxb/ch12/tracing_jaeger.py
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.exporter.jaeger.thrift import JaegerExporter
-from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+\heading{使用Docker快速启动Jaeger}
 
-# 1. 定义服务资源信息
-resource = Resource.create({
-    SERVICE_NAME: "order-service",
-    "deployment.environment": "production",
-})
+最简单的Jaeger启动方式是使用Docker运行其镜像：
 
-# 2. 设置 TracerProvider
-trace.set_tracer_provider(TracerProvider(resource=resource))
-
-# 3. 配置 Jaeger 导出器
-jaeger_exporter = JaegerExporter(
-    agent_host_name="localhost",
-    agent_port=6831,  # Jaeger agent 默认 UDP 端口
-)
-
-# 4. 添加处理器
-span_processor = BatchSpanProcessor(jaeger_exporter)
-trace.get_tracer_provider().add_span_processor(span_processor)
-
-# 后续代码与上例相同...
+\begin{minted}{bash}
+docker pull jaegertracing/jaeger
+docker run --rm --name jaeger \
+  -p 16686:16686 \    # Jaeger UI Web界面
+  -p 4317:4317 \      # OTLP gRPC端口（OpenTelemetry协议）
+  -p 4318:4318 \      # OTLP HTTP端口
+  -p 5778:5778 \      # 配置端口
+  -p 6831:6831/udp \  # Jaeger原生UDP端口（Thrift协议）
+  -p 9411:9411 \      # Zipkin兼容端口
+  jaegertracing/jaeger
 \end{minted}
 
-\subsection{追踪与日志、指标的协同}
+此命令运行Jaeger的All-in-one配置，将收集器和查询组件组合在单个进程中，并使用临时的内存存储来保存追踪数据，无需手动配置Jaeger组件依赖。上面容器端口的映射用途见表\ref{tab:jaeger-ports}。
 
-分布式追踪不应孤立使用，而应与日志、指标协同构建完整的可观测性体系。以下示例展示如何在一个服务类中统一集成三类可观测性数据：
+\begin{table}[htbp!]
+  \centering
+  \small
+  \caption{Jaeger容器端口映射用途说明}
+  \begin{tabular}{llp{8cm}}
+    \toprule
+    映射配置 & 协议 & 用途说明 \\
+    \midrule
+    -p 16686:16686 & TCP（默认） & Jaeger的UI可视化界面端口，主机访问 \texttt{http://主机IP:16686} 即可打开Jaeger查询界面，查看追踪链路、服务依赖等 \\
+    -p 4317:4317 & TCP & OTLP gRPC 协议的追踪数据接收端口（现代微服务常用，支持高性能的二进制传输），应用可通过该端口上报追踪数据 \\
+    -p 4318:4318 & TCP & OTLP HTTP 协议的追踪数据接收端口（兼容性更强，基于HTTP/json传输，便于调试） \\
+    -p 5778:5778 & TCP & Jaeger的配置查询端口，用于服务发现和采样策略配置的查询（兼容旧版Jaeger客户端） \\
+    -p 6831:6831/udp & UDP & Jaeger Thrift 协议的UDP数据接收端口（旧版客户端常用，轻量级无连接传输） \\
+    -p 9411:9411 & TCP & Zipkin 兼容端口，用于接收Zipkin格式的追踪数据（实现与Zipkin系统的兼容，平滑迁移） \\
+    \bottomrule 
+  \end{tabular}
+\label{tab:jaeger-ports}
+\end{table}
 
-\begin{minted}{python}
-# file: src/fxb/ch12/observable_service.py
-import structlog
-from prometheus_client import Counter, Histogram
-from opentelemetry import trace
+容器启动后，可以通过 \url{http://localhost:16686/}访问Jaeger的Web管理界面。
 
-class ObservableService:
-    """
-    可观测服务示例类，集成日志、指标、追踪三大支柱
-    """
-    def __init__(self, name: str):
-        self.name = name
-        self.logger = structlog.get_logger(name)
-        self.tracer = trace.get_tracer(name)
-        
-        # 定义 Prometheus 指标
-        self.request_counter = Counter(f'{name}_requests_total', 'Total requests', ['status'])
-        self.request_duration = Histogram(f'{name}_request_duration_seconds', 'Request duration')
-    
-    def handle_request(self, request_id: str) -> str:
-        # 启动一个追踪 Span
-        with self.tracer.start_as_current_span("handle_request") as span:
-            span.set_attribute("request.id", request_id)
-            
-            # 记录请求开始日志
-            self.logger.info("request_started", request_id=request_id)
-            
-            # 开始计时（用于指标）
-            start_time = time.time()
-            
-            try:
-                # 模拟业务处理
-                result = self._process_business(request_id)
-                status = "success"
-            except Exception as e:
-                status = "error"
-                self.logger.error("request_failed", exc_info=e, request_id=request_id)
-                span.record_exception(e)
-                raise
-            finally:
-                # 记录请求耗时指标
-                duration = time.time() - start_time
-                self.request_duration.observe(duration)
-                self.request_counter.labels(status=status).inc()
-                
-                # 记录请求完成日志
-                self.logger.info("request_completed", 
-                                 request_id=request_id, 
-                                 status=status, 
-                                 duration_ms=round(duration * 1000, 2))
-            
-            return result
-    
-    def _process_business(self, request_id: str) -> str:
-        """模拟业务逻辑，可进一步嵌套追踪 Span"""
-        with self.tracer.start_as_current_span("business_logic"):
-            # 实际业务处理...
-            return f"Processed {request_id}"
+\heading{运行Python应用生成追踪数据}
 
-# 使用示例
-if __name__ == "__main__":
-    service = ObservableService("order_service")
-    service.handle_request("req-001")
-\end{minted}
+现在执行\inlinefile{tracing\_demo.py}，生成追踪数据，这些数据一方面会通过控制台导出器在终端中输出，另一方面则通过JaegerExporter将数据发送到Jaeger后端。
 
-\subsection{分布式追踪实施建议}
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/jaeger.jpg}
+    \caption{订单追踪数据示例}
+    \label{fig:jaeger:demo}
+\end{figure}
 
-在项目中引入分布式追踪时，建议遵循以下实践：
+进一步，打开\url{http://localhost:16686/}，查看追踪数据，结果如图\ref{fig:jaeger:demo}所示。
 
-\begin{itemize}
-    \item \textbf{尽早接入}：在项目早期即设计追踪埋点，避免后期改造成本；
-    \item \textbf{合理采样}：全量追踪可能带来性能与存储压力，应根据业务重要性设置采样率；
-    \item \textbf{统一上下文传递}：确保 Trace ID 在 HTTP 头、消息队列、gRPC 元数据等跨进程通信中正确传递；
-    \item \textbf{与日志关联}：在日志中输出 Trace ID，便于在追踪与日志间跳转分析；
-    \item \textbf{选择适合的后端}：根据团队技术栈与运维能力，选择 Jaeger、Zipkin、云厂商托管服务等作为追踪存储与查询平台。
-\end{itemize}
+\subsection{分布式追踪实践建议}
 
-通过系统性地实施分布式追踪，团队能够获得对复杂系统交互的深度洞察，显著提升故障排查、性能优化与系统理解的效率。
+分布式追踪的核心价值在于实现全链路可视化，能够清晰展示请求在复杂系统中的完整流转路径。通过追踪数据，开发者可以精准识别跨服务调用的性能瓶颈、快速定位故障根因，并有效梳理服务间的依赖关系，从而优化系统性能并提升问题诊断效率。
+
+在实际项目中使用分布式追踪时，建议遵循以下实践原则：首先，应在项目早期设计追踪埋点，避免后期改造成本过高；其次，根据业务重要性设置合理的采样率，避免全量追踪带来的性能与存储压力；同时，确保Trace ID在HTTP头、消息队列等跨进程通信中正确传递；此外，通过在日志中关联Trace ID，便于在追踪与日志间跳转分析；最后，根据团队技术栈与运维能力，选择适合的后端平台进行追踪数据的存储与查询。
+
+分布式追踪不应孤立使用，而应与日志、指标协同构建完整的可观测性体系。通过在日志中关联Trace ID、结合追踪数据计算性能指标，并在统一的可观测性仪表板中整合展示，可以实现从宏观指标到微观日志的全链路分析能力，为系统运维和问题排查提供更全面的视角。
+
+分布式追踪是现代可观测性体系的关键组成部分，OpenTelemetry作为行业标准，提供了跨语言、跨平台的统一解决方案，使开发者能够以一致的方式收集、管理和导出追踪数据。通过将分布式追踪与日志、指标相结合，可以构建全面的系统可观测性，快速定位和解决复杂分布式系统中的问题。
 
 
 \section*{本章总结与进阶思考}
@@ -1291,14 +1299,14 @@ if __name__ == "__main__":
 
 \textbf{要点回顾：}
 
-\begin{enumerate}
-    \item \textbf{可观测性三大支柱}：日志（发生了什么）、追踪（如何发生）、指标（运行如何）相辅相成，缺一不可。
-    \item \textbf{结构化日志}：通过JSON等机器可读格式提升日志处理效率，\texttt{structlog}库提供了优雅的实现方式。
-    \item \textbf{环境感知配置}：不同环境应采用不同的日志级别、输出目标和采样策略。
-    \item \textbf{交互式调试}：PDB用于本地调试，\texttt{debugpy}支持远程调试，IDE集成提升调试体验。
-    \item \textbf{指标监控}：Prometheus提供了强大的指标采集和查询能力，是监控系统的核心。
-    \item \textbf{分布式追踪}：OpenTelemetry实现了跨语言、跨服务的链路追踪，是微服务可观测性的关键。
-\end{enumerate}
+\begin{itemize}
+    \item 可观测性三大支柱：日志（发生了什么）、追踪（如何发生）、指标（运行如何）相辅相成，构成了完整的遥测数据体系。
+    \item 结构化日志：通过JSON等机器可读格式提升日志处理效率，structlog库提供了优雅的实现方式。
+    \item 环境感知配置：不同环境应采用不同的日志级别、输出目标和采样策略。
+    \item 交互式调试：PDB用于本地调试，debugpy支持远程调试，IDE集成提升调试体验。
+    \item 指标监控：Prometheus提供了强大的指标采集和查询能力，是监控系统的核心。
+    \item 分布式追踪：OpenTelemetry实现了跨语言、跨服务的链路追踪，统一了遥测数据的生成标准。
+\end{itemize}
 
 \textbf{进阶思考：} 
 

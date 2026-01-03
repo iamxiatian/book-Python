@@ -186,7 +186,7 @@
 %\setminted{bgcolor=bg}
 \setminted{numbersep=2mm}
 \setminted{fontsize=\small}
-%\setminted{fontfamily="Ubuntu Mono", fontsize=\small}
+% \setminted{fontfamily="Fira Code"}
 
 \AfterEndEnvironment{minted}{\par\noindent}
 
@@ -203,18 +203,18 @@
 % 利用pifont在heading前加上方框符号
 \newcommand{\heading}[1]{  {\vspace{5pt} \color{darkgray}\noindent ~~ \ding{111} \textbf{#1}} \vspace{3pt}}
 
-\newcommand{\inlinecmd}[1]{ \colorbox{blue!5}{#1} }
-\newcommand{\inlinefile}[1]{ \colorbox{orange!10}{#1} }
-\newcommand{\inlinepython}[1]{ \colorbox{red!3}{#1} }
-\newcommand{\variable}[1]{ \colorbox{yellow!10}{#1} }
-\newcommand{\inlinecode}[2]{\mintinline{#1}[fontsize=\normalsize]{#2}}
 
+\usepackage{seqsplit}
+\usepackage{path}
+\newcommand{\inlinecmd}[1]{{\texttt{#1}}}
+\newcommand{\inlinefile}[1]{\seqsplit{\texttt{#1}}}
+\newcommand{\inlinepython}[1]{\seqsplit{\texttt{#1}}}
+%\newcommand{\variable}[1]{ \colorbox{yellow!10}{#1} }
+\newcommand{\variable}[1]{{\texttt{#1}}}
+\newcommand{\inlineurl}[1]{{\texttt{#1}}}
+
+\newcommand{\inlinecode}[2]{\mintinline{#1}{#2}}
 \newcommand{\textem}[1]{{\color{red} #1}} % 强调文本
-
-% 重定义数学向量符号的形式
-\renewcommand{\vec}[1]{\symbf{#1}}  
-%\renewcommand{\vec}[1]{\overrightarrow{#1}} 
-
 
 % 设置表格的行高
 \renewcommand{\arraystretch}{1.5}
@@ -299,22 +299,24 @@
 			\vspace{4em}
 	  	}
 	\normalsize{}
-	% \part{环境与依赖管理}
-	% \include{chapter/ch01}
-	% \include{chapter/ch02}
+	\part{环境与依赖管理}
+	\include{chapter/ch01}
+	\include{chapter/ch02}
 	\include{chapter/ch03}
-	% \part{类型、质量与设计模式}
-	% \include{chapter/ch04}
- 	% \include{chapter/ch05}
-	% \include{chapter/ch06}
-	% \part{并发、异步与性能优化}
-	% \include{chapter/ch07}
-	% \include{chapter/ch08}
-	% \include{chapter/ch09}
-	% \part{测试、配置与可观测性}
+	\part{类型、质量与设计模式}
+	\include{chapter/ch04}
+ 	\include{chapter/ch05}
+	\include{chapter/ch06}
+	\part{并发、异步与性能优化}
+	\include{chapter/ch07}
+	\include{chapter/ch08}
+	\include{chapter/ch09}
+	\part{测试、配置与可观测性}
 	\include{chapter/ch10}
-	% \include{chapter/ch11}
-	% \include{chapter/ch12}
+	\include{chapter/ch11}
+	\include{chapter/ch12}
+
+	% 以下是第2版计划添加的内容
 	% \part{Git与工程协作流程}
 	% \include{chapter/ch13}
 	% \include{chapter/ch14}

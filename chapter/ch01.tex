@@ -5,7 +5,7 @@
 
 \section{Python包管理基础：site-packages目录}
 
-\inlinefile{site-packages}是Python解释器存放第三方包的全局目录，也是import语句搜索模块的关键路径。这一目录在Python生态中扮演着核心角色：存储通过pip安装的第三方库，作为模块导入时的搜索路径，并实现所有项目的全局共享。
+\index{站点目录}\inlinefile{site-packages}是Python解释器存放第三方包的全局目录，也是import语句搜索模块的关键路径。这一目录在Python生态中扮演着核心角色：存储通过pip安装的第三方库，作为模块导入时的搜索路径，并实现所有项目的全局共享。
 
 \inlinefile{site-packages}的路径随Python解释器安装位置而变化。通过命令行可快速查看：
 
@@ -26,7 +26,7 @@ python -c "import site; print(site.getsitepackages())"
 
 \section{为什么需要虚拟环境}
 
-虚拟环境是现代Python开发的基石，它通过环境隔离和依赖管理解决了全局环境中的诸多问题，为专业软件开发提供了可靠保障。虚拟环境的必要性主要体现在三个核心方面：环境隔离、可复现性和依赖冲突解决。
+\index{虚拟环境}虚拟环境是现代Python开发的基石，它通过环境隔离和依赖管理解决了全局环境中的诸多问题，为专业软件开发提供了可靠保障。虚拟环境的必要性主要体现在三个核心方面：环境隔离、可复现性和依赖冲突解决。
 
 \subsection{环境隔离的价值}
 
@@ -42,7 +42,7 @@ pip install transformers==4.57.1  # 这会覆盖4.28.0，破坏项目A
 
 \subsection{确保可复现性}
 
-可复现性是CI/CD流程和团队协作的基石\footnote{CI/CD（Continuous Integration/Continuous Deployment）是一种软件开发实践，意指持续集成/持续开发，旨在通过自动化流程来提高软件交付的速度和质量。}，通过精确锁定依赖版本，虚拟环境确保在任何时间、任何地点都能重建完全相同的运行环境。这不仅包括直接安装的包，还涵盖所有间接依赖。
+可复现性是CI/CD流程和团队协作的基石\footnote{CI/CD（continuous integration/continuous deployment）是一种软件开发实践，意指持续集成/持续开发，旨在通过自动化流程来提高软件交付的速度和质量。}，通过精确锁定依赖版本，虚拟环境确保在任何时间、任何地点都能重建完全相同的运行环境。这不仅包括直接安装的包，还涵盖所有间接依赖。
 
 \begin{minted}{bash}
 # 不可复现的依赖声明
@@ -79,7 +79,7 @@ Python生态中提供多种虚拟环境工具，其中venv和Conda是最主流�
 
 \subsection{venv：轻量级标准解决方案}
 
-作为Python官方标准库，venv创建轻量级环境，共享基础Python解释器，通过修改PATH环境变量实现环境切换：
+\index{venv}作为Python官方标准库，venv创建轻量级环境，共享基础Python解释器，通过修改PATH环境变量实现环境切换：
 
 \begin{minted}{bash}
 # 创建和使用venv环境
@@ -94,7 +94,7 @@ venv专注于Python包管理，适合Web开发、API服务和命令行工具等�
 
 \subsection{Conda：跨语言环境管理器}
 
-Conda不仅是Python包管理器，还是跨语言的环境管理工具。它创建完全独立的环境，包含完整的Python解释器，并能管理非Python二进制依赖：
+\index{Conda}Conda不仅是Python包管理器，还是跨语言的环境管理工具。它创建完全独立的环境，包含完整的Python解释器，并能管理非Python二进制依赖：
 
 \begin{minted}{bash}
 # 使用conda管理复杂依赖
@@ -107,7 +107,7 @@ conda install tensorflow-gpu pytorch cudatoolkit=11.3
 
 \subsection{现代化工具：poetry与uv的虚拟环境}
 
-poetry和uv作为现代Python开发工具，在虚拟环境管理上采用了与venv兼容但更加智能化的方式。它们不是创建新的虚拟环境类型，而是在标准venv机制基础上进行了优化和封装。
+\index{poetry}\index{uv}poetry和uv作为现代Python开发工具，在虚拟环境管理上采用了与venv兼容但更加智能化的方式。它们不是创建新的虚拟环境类型，而是在标准venv机制基础上进行了优化和封装。
 
 poetry默认在统一目录中管理所有项目的虚拟环境，通过自动检测和配置，让开发者无需手动激活环境，只需使用\mintinline{bash}{poetry run}命令即可在正确环境中执行代码。这种设计既保持了与现有venv环境的兼容性，又大大简化了环境管理的复杂度。
 
@@ -152,10 +152,10 @@ source vllm/bin/activate
 \textbf{要点回顾：}
 
 \begin{itemize}
-    \item {隔离是基础}：虚拟环境防止项目间相互干扰，确保环境纯净；
-    \item {可复现性是目标}：锁定依赖版本，确保任何地方都能重建相同环境；
-    \item {工具选择很重要}：venv适合纯Python项目，Conda适合复杂依赖；
-    \item {跨平台一致性}：使用现代化工具和环境标记解决平台差异。
+    \item 隔离是基础：虚拟环境防止项目间相互干扰，确保环境纯净；
+    \item 可复现性是目标：锁定依赖版本，确保任何地方都能重建相同环境；
+    \item 工具选择很重要：venv适合纯Python项目，Conda适合复杂依赖；
+    \item 跨平台一致性：使用现代化工具和环境标记解决平台差异。
 \end{itemize}
 
 \textbf{进阶思考：}

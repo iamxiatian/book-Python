@@ -8,7 +8,7 @@
 
 \subsection{性能分析的基本概念}
 
-性能分析（Profiling）是一种动态程序分析技术，它通过记录程序执行过程中各个函数的调用次数、执行时间等数据，帮助开发者了解程序的运行特征。与简单计时不同，Profiling能够提供函数级别的性能数据，为优化提供精准指导。
+\index{性能分析}\index{profiling}性能分析（profiling）是一种动态程序分析技术，它通过记录程序执行过程中各个函数的调用次数、执行时间等数据，帮助开发者了解程序的运行特征。与简单计时不同，Profiling能够提供函数级别的性能数据，为优化提供精准指导。
 
 在性能分析领域，有三个密切相关的英文术语：
 \begin{itemize}
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 \subsection{cProfile：Python内置的性能分析器}
 
 
-cProfile是Python标准库中提供的性能分析工具，它以C语言实现，具有性能开销小、分析准确的特点。通过cProfile，开发者能够获得程序中每个函数的详细执行数据，包括调用次数、执行时间等关键指标，从而为性能优化提供精准的数据支持。
+\index{cProfile}cProfile是Python标准库中提供的性能分析工具，它以C语言实现，具有性能开销小、分析准确的特点。通过cProfile，开发者能够获得程序中每个函数的详细执行数据，包括调用次数、执行时间等关键指标，从而为性能优化提供精准的数据支持。
 
 \heading{基本使用方法}
 
@@ -188,7 +188,7 @@ cProfile输出的报告包含多个重要指标\footnote{详细说明可参考�
 
 \heading{高级分析技巧}
 
-除了基本使用方法外，cProfile还支持多种高级分析技巧。使用pstats模块可以对分析结果进行更灵活的处理，包括数据过滤、多种排序方式、查看函数调用关系等高级功能。
+除了基本使用方法外，cProfile还支持多种高级分析技巧。\index{pstats}使用pstats模块可以对分析结果进行更灵活的处理，包括数据过滤、多种排序方式、查看函数调用关系等高级功能。
 
 以下为pstats的使用示例：
 
@@ -317,7 +317,7 @@ pi.py:4(estimate_pi)  -> 5000000    0.197    0.197  {built-in method math.sqrt}
 
 \heading{火焰图：直观的性能可视化}
 
-火焰图（Flame Graph）是一种直观的性能可视化工具，通过图形化方式展示函数调用栈和时间消耗。图\ref{fig:flame}展示了flameprof工具生成的火焰图示例。
+\index{火焰图}火焰图（flame graph）是一种直观的性能可视化工具，通过图形化方式展示函数调用栈和时间消耗。\index{flameprof}图\ref{fig:flame}展示了flameprof工具生成的火焰图示例。
 
 
 \begin{figure}[H]
@@ -338,7 +338,7 @@ pi.py:4(estimate_pi)  -> 5000000    0.197    0.197  {built-in method math.sqrt}
 
 \heading{snakeviz：交互式性能分析}
 
-snakeviz提供了交互式的可视化界面，支持火焰图和冰柱图两种视图模式：
+\index{snakeviz}snakeviz提供了交互式的可视化界面，支持火焰图和冰柱图两种视图模式：
 
 \begin{minted}{bash}
 # 安装snakeviz
@@ -521,7 +521,7 @@ if __name__ == "__main__":
 
 \heading{使用gc模块检测内存问题}
 
-Python内置的gc垃圾回收模块可以帮助我们了解垃圾回收器追踪到了哪些对象。以下是使用\inlinepython{gc.get\_objects()}检测内存使用的基本方法：
+\index{gc垃圾回收}Python内置的gc垃圾回收模块可以帮助我们了解垃圾回收器追踪到了哪些对象。以下是使用\inlinepython{gc.get\_objects()}检测内存使用的基本方法：
 
 \begin{minted}{python}
 # file: src/fxb/ch09/memory_gc_demo.py
@@ -574,7 +574,7 @@ gc模块可以告诉我们当前有哪些对象，但无法告诉我们这些对
 
 \heading{使用tracemalloc进行内存分配追踪}
 
-Python 3.4新增的tracemalloc模块提供了内存分配的追踪机制，能够定位对象的内存位置、按文件按行统计内存分配情况，并对比内存快照以排查内存泄漏。以下是使用tracemalloc检测内存泄漏的示例：
+\index{tracemalloc}Python 3.4新增的tracemalloc模块提供了内存分配的追踪机制，能够定位对象的内存位置、按文件按行统计内存分配情况，并对比内存快照以排查内存泄漏。以下是使用tracemalloc检测内存泄漏的示例：
 
 \begin{minted}[escapeinside=||]{python}
 # file: src/fxb/ch09/memory_tracemalloc_demo.py
@@ -651,7 +651,7 @@ if __name__ == "__main__":
 
 \heading{使用memory\_profiler进行内存分析}
 
-memory\_profiler是一个专为Python程序设计的模块，用于监控进程的内存消耗，并提供行级的内存使用分析。它是一个纯Python模块，依赖于psutil\footnote{psutil是一个专门用来获取操作系统以及CPU、磁盘、网络、内存等硬件相关信息的Python包，网址：\url{https://github.com/giampaolo/psutil}}模块来收集系统信息。
+\index{内存分析}\index{memory\_profiler}memory\_profiler是一个专为Python程序设计的模块，用于监控进程的内存消耗，并提供行级的内存使用分析。它是一个纯Python模块，依赖于psutil\footnote{psutil是一个专门用来获取操作系统以及CPU、磁盘、网络、内存等硬件相关信息的Python包，网址：\url{https://github.com/giampaolo/psutil}}模块来收集系统信息。
 
 可通过如下方式安装memory\_profiler：
 
@@ -711,7 +711,7 @@ Line #    Mem usage    Increment  Occurrences   Line Contents
 
 \subsection{利用\_\_slots\_\_优化对象内存使用}
 
-\inlinepython{\_\_slots\_\_} 是Python类中的特殊类属性，用于限制类实例可拥有的属性名称，同时能显著优化内存占用并提升属性访问速度。
+\index{\_\_slots\_\_}\inlinepython{\_\_slots\_\_} 是Python类中的特殊类属性，用于限制类实例可拥有的属性名称，同时能显著优化内存占用并提升属性访问速度。
 
 默认情况下，Python类实例的属性存储在动态字典\inlinepython{\_\_dict\_\_}中，这使得实例可以随时新增任意属性，提供了很大的灵活性。然而，这种灵活性也带来了额外的内存开销。当需要创建大量同类型对象时，如前面示例中的DataItem类，这种内存开销可能成为性能瓶颈。
 
@@ -938,7 +938,7 @@ if __name__ == "__main__":
 
 \subsection{使用itertools模块的高效迭代器}
 
-itertools模块提供了一系列高效、内存友好的迭代器函数，它们采用惰性求值策略，仅在需要时才计算下一个值，特别适合处理大规模数据集。使用itertools不仅可以减少内存消耗，还能使代码更加简洁优雅。
+\index{itertools}itertools模块提供了一系列高效、内存友好的迭代器函数，它们采用惰性求值策略，仅在需要时才计算下一个值，特别适合处理大规模数据集。使用itertools不仅可以减少内存消耗，还能使代码更加简洁优雅。
 
 \heading{常用函数及应用场景}
 
@@ -1042,7 +1042,7 @@ itertools模块提供的函数不仅性能优越，还能使代码更加简洁�
 
 \subsection{Cython简介与工作原理}
 
-Cython是Python的超集，不仅完整支持纯Python语法，还引入了C语言级别的类型声明能力，为追求高性能的Python开发提供了更灵活的选择。Cython支持两类文件的编译：一是``.py''文件，作为标准Python源代码，可以通过Cython编译获得性能优化；二是Cython的扩展格式``.pyx''文件，在兼容Python语法基础上新增了Cython特有的语法特性。因此，对于不需要Cython特有语法的简单优化，可以直接使用.py文件进行编译。Cython的整个工作流程见图\ref{fig:cython:workflow}。
+\index{Cython}Cython是Python的超集，不仅完整支持纯Python语法，还引入了C语言级别的类型声明能力，为追求高性能的Python开发提供了更灵活的选择。Cython支持两类文件的编译：一是``.py''文件，作为标准Python源代码，可以通过Cython编译获得性能优化；二是Cython的扩展格式``.pyx''文件，在兼容Python语法基础上新增了Cython特有的语法特性。因此，对于不需要Cython特有语法的简单优化，可以直接使用.py文件进行编译。Cython的整个工作流程见图\ref{fig:cython:workflow}。
 
 \begin{figure}[H]
     \centering

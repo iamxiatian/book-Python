@@ -25,7 +25,7 @@
 \subsection{测试驱动开发}
 \label{subsec:tdd-philosophy}
 
-测试驱动开发（Test-Driven Development, TDD）颠覆了传统的先实现后测试的工作流程，倡导测试先行的哲学。TDD遵循``红—绿—重构''的循环（Red — Green — Refactor），即：首先编写一个失败的测试（红），然后实现最简单的代码使测试通过（绿），最后优化代码结构而不改变其行为（重构）。
+\index{测试驱动开发}测试驱动开发（test-driven development, TDD）颠覆了传统的先实现后测试的工作流程，倡导测试先行的哲学。\index{``红—绿—重构''循环}TDD遵循``红—绿—重构''的循环（red — green — refactor），即：首先编写一个失败的测试（红），然后实现最简单的代码使测试通过（绿），最后优化代码结构而不改变其行为（重构）。
 
 这种循环的核心理念在于，测试不是事后验证，而是设计工具。通过先编写测试，开发者被迫思考代码应该如何被使用，从而带来更清晰的代码设计。例如，在实现一个字符串反转功能时，TDD的循环可如下展开：
 
@@ -51,7 +51,7 @@ TDD不仅适用于单元测试，也可用于集成测试与验收测试。其�
 \subsection{测试金字塔与分层策略}
 \label{subsec:test-pyramid}
 
-由Mike Cohn提出的测试金字塔（Test Pyramid）是一个经典的分层测试模型\citep{Cohn2009}。如图\ref{fig:test-pyramid}所示，测试金字由底层的单元测试、中层的集成测试和顶层的端到端测试构成。该模型强调测试数量应随层次升高而递减，以保证测试套件的执行效率与维护性。
+\index{测试金字塔}由Mike Cohn提出的测试金字塔（test pyramid）是一个经典的分层测试模型\citep{Cohn2009}。如图\ref{fig:test-pyramid}所示，测试金字由底层的单元测试、中层的集成测试和顶层的端到端测试构成。该模型强调测试数量应随层次升高而递减，以保证测试套件的执行效率与维护性。
 
 \begin{figure}[htbp]
 \centering
@@ -88,7 +88,7 @@ TDD不仅适用于单元测试，也可用于集成测试与验收测试。其�
 \subsection{断言}
 \label{subsec:assertions}
 
-断言是测试中用于验证条件是否为真的语句。Python使用\inlinepython{assert}关键字实现断言，若条件为假则抛出\inlinepython{AssertionError}。断言取代了人工检查输出结果的方式，实现了验证过程的自动化。
+\index{断言}断言是测试中用于验证条件是否为真的语句。Python使用\inlinepython{assert}关键字实现断言，若条件为假则抛出\inlinepython{AssertionError}。断言取代了人工检查输出结果的方式，实现了验证过程的自动化。
 
 \begin{minted}{python}
 # 断言的基本语法
@@ -112,7 +112,7 @@ assert x < y, f"预期{x}小于{y}，但实际并非如此"
 \subsection{测试用例}
 \label{subsec:test-cases}
 
-测试用例（Test Case）是一组相关的测试，用于验证某个特定功能或行为。在Python测试中，测试用例通常以函数或类的形式组织，良好的组织方式能够显著提升测试代码的可读性和可维护性。
+\index{测试用例}测试用例（test case）是一组相关的测试，用于验证某个特定功能或行为。在Python测试中，测试用例通常以函数或类的形式组织，良好的组织方式能够显著提升测试代码的可读性和可维护性。
 
 \heading{测试函数：最简单的测试用例}
 
@@ -135,7 +135,7 @@ def test_addition():
 
 \heading{测试类：组织相关测试}
 
-当需要测试一个类的多个方法或多个相关功能时，可以使用测试类来组织测试用例。测试类将相关的测试方法组织在一起，共享相同的测试上下文。例如，测试一个计算器类的功能时，可以将所有测试方法组织在一个测试类中：
+当需要测试一个类的多个方法或多个相关功能时，可以使用测试类来组织测试用例。\index{测试类}测试类将相关的测试方法组织在一起，共享相同的测试上下文。例如，测试一个计算器类的功能时，可以将所有测试方法组织在一个测试类中：
 
 \begin{minted}{python}
 # 被测试的类
@@ -191,7 +191,6 @@ class TestCalculator:
 
 
 
-
 \section{开源测试框架}
 \label{sec:testing-frameworks}
 
@@ -199,7 +198,7 @@ Python测试生态系统经历了从unittest到nose，再到pytest的演进过�
 
 \subsection{从unittest到pytest的演进}
 
-Python标准库中的unittest模块为测试提供了基础支持，其设计深受Java的JUnit框架影响。unittest采用基于类的组织方式，要求测试用例必须继承\inlinepython{TestCase}类，并使用专用的断言方法如\inlinepython{assertEqual}、\inlinepython{assertTrue}等。这种设计确保了测试的一致性和可靠性，但语法相对繁琐，不如Python原生的\inlinepython{assert}语句直观。
+\index{unittest}Python标准库中的unittest模块为测试提供了基础支持，其设计深受Java的JUnit框架影响。unittest采用基于类的组织方式，要求测试用例必须继承\inlinepython{TestCase}类，并使用专用的断言方法如\inlinepython{assertEqual}、\inlinepython{assertTrue}等。这种设计确保了测试的一致性和可靠性，但语法相对繁琐，不如Python原生的\inlinepython{assert}语句直观。
 
 \begin{minted}{python}
 # unittest示例：必须继承TestCase类
@@ -215,9 +214,9 @@ class TestMath(unittest.TestCase):
 
 unittest的主要价值在于其作为Python标准库的一部分，无需额外安装即可使用。对于简单的测试需求或受限制的环境，unittest仍然是一个可靠的选择。然而，随着项目复杂度增加，unittest的局限性逐渐显现，包括繁琐的语法、有限的扩展能力和不够灵活的测试发现机制。
 
-伴随着unittest的使用，早年的Python社区还开发了nose框架，旨在提供更简洁的测试发现和运行体验。nose通过插件机制增强了测试框架的可扩展性，允许使用简单函数作为测试用例。随着nose项目在2015年后逐渐停止活跃维护，其继任者nose2随之诞生。nose2扩展了unittest以改善测试体验，但主要作为unittest的增强版而非全新框架，社区规模和插件生态相对有限\footnote{\url{https://docs.nose2.io/}}。
+\index{nose}伴随着unittest的使用，早年的Python社区还开发了nose框架，旨在提供更简洁的测试发现和运行体验。nose通过插件机制增强了测试框架的可扩展性，允许使用简单函数作为测试用例。随着nose项目在2015年后逐渐停止活跃维护，其继任者nose2随之诞生。nose2扩展了unittest以改善测试体验，但主要作为unittest的增强版而非全新框架，社区规模和插件生态相对有限\footnote{\url{https://docs.nose2.io/}}。
 
-pytest在吸收前代框架优点的基础上，进行了全面的重新设计，确立了现代Python测试框架的新标准。它不仅支持使用原生的assert语句，还引入了固件、参数化测试等创新特性，极大地提升了测试的编写效率和可维护性。如今，pytest已成为大多数Python项目的首选测试框架。
+\index{pytest}pytest在吸收前代框架优点的基础上，进行了全面的重新设计，确立了现代Python测试框架的新标准。它不仅支持使用原生的assert语句，还引入了固件、参数化测试等创新特性，极大地提升了测试的编写效率和可维护性。如今，pytest已成为大多数Python项目的首选测试框架。
 
 \subsection{pytest的核心特性}
 \label{subsec:pytest-core-features}
@@ -242,7 +241,7 @@ def test_add():
 
 \heading{强大的固件系统}
 
-固件（Fixture）是pytest框架的核心特性，它为测试环境的准备和清理提供了优雅的解决方案。在中文语境中，Fixture有多种译法：可译为``测试夹具''，强调其固定测试前置条件和后置清理的能力；也可译为``测试装置''，突出其为测试搭建配套环境的角色。本书统一采用``固件''这一译法，意指其为测试的固定基础组件。
+\index{固件}固件（fixture）是pytest框架的核心特性，它为测试环境的准备和清理提供了优雅的解决方案。在中文语境中，fixture有多种译法：可译为``测试夹具''，强调其固定测试前置条件和后置清理的能力；也可译为``测试装置''，突出其为测试搭建配套环境的角色。本书统一采用``固件''这一译法，意指其为测试的固定基础组件。
 
 固件支持函数、类、模块、会话等多种作用域，开发者可根据资源初始化成本和测试需求灵活选择。通过依赖注入机制，固件能够自动提供给需要它的测试函数，这种设计显著提升了测试代码的模块化和可复用性。例如，定义一个简单的数据准备固件：
 
@@ -293,7 +292,7 @@ pytest的智能测试发现机制能自动识别并运行测试代码，支持�
 \section{高质量单元测试}
 \label{sec:writing-unit-tests}
 
-高质量的测试不仅要求功能正确，还应具备良好的可维护性、可读性和执行效率。编写高质量单元测试需要掌握一系列技术和原则，这些技术和原则共同构成了专业测试的工具箱。
+\index{单元测试}高质量的测试不仅要求功能正确，还应具备良好的可维护性、可读性和执行效率。编写高质量单元测试需要掌握一系列技术和原则，这些技术和原则共同构成了专业测试的工具箱。
 
 
 \subsection{设计可测试的代码结构}
@@ -409,7 +408,7 @@ def test_divide_by_zero(a, b):
 
 \heading{unittest.mock模块与patch()函数}
 
-Python标准库中的\inlinepython{unittest.mock}模块提供了模拟（Mock）对象的能力，其核心设计思想是``用可控的模拟对象替代真实依赖''，让单元测试能够专注于验证业务逻辑的正确性，而不受外部依赖的不确定性影响。该模块中最核心、最常用的工具是\inlinepython{patch()}函数，它允许在测试的作用域内，临时将目标对象（函数、方法或类）替换为模拟对象，测试结束后自动恢复原对象，确保测试之间的独立性。
+\index{mock模块}Python标准库中的\inlinepython{unittest.mock}模块提供了模拟（mock）对象的能力，其核心设计思想是``用可控的模拟对象替代真实依赖''，让单元测试能够专注于验证业务逻辑的正确性，而不受外部依赖的不确定性影响。该模块中最核心、最常用的工具是\inlinepython{patch()}函数，它允许在测试的作用域内，临时将目标对象（函数、方法或类）替换为模拟对象，测试结束后自动恢复原对象，确保测试之间的独立性。
 
 \circled{1} 示例：模拟天气API调用
 
@@ -432,7 +431,7 @@ def get_weather(city):
         return None
 \end{minted}
 
-在测试中，我们需要模拟API调用的行为而非实际发送网络请求，此时可以使用\inlinepython{patch()}实现对\inlinepython{get\_weather}中\inlinepython{requests.get}的模拟：
+\index{patch()}在测试中，我们需要模拟API调用的行为而非实际发送网络请求，此时可以使用\inlinepython{patch()}实现对\inlinepython{get\_weather}中\inlinepython{requests.get}的模拟：
 
 \begin{minted}{python}
 # file: tests/ch10/test_weather.py
@@ -642,7 +641,7 @@ pytest-mock最直接的改进是在完全兼容unittest.mock基础上，提供�
 \subsection{分析与优化测试覆盖率}
 \label{subsec:test-coverage}
 
-测试覆盖率是衡量测试完备性的重要指标，它反映了有多少源代码在测试执行过程中被实际运行。pytest通过pytest-cov插件\footnote{\url{https://pytest-cov.readthedocs.io/}}支持覆盖率分析，可以生成详细的覆盖率报告，帮助开发者识别未测试的代码区域。
+\index{测试覆盖率}测试覆盖率是衡量测试完备性的重要指标，它反映了有多少源代码在测试执行过程中被实际运行。pytest通过pytest-cov插件\footnote{\url{https://pytest-cov.readthedocs.io/}}支持覆盖率分析，可以生成详细的覆盖率报告，帮助开发者识别未测试的代码区域。
 
 \begin{minted}{bash}
 # 通过uv add 安装插件
@@ -689,7 +688,7 @@ Coverage HTML written to dir htmlcov
 \subsection{集成测试的定位与价值}
 \label{subsec:integration-value}
 
-集成测试旨在发现组件集成时出现的问题，这类问题在隔离的单元测试中往往无法暴露。单元测试侧重于在独立环境中验证单个组件的正确性，但实际系统中各组件需要相互协作，而协作过程可能引发接口不匹配、数据格式不一致、时序冲突、资源竞争等多种问题。
+\index{集成测试}集成测试旨在发现组件集成时出现的问题，这类问题在隔离的单元测试中往往无法暴露。单元测试侧重于在独立环境中验证单个组件的正确性，但实际系统中各组件需要相互协作，而协作过程可能引发接口不匹配、数据格式不一致、时序冲突、资源竞争等多种问题。
 
 集成测试重点关注组件间的交互行为，主要验证接口兼容性、数据流正确性、业务流程完整性以及错误处理的一致性。通过集成测试，可以确保各个组件能够按设计协同工作，实现系统的整体功能。此外，集成测试也能够验证系统的非功能特性，如性能、可靠性和安全性，这些特性往往依赖于多个组件的协同配合。
 
@@ -698,7 +697,7 @@ Coverage HTML written to dir htmlcov
 \subsection{集成测试中的依赖注入}
 \label{subsec:dependency-injection}
 
-依赖注入作为一种设计模式，不仅在单元测试中发挥着重要作用，在集成测试中同样具有重要意义。在集成测试中，依赖注入的主要价值体现在能够灵活管理组件之间的依赖关系，根据测试需求配置不同的测试环境。
+\index{依赖注入}依赖注入作为一种设计模式，不仅在单元测试中发挥着重要作用，在集成测试中同样具有重要意义。在集成测试中，依赖注入的主要价值体现在能够灵活管理组件之间的依赖关系，根据测试需求配置不同的测试环境。
 
 在集成测试场景下，依赖注入通常表现为两种形式：第一种是使用真实的依赖组件，如测试数据库、消息队列等，以验证组件在实际环境中的协作；第二种是使用测试替身，如模拟对象，用于隔离部分不稳定或难以配置的依赖，专注于测试目标组件的集成行为。
 
@@ -750,7 +749,7 @@ def test_user_count(test_database):
 
 在实践中，合理的测试策略需要在单元测试和集成测试之间取得平衡。单元测试应该覆盖大部分业务逻辑，因为它们执行快、隔离性好，能够快速反馈问题。集成测试则专注于验证组件间的关键交互，确保系统作为一个整体能够正常工作。
 
-第\ref{subsec:test-pyramid}节所提到的测试金字塔模型为这种平衡提供了指导原则：大量快速的单元测试构成基础，中等数量的集成测试作为中间层，少量端到端测试位于顶层。这种结构能够在保证测试质量的同时，最大化测试套件的执行效率。
+\index{测试金字塔}第\ref{subsec:test-pyramid}节所提到的测试金字塔模型为这种平衡提供了指导原则：大量快速的单元测试构成基础，中等数量的集成测试作为中间层，少量端到端测试位于顶层。这种结构能够在保证测试质量的同时，最大化测试套件的执行效率。
 
 单元测试的优势在于快速和精确。它们可以频繁运行，为开发者提供即时反馈。当测试失败时，单元测试能够精确定位问题所在，因为它们只测试一个小的代码单元。单元测试的覆盖成本较低，可以针对每个函数、每个分支、每个边界条件编写测试。
 

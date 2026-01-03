@@ -6,7 +6,7 @@
 
 \subsection{async/await语法与协程原理}
 
-\index{协程}\index{Coroutine}协程（Coroutine）是asyncio异步编程的基本构建块，它是一种特殊的函数，能够在执行过程中主动暂停，并将控制权交还给调度器，随后在恰当的时机从暂停点恢复执行。
+\index{协程}\index{Coroutine}\index{asyncio}协程（coroutine）是asyncio异步编程的基本构建块，它是一种特殊的函数，能够在执行过程中主动暂停，并将控制权交还给调度器，随后在恰当的时机从暂停点恢复执行。
 
 与操作系统线程的抢占式调度不同，协程采用协作式调度方式，主动通过\inlinepython{await}表达式让出控制权，而非被强制中断。相对比而言，线程切换发生在操作系统的内核态，需要保存/恢复完整的CPU上下文，如寄存器、栈指针等，涉及系统调用开销；协程切换完全在用户态进行，仅需保存程序计数器、栈指针等少量状态，开销通常为线程切换的百分之一甚至千分之一。
 
@@ -63,7 +63,7 @@ coro1 类型: <class 'coroutine'>
 
 \subsection{从顺序到并发：理解await与任务创建}
 
-默认情况下，多个\inlinepython{await}是顺序执行的。要实现真正的并发，需要创建任务。任务是事件循环对协程的进一步封装，它负责调度协程的执行，并允许它们在事件循环中并发运行。
+\index{await}默认情况下，多个\inlinepython{await}是顺序执行的。要实现真正的并发，需要创建任务。任务是事件循环对协程的进一步封装，它负责调度协程的执行，并允许它们在事件循环中并发运行。
 
 下面的示例展示了顺序执行与并发执行的区别：
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
 \subsection{事件循环的核心职责}
 
-事件循环（Event Loop）是整个asyncio框架的核心，它负责调度协程的执行，管理I/O事件。在单线程环境中，事件循环采用事件驱动的方式，通过轮询和回调机制监控所有I/O事件和任务状态，以此决定协程的执行顺序。
+\index{事件循环}事件循环（event loop）是整个asyncio框架的核心，它负责调度协程的执行，管理I/O事件。在单线程环境中，事件循环采用事件驱动的方式，通过轮询和回调机制监控所有I/O事件和任务状态，以此决定协程的执行顺序。
 
 \begin{figure}[h]
 \centering
@@ -185,7 +185,7 @@ results = await asyncio.gather(
 
 \subsection{结构化并发}
 
-Python 3.11引入了\inlinepython{asyncio.TaskGroup}，提供了更安全的结构化并发管理方式。\inlinepython{TaskGroup}确保组内所有任务都被妥善管理，当一个任务失败时，会自动取消其他任务，避免资源泄漏。
+\index{结构化并发}\index{TaskGroup}Python 3.11引入了\inlinepython{asyncio.TaskGroup}，提供了更安全的结构化并发管理方式。\inlinepython{TaskGroup}确保组内所有任务都被妥善管理，当一个任务失败时，会自动取消其他任务，避免资源泄漏。
 
 \begin{minted}[escapeinside=||]{python}
 # file: src/fxb/ch08/task_group.py (Python 3.11+)

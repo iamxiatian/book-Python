@@ -1,8 +1,3 @@
-"""
-FastAPI应用集成Prometheus指标监控示例
-该应用定义三种Prometheus指标类型，并通过/metrics端点暴露指标数据
-"""
-
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from fastapi import FastAPI, Response
 import random
@@ -46,7 +41,6 @@ async def get_data():
 
     # ========== 更新Prometheus指标 ==========
     # 1. 更新请求计数器：为"/api/data"端点的计数器加1
-    #    .labels()方法使用标签区分不同端点的请求
     REQUEST_COUNT.labels(endpoint="/api/data").inc()
 
     # 2. 记录请求处理耗时：将本次请求的处理时间记录到直方图中
@@ -54,8 +48,6 @@ async def get_data():
     REQUEST_DURATION.observe(time.time() - start_time)
 
     # 3. 更新活跃会话数：随机设置一个模拟值
-    #    .set()方法直接设置仪表盘的当前值
-    #    在实际应用中，这里可能是从共享状态或数据库中获取的真实值
     ACTIVE_SESSIONS.set(random.randint(10, 100))  # 设置活跃会话数
 
     return {"status": "ok", "data": "sample"}
@@ -68,8 +60,6 @@ async def metrics():
     这是Python应用与Prometheus监控系统集成的关键
     """
     # generate_latest()：生成Prometheus格式的指标数据
-    #   该函数会将所有已注册的指标转换为Prometheus可识别的文本格式
-    # Response：返回HTTP响应，指定内容类型为纯文本
     return Response(content=generate_latest(), media_type="text/plain")
 
 

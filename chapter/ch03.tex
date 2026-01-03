@@ -27,7 +27,7 @@ my-project/
 
 \subsection{项目结构的扁平布局}
 
-当项目逻辑变得复杂，需要拆分为多个模块时，扁平布局（Flat Layout）是一个常见的选择。这种结构的设计理念源于Python的``简单优于复杂''哲学，源代码目录直接放置在项目根目录下，与配置文件、测试文件等并列。
+\index{扁平布局}当项目逻辑变得复杂，需要拆分为多个模块时，扁平布局（Flat Layout）是一个常见的选择。这种结构的设计理念源于Python的``简单优于复杂''哲学，源代码目录直接放置在项目根目录下，与配置文件、测试文件等并列。
 
 \begin{minted}{text}
 my-project/
@@ -65,7 +65,7 @@ src 布局通过强制模拟真实用户环境，确保开发阶段的测试结�
 
 \heading{src布局的基本结构}
 
-src 布局的核心思想是隔离源代码：将需要被导入的 Python 代码放置在 \inlinefile{src/} 目录下，使其在尚未安装的状态时，代码对解释器不可见。src 布局已成为社区广泛推荐的标准实践，Python 专家 Hynek Schlawack 在《Testing \& Packaging》中明确阐述了其优势\citep{schlawack2023testing}，并指出这是规避常见导入问题的有效方案。该布局基于关注点分离的软件工程原则，具体结构如下：
+\index{src布局}src布局的核心思想是隔离源代码：将需要被导入的 Python 代码放置在 \inlinefile{src/} 目录下，使其在尚未安装的状态时，代码对解释器不可见。src 布局已成为社区广泛推荐的标准实践，Python 专家 Hynek Schlawack 在《Testing \& Packaging》中明确阐述了其优势\citep{schlawack2023testing}，并指出这是规避常见导入问题的有效方案。该布局基于关注点分离的软件工程原则，具体结构如下：
 
 \begin{minted}{text}
 my-project/
@@ -179,7 +179,7 @@ from src import my_package #即时能导入，但这是错误的做法
 
 \heading{PEP 420 与隐式命名空间}
 
-在 Python 3.3 之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{\_\_init\_\_.py} 中使用 \inlinepython{pkgutil.extend\_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
+\index{命名空间包}在Python3.3之前，创建命名空间包需要复杂的黑魔法（如在 \inlinefile{\_\_init\_\_.py} 中使用 \inlinepython{pkgutil.extend\_path}）。但随着PEP 420 (Implicit Namespace Packages)的引入\citep{eric2025pep420}，这一过程变得极其简洁。
 
 PEP 420 允许我们将一个逻辑上的包拆分到文件系统中的不同目录下，甚至不同的发布包（Distribution Packages）中。其核心规则只有一个：在命名空间目录中不要包含 \inlinefile{\_\_init\_\_.py} 文件。
 
@@ -404,7 +404,7 @@ uv pip install -e .
 
 \subsection{高内聚：专注单一职责}
 
-高内聚要求一个模块或类中的所有元素紧密相关，共同为完成一个单一的、明确定义的任务而服务。这种设计理念在Robert C. Martin的代码整洁之道\citep{martin2017clean}中被系统阐述，强调每个模块都应该有清晰的职责边界。
+\index{高内聚}高内聚要求一个模块或类中的所有元素紧密相关，共同为完成一个单一的、明确定义的任务而服务。这种设计理念在Robert C. Martin的代码整洁之道\citep{martin2017clean}中被系统阐述，强调每个模块都应该有清晰的职责边界。
 
 高内聚的设计提高了代码的可读性和可维护性。当需要修改某个功能时，开发者能够快速定位到相关模块，而不必在多个文件中来回跳转。在实际开发中，应将功能相关的代码组织在同一个模块中，避免创建承担过多职责的全能模块。
 
@@ -448,7 +448,7 @@ def fetch_data(endpoint):
 
 \subsection{低耦合：减少模块依赖}
 
-低耦合要求模块间的依赖关系尽量减少和简化，一个模块的变动不应该强制要求其他大量模块做出修改。实现低耦合的关键策略包括依赖注入和接口抽象。通过依赖抽象接口而非具体实现，可以显著降低模块间的耦合度。
+\index{低耦合}低耦合要求模块间的依赖关系尽量减少和简化，一个模块的变动不应该强制要求其他大量模块做出修改。实现低耦合的关键策略包括依赖注入和接口抽象。通过依赖抽象接口而非具体实现，可以显著降低模块间的耦合度。
 
 \heading{反例：硬编码依赖导致的紧耦合}
 
@@ -582,7 +582,7 @@ my_project/
 
 \heading{大型项目的分层目录组织结构}
 
-测试领域有一个测试金字塔（Test Pyramid）理念（详细内容见第\ref{subsec:test-pyramid}节），为匹配该理念，还可以按照如下方式建立分层子目录，对测试相关文件进行分类组织：
+测试领域有一个测试金字塔理念（详细内容见第\ref{subsec:test-pyramid}节），为匹配该理念，还可以按照如下方式建立分层子目录，对测试相关文件进行分类组织：
 
 \begin{minted}{text}
 tests/
@@ -678,7 +678,7 @@ docs/
 
 \section{项目结构的实践建议}
 
-初学者在构建 Python 项目时，常会踩中过早优化结构的坑：还没写几行代码就急着把目录拆成深层级的 src、core、utils，结果每次新建文件都要在多层文件夹里来回跳转，反而拖慢开发节奏。最简单的办法是只用一级或两级目录把当前功能放下即可，等真正出现文件太多不好查找的情况再进行拆分。
+初学者在构建Python项目时，常会踩中过早优化结构的坑：还没写几行代码就急着把目录拆成深层级的 src、core、utils，结果每次新建文件都要在多层文件夹里来回跳转，反而拖慢开发节奏。最简单的办法是只用一级或两级目录把当前功能放下即可，等真正出现文件太多不好查找的情况再进行拆分。
 
 导入路径混乱也是初学者常遇到的问题，一会儿\inlinepython{from ..utils import foo}，一会儿\inlinepython{from src.utils import foo}，路径混乱，换台机器或跑个 pytest就报ImportError。解决这一问题的简单办法是采用\inlinefile{pyproject.toml}和uv等工具，把包安装到虚拟环境，采用\inlinepython{from my\_project.utils import foo}这种形式的绝对导入方式。
 

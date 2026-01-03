@@ -1,6 +1,6 @@
 \chapter{全方位类型系统 \label{ch:comprehensive-static-type-system}}
 
-类型提示（Type Hinting）是构建大型可维护系统的重要保障。本章将探讨现代Python类型系统的完整技术栈，构建从开发时到运行时的全方位类型安全保障。内容包括：静态类型系统，涵盖泛型、协议等高级类型提示技巧；类型检查工具，通过静态分析在编码阶段提前发现潜在错误；以及如何将类型系统延伸至运行时验证，利用Pydantic等工具确保外部输入数据的类型合规性，最终实现端到端的类型安全。
+\index{类型提示}类型提示（type hinting）是构建大型可维护系统的重要保障。本章将探讨现代Python类型系统的完整技术栈，构建从开发时到运行时的全方位类型安全保障。内容包括：静态类型系统，涵盖泛型、协议等高级类型提示技巧；类型检查工具，通过静态分析在编码阶段提前发现潜在错误；以及如何将类型系统延伸至运行时验证，利用Pydantic等工具确保外部输入数据的类型合规性，最终实现端到端的类型安全。
 
 \section{高级类型提示}
 
@@ -8,7 +8,7 @@
 
 \subsection{泛型：处理容器与抽象类型}
 
-Python中的泛型是一种强大的类型提示工具，它允许你在编写函数、类或数据结构时，先不锁定具体的数据类型，而是使用一个通用的类型占位符（如 \inlinepython{T}、\inlinepython{K}、\inlinepython{V}）。这种机制的核心思想是将类型本身参数化，就像函数的参数一样，在定义时用符号表示，在实际使用时才确定具体的类型。
+\index{泛型}Python中的泛型是一种强大的类型提示工具，它允许你在编写函数、类或数据结构时，先不锁定具体的数据类型，而是使用一个通用的类型占位符（如 \inlinepython{T}、\inlinepython{K}、\inlinepython{V}）。这种机制的核心思想是将类型本身参数化，就像函数的参数一样，在定义时用符号表示，在实际使用时才确定具体的类型。
 
 泛型设计带来了多重优势。首先，它极大地提升了代码的复用性，同一套逻辑可以安全地处理各种不同类型的数据，无需为每种类型编写重复代码；其次，通过静态类型检查工具，能够在代码运行前就发现类型不匹配的错误，增强了程序的可靠性；最后，泛型让代码意图更加清晰明确，使用者能够一目了然地了解应该传入什么类型的数据以及会得到什么类型的返回值。
 
@@ -140,9 +140,9 @@ print(str_container.get_value())  # 输出: 2035年11月19日
 
 理解类型系统中的协变与逆变概念对于处理继承关系至关重要，理解该概念的关键在于：当一个类型\inlinepython{A}是另一个类型\inlinepython{B}的子类型时，即\inlinepython{A}继承自\inlinepython{B}，那么基于\inlinepython{A}和\inlinepython{B}的复杂类型（如\inlinepython{List[A]}和\inlinepython{List[B]}之间是否也存在类似的子类型关系？
 
-\circled{1} 协变（Covariance）：具体的集合，能当通用的集合用
+\circled{1} 协变（covariance）：具体的集合，能当通用的集合用
 
-如果\inlinepython{A}是\inlinepython{B}的子类型（\inlinepython{A <: B}），并且\inlinepython{Generic[A]}也是\inlinepython{Generic[B]}的子类型（\inlinepython{Generic[A] <: Generic[B]}），那么\inlinepython{Generic}这个泛型类就是协变的。简单来说，就是子类的泛型实例，可以赋值给父类的泛型实例。
+\index{协变}如果\inlinepython{A}是\inlinepython{B}的子类型（\inlinepython{A <: B}），并且\inlinepython{Generic[A]}也是\inlinepython{Generic[B]}的子类型（\inlinepython{Generic[A] <: Generic[B]}），那么\inlinepython{Generic}这个泛型类就是协变的。简单来说，就是子类的泛型实例，可以赋值给父类的泛型实例。
 
 协变可以提高代码的复用度和灵活性：如果你有一个函数可以处理\inlinepython{List[Fruit]}，你不应该再为\inlinepython{List[Apple]}、\inlinepython{List[Banana]}等每一个水果子类都单独写一个版本。协变让\inlinepython{List[Apple]}可以被传递给需要\inlinepython{List[Fruit]}的函数，从而复用代码。
 
@@ -176,9 +176,9 @@ eat_fruits(apples)  # eat apple, eat apple
 协变的这种处理方式比较符合人类直觉。一个装满苹果的盒子，当然也是一个装满水果的盒子，也就可以安全地从这个盒子里拿出水果来吃。
 
 \vspace{1em}
-\circled{2} 逆变（Contravariance）： 通用的工具，能当具体的工具用
+\circled{2} 逆变（contravariance）： 通用的工具，能当具体的工具用
 
-如果\inlinepython{A}是\inlinepython{B}的子类型（\inlinepython{A <: B}），并且\inlinepython{Generic[B]}是\inlinepython{Generic[A]}的子类型（\inlinepython{Generic[B] <: Generic[A]}），那么\inlinepython{Generic}这个泛型类就是逆变的。和协变相反，逆变的父类的泛型实例，可以赋值给子类的泛型实例。
+\index{逆变}如果\inlinepython{A}是\inlinepython{B}的子类型（\inlinepython{A <: B}），并且\inlinepython{Generic[B]}是\inlinepython{Generic[A]}的子类型（\inlinepython{Generic[B] <: Generic[A]}），那么\inlinepython{Generic}这个泛型类就是逆变的。和协变相反，逆变的父类的泛型实例，可以赋值给子类的泛型实例。
 
 继续考虑水果的应用场景，如果你需要一个能处理Apple的工具，一个能处理更通用的Fruit的工具显然也能胜任。这个工具不会关心Apple比Fruit多了什么属性，它只需要用Fruit的通用方法来处理即可。
 
@@ -264,14 +264,14 @@ cut_apple(fruit_cutter, apple)
   \end{tabular}
 \end{table}
 
-综上，协变和逆变是为了在静态类型系统中，能更精确地描述和验证复杂类型之间的关系，从而在保证类型安全的前提下，尽可能地提供代码的灵活性和复用性。它们是静态类型语言（如 Java、C\#、Scala，以及支持静态类型检查的 Python）中处理泛型的基石。
+综上，协变和逆变是为了在静态类型系统中，能更精确地描述和验证复杂类型之间的关系，从而在保证类型安全的前提下，尽可能地提供代码的灵活性和复用性。它们是静态类型语言（如 Java、C\#、Scala，以及支持静态类型检查的Python）中处理泛型的基石。
 
 
 \subsection{协议：实现鸭子类型的类型安全}
 
-Python语言有一个很有意思的特性，称之为鸭子类型（Duck Typing）—— 如果一个对象走起来像鸭子，叫起来像鸭子，那么它就可以被当作鸭子。这种动态特性带来了极大的灵活性，但在大型项目中却可能成为维护的隐患。传统的鸭子类型缺乏明确的接口契约，使得静态类型检查难以发挥作用，代码使用者必须深入阅读实现细节才能了解所需接口，重构时也容易意外破坏依赖特定方法的代码。
+\index{鸭子类型}Python语言有一个很有意思的特性，称之为鸭子类型（duck typing）—— 如果一个对象走起来像鸭子，叫起来像鸭子，那么它就可以被当作鸭子。这种动态特性带来了极大的灵活性，但在大型项目中却可能成为维护的隐患。传统的鸭子类型缺乏明确的接口契约，使得静态类型检查难以发挥作用，代码使用者必须深入阅读实现细节才能了解所需接口，重构时也容易意外破坏依赖特定方法的代码。
 
-Python 3.8 引入的 \inlinepython{Protocol} 类型为此提供了优雅的解决方案。\inlinepython{Protocol} 允许定义结构化的接口契约，既保持了鸭子类型的灵活性，又提供了静态类型安全。它基于结构化类型系统（Structural Typing）的理念，一个类只要实现了协议定义的所有方法和属性，就被认为是该协议的子类型，而无需显式声明继承关系。
+Python 3.8 引入的 \inlinepython{Protocol} 类型为此提供了优雅的解决方案。\inlinepython{Protocol} 允许定义结构化的接口契约，既保持了鸭子类型的灵活性，又提供了静态类型安全。它基于结构化类型系统（structural typing）的理念，一个类只要实现了协议定义的所有方法和属性，就被认为是该协议的子类型，而无需显式声明继承关系。
 
 以下示例使用水果场景展示 \inlinepython{Protocol} 的应用：
 
@@ -390,7 +390,7 @@ class Rock:
 
 \heading{类型别名简化复杂签名}
 
-类型别名（Type Alias）可以显著提升代码的可读性和可维护性。它将复杂的类型定义抽象为有意义的名称，让函数签名更加清晰，同时也便于集中管理类型定义。当数据结构需要调整时，只需修改类型别名的定义，所有使用该别名的地方都会自动更新，大大减少了出错的可能性。
+\index{类型别名}类型别名（type alias）可以显著提升代码的可读性和可维护性。它将复杂的类型定义抽象为有意义的名称，让函数签名更加清晰，同时也便于集中管理类型定义。当数据结构需要调整时，只需修改类型别名的定义，所有使用该别名的地方都会自动更新，大大减少了出错的可能性。
 
 \begin{minted}{python}
 from typing import Dict, List, Union, TypeAlias
@@ -555,7 +555,7 @@ Python解释器在运行时并不会强制检查所有类型错误，专业的�
 
 \subsection{Python社区的类型检查基石：Mypy}
 
-Python类型检查生态的先驱当属Mypy无疑，它基于 Python 的类型提示标准，提供了严格的类型验证能力，并拥有最广泛的社区采用度和丰富的配置选项。
+\index{Mypy工具}Python类型检查生态的先驱当属Mypy无疑，它基于 Python 的类型提示标准，提供了严格的类型验证能力，并拥有最广泛的社区采用度和丰富的配置选项。
 
 \heading{安装与使用}
 
@@ -656,8 +656,7 @@ Found 2 errors in 1 file (checked 1 source file)
 
 \subsection{高性能的类型检查器：Pyright}
 
-由微软开发的Pyright以出色的性能表现和精确的类型推断能力而著称，也是Pylance语言服务器的基础。
-Pylance同样由微软开发，基于Pyright类型检查器构建，结合静态类型检查、智能代码补全和丰富的语言特性，为VSCode提供强大的Python开发支持，用户可通过VSCode的扩展商店安装Pylance。
+\index{Pyright工具}由微软开发的Pyright以出色的性能表现和精确的类型推断能力而著称，也是Pylance语言服务器的基础。Pylance同样由微软开发，基于Pyright类型检查器构建，结合静态类型检查、智能代码补全和丰富的语言特性，为VSCode提供强大的Python开发支持，用户可通过VSCode的扩展商店安装Pylance。
 
 与Mypy一样，Pyright也可以运行在命令行模式下，并支持多种配置方式。
 
@@ -733,11 +732,11 @@ uv run pyright src/ tests/
 
 \section{基于Pydantic的运行时类型校验}
 
-类型提示的价值不仅限于静态检查阶段。通过Pydantic库\footnote{\url{https://docs.pydantic.dev/}}，我们能够在运行时将类型声明转化为实际的数据验证逻辑，实现类型驱动开发模式。这种模式让类型注解从开发时的文档约束，升级为运行时的安全保障。
+\index{运行时类型校验}类型提示的价值不仅限于静态检查阶段。通过Pydantic库\footnote{\url{https://docs.pydantic.dev/}}，我们能够在运行时将类型声明转化为实际的数据验证逻辑，实现类型驱动开发模式。这种模式让类型注解从开发时的文档约束，升级为运行时的安全保障。
 
 \subsection{Pydantic 的核心价值与 BaseModel}
 
-Pydantic是一个基于Python类型提示的现代化数据验证库，它能够在运行时对数据进行验证和序列化操作。Pydantic的核心优势在于直接复用Python的类型提示语法，实现了静态类型系统与运行时验证的无缝衔接。其基础构建块是\inlinepython{BaseModel}类，通过继承此类并定义类型注解字段，即可获得自动的数据验证和转换能力。
+\index{Pydantic}Pydantic是一个基于Python类型提示的现代化数据验证库，它能够在运行时对数据进行验证和序列化操作。Pydantic的核心优势在于直接复用Python的类型提示语法，实现了静态类型系统与运行时验证的无缝衔接。其基础构建块是\inlinepython{BaseModel}类，通过继承此类并定义类型注解字段，即可获得自动的数据验证和转换能力。
 
 执行以下命令将Pydantic依赖加入到项目中：
 

@@ -9,12 +9,15 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=25.1.0",
+    "deprecated>=1.3.1",
     "fastapi>=0.128.0",
     "flameprof>=0.4",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "memory-profiler>=0.61.0",
     "numpy>=2.3.5",
+    "opentelemetry-exporter-jaeger-thrift>=1.21.0",
+    "opentelemetry-sdk>=1.39.1",
     "prometheus-client>=0.23.1",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.12.0",

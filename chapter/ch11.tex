@@ -14,9 +14,9 @@
 
 \subsection{配置分离原则与十二要素方法论}
 
-为应对硬编码配置带来的挑战，业界逐渐形成了配置分离的基本共识：将配置从代码中彻底分离，实现外置化管理。这一原则基于几个重要认识：配置与代码具有不同的变更频率和生命周期；配置往往包含敏感信息，需要与代码采用不同的安全策略；配置需要支持不同环境间的差异化。
+\index{配置分离原则}为应对硬编码配置带来的挑战，业界逐渐形成了配置分离的基本共识：将配置从代码中彻底分离，实现外置化管理。这一原则基于几个重要认识：配置与代码具有不同的变更频率和生命周期；配置往往包含敏感信息，需要与代码采用不同的安全策略；配置需要支持不同环境间的差异化。
 
-软件开发的十二要素应用（The Twelve-Factor App）方法论为此提供了系统的理论指导。该方法的第三个要素明确指出\footnote{\url{https://12factor.net/config}}：配置应该严格地从代码中分离，并存储在环境（Environment）中。这一原则包含几个关键要点：
+软件开发的十二要素应用（the twelve-factor app）方法论为此提供了系统的理论指导。该方法的第三个要素明确指出\footnote{\url{https://12factor.net/config}}：配置应该严格地从代码中分离，并存储在环境（Environment）中。这一原则包含几个关键要点：
 
 首先，配置被定义为那些在不同部署环境之间会发生变化的一切。这包括但不限于数据库连接信息、外部服务端点、资源句柄、功能开关等。通过这种定义，我们可以清晰地区分哪些应该作为配置从代码中分离，哪些可以作为代码中的常量保留。
 
@@ -29,7 +29,7 @@
 \section{配置外置化基础： 环境变量}
 
 \subsection{环境变量的基本概念}
-环境变量（Environment Variable）是一组全局的键值对（Key-Value）数据，由操作系统维护，用于存储系统或应用程序运行所需的配置信息，供所有进程（程序）读取和使用。环境变量是实现配置外置化的首选方案，几乎所有的操作系统、编程语言和部署平台都提供了对它的支持。
+\index{环境变量}环境变量（environment variable）是一组全局的键值对（key-value）数据，由操作系统维护，用于存储系统或应用程序运行所需的配置信息，供所有进程（程序）读取和使用。环境变量是实现配置外置化的首选方案，几乎所有的操作系统、编程语言和部署平台都提供了对它的支持。
 
 环境变量具有几个显著优势：它提供了天然的环境隔离能力，不同环境可以设置不同的环境变量值，而应用程序代码保持不变；环境变量具有语言无关性，无论是Python、Java、Go还是其他语言，都能以相似的方式访问环境变量；在安全性方面，现代操作系统和容器化平台（如Docker、Kubernetes）提供了安全的方式来注入和管理这些变量，避免它们出现在代码或日志中。
 
@@ -118,7 +118,7 @@ max_workers = int(os.getenv("MAX_WORKERS", "4"))
 
 \subsection{.env文件：本地开发的配置管理方案}
 
-在本地开发环境中，管理环境变量的标准实践是使用\inlinefile{.env}文件。这是一种约定俗成的做法，通过简单的文本文件存储环境变量，支持键值对格式和注释功能。
+\index{.env}在本地开发环境中，管理环境变量的标准实践是使用\inlinefile{.env}文件。这是一种约定俗成的做法，通过简单的文本文件存储环境变量，支持键值对格式和注释功能。
 
 \inlinefile{.env}文件采用\variable{KEY=VALUE}的基本格式，每行定义一个环境变量。支持以\variable{\#}开头的注释行，便于开发者理解各配置项的作用。以下是一个典型的\inlinefile{.env}文件示例：
 
@@ -326,7 +326,7 @@ if __name__ == "__main__":
 
 \section{配置格式的选择}
 
-当应用程序的配置需求变得复杂时，简单的键值对形式可能难以表达多层次、结构化的配置信息。此时，选择合适的结构化配置格式变得至关重要。在现代Python应用中，JSON、YAML和TOML是三种最为常见的结构化配置格式。
+\index{配置格式}当应用程序的配置需求变得复杂时，简单的键值对形式可能难以表达多层次、结构化的配置信息。此时，选择合适的结构化配置格式变得至关重要。在现代Python应用中，JSON、YAML和TOML是三种最为常见的结构化配置格式。
 
 \subsection{JSON：通用的数据交换格式}
 
@@ -353,7 +353,7 @@ JSON适合作为API数据传输或工具间交换配置的中间格式，但在�
 
 \subsection{YAML：人类友好的配置语言}
 
-YAML（YAML Ain't Markup Language）以人类可读性为核心设计目标，通过缩进表示层次结构，天然支持注释和复杂数据类型\footnote{\url{https://yaml.org/}}。它在DevOps工具链\footnote{DevOps工具链指的是一系列相互集成、协同工作的软件工具集合，旨在支持软件从开发（Development）到运维（Operations）的整个生命周期，实现持续集成、持续交付和持续部署（CI/CD），提升软件交付的效率、可靠性和自动化水平。}中被广泛使用，如Kubernetes\footnote{\url{https://kubernetes.io/}}、Ansible\footnote{\url{https://www.ansible.com/}}等。
+\index{YAML}YAML（YAML Ain't Markup Language）以人类可读性为核心设计目标，通过缩进表示层次结构，天然支持注释和复杂数据类型\footnote{\url{https://yaml.org/}}。它在DevOps工具链\footnote{DevOps工具链指的是一系列相互集成、协同工作的软件工具集合，旨在支持软件从开发（Development）到运维（Operations）的整个生命周期，实现持续集成、持续交付和持续部署（CI/CD），提升软件交付的效率、可靠性和自动化水平。}中被广泛使用，如Kubernetes\footnote{\url{https://kubernetes.io/}}、Ansible\footnote{\url{https://www.ansible.com/}}等。
 
 YAML文件示例如下：
 
@@ -376,7 +376,7 @@ YAML的缩进敏感特性既是优势也是潜在风险：缩进错误会导致�
 
 \subsection{TOML：专为配置设计的格式}
 
-TOML（Tom's Obvious Minimal Language）是专为配置文件设计的格式\footnote{\url{https://toml.io/}}，语法简洁直观，通过明确的节（section）划分层次结构。随着\texttt{pyproject.toml}的普及，TOML正在成为Python社区配置相关的事实标准。
+\index{TOML}TOML（Tom's obvious minimal language）是专为配置文件设计的格式\footnote{\url{https://toml.io/}}，语法简洁直观，通过明确的节（section）划分层次结构。随着\texttt{pyproject.toml}的普及，TOML正在成为Python社区配置相关的事实标准。
 
 TOML文件示例如下：
 
@@ -564,7 +564,7 @@ if __name__ == "__main__":
 
 \subsection{使用Pydantic Settings实现类型安全的配置管理}
 
-随着配置复杂度的增加，手动解析、验证和管理配置变得繁琐且容易出错。Python社区为解决这一问题提供了强大的工具——Pydantic Settings。作为Pydantic的扩展，它不仅继承了Pydantic的运行时类型校验能力，还专门针对配置管理场景进行了优化，为生产级应用提供了类型安全、多源加载的配置管理解决方案。
+\index{Pydantic Settings}随着配置复杂度的增加，手动解析、验证和管理配置变得繁琐且容易出错。Python社区为解决这一问题提供了强大的工具——Pydantic Settings。作为Pydantic的扩展，它不仅继承了Pydantic的运行时类型校验能力，还专门针对配置管理场景进行了优化，为生产级应用提供了类型安全、多源加载的配置管理解决方案。
 
 \heading{Pydantic Settings的核心优势}
 
@@ -849,11 +849,11 @@ class AppSettings(BaseSettings):
 
 \heading{运行时监控与热重载}
 
-在生产环境中，配置可能因业务需求或运维调整而发生变更。传统的做法是重启应用以加载新配置，但这会导致服务中断，影响用户体验与系统可用性。为避免因配置更新而频繁重启，可以引入热重载（Hot Reload）机制，使应用在运行时动态加载更新的配置，实现无缝切换。
+\index{热重载}在生产环境中，配置可能因业务需求或运维调整而发生变更。传统的做法是重启应用以加载新配置，但这会导致服务中断，影响用户体验与系统可用性。为避免因配置更新而频繁重启，可以引入热重载（Hot Reload）机制，使应用在运行时动态加载更新的配置，实现无缝切换。
 
 热重载不仅能提升系统的持续可用性，还能减少因误操作或测试配置而反复重启所浪费的时间，尤其适合需要高可用性的在线服务。
 
-以下是一个基于前文介绍的Pydantic Settings 配置类的热重载示例。该示例使用watchdog库监听配置文件变化，并在文件被修改时自动重新加载配置：
+以下是一个基于前文介绍的Pydantic Settings 配置类的热重载示例。\index{watchdog}该示例使用watchdog库监听配置文件变化，并在文件被修改时自动重新加载配置：
 
 \begin{minted}{python}
 # file: src/fxb/ch11/config_hot_reload.py
