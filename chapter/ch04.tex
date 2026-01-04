@@ -36,16 +36,16 @@ def process_data(data: list[str]) -> dict[str, int]:
 
 
 # 测试
-users = ["张三", "李四", "王小五", "赵老六"]
+users = ["张三", "李四", "王五", "赵六"]
 
 result = process_users(users)
-print(result)  # 输出: {'张三': 2, '李四': 2, '王小五': 3, '赵老六': 3}
+print(result)  # 输出: {'张三': 2, '李四': 2, '王五': 3, '赵六': 3}
 \end{minted}
 
 
 \heading{自定义泛型类}
 
-借助\inlinepython{typing}中的\inlinepython{TypeVar}和\inlinepython{Generic}，可以定义自己的泛型类和函数，并结合第\ref{ch4:sec:mypy}小节的mypy工具，能够实现静态类型提示，提升代码的可读性和健壮性。
+借助\inlinepython{typing}中的\inlinepython{TypeVar}和\inlinepython{Generic}，可以定义自己的泛型类和函数，并结合第\ref{ch4:sec:mypy}小节的Mypy工具，能够实现静态类型提示，提升代码的可读性和健壮性。
 
 \inlinepython{TypeVar}用来创建一个类型占位符（变量），这个占位符在后续代码中可以代表任意具体类型，比如\inlinepython{int}、\inlinepython{str}、自定义类等，直到实际使用时才确定具体类型。从而让函数或类能够适配多种类型，同时保持类型一致性，支持类型约束，限制占位符只能代表某些特定的类型。
 
@@ -72,7 +72,7 @@ def first(values: list[V]) -> V:
 print(first(["hello", "world"]))
 \end{minted}
 
-注意，Python 解释器本身不强制执行类型注解，所以上面的代码用解释器执行时，并不会直接导致程序崩溃，但显然不符合类型设计的意图。用本章后面提到的mypy静态检查工具进行检查，则会提示错误：
+注意，Python 解释器本身不强制执行类型注解，所以上面的代码用解释器执行时，并不会直接导致程序崩溃，但显然不符合类型设计的意图。用本章后面提到的Mypy静态检查工具进行检查，则会提示错误：
 
 \begin{minted}{text}
 error: Value of type variable "V" of "first" cannot be "str"
@@ -452,13 +452,13 @@ print(user_data)
 \inlinepython{NewType}是 Python 类型系统中用于创建语义上不同的类型的工具，它能够在基础类型之上添加额外的语义层。虽然\inlinepython{UserId} 和\inlinepython{PostId} 在运行时本质上都是\inlinepython{int}类型，但通过\inlinepython{NewType}创建后，它们在类型检查时被视为完全不同的类型，这样可以防止在代码中意外地将用户ID和帖子ID混淆使用。显式转换强调了类型的语义差异，让代码意图更加清晰。现代类型检查器能够严格区分这些语义类型，因此当尝试将 \inlinepython{PostId} 传递给期望输入 \inlinepython{UserId} 的函数时，类型检查器会报错，即使它们在底层都是整数。
 
 \begin{minted}{bash}
-    # 直接运行，可以运行
-    python newtype_demo.py
-    # 输出：{'user_id': 123, 'name': '小白'}
+# 直接运行，可以运行
+python newtype_demo.py
+# 输出：{'user_id': 123, 'name': '小白'}
 
-    # 使用mypy进行静态检查，会报错，可用于确定错误，提高代码健壮性
-    mypy newtype_demo.py
-    # newtype_demo.py:24: error: Argument 1 to "get_user_profile" has incompatible type "PostId"; expected "UserId"  [arg-type]
+# 使用mypy进行静态检查，会报错，可用于确定错误，提高代码健壮性
+mypy newtype_demo.py
+# newtype_demo.py:24: error: Argument 1 to "get_user_profile" has incompatible type "PostId"; expected "UserId"  [arg-type]
 \end{minted}
 
 这种机制特别适用于那些底层类型相同但语义不同的场景，如各种ID、邮箱地址、URL等。它能够在编译期提前捕获潜在的类型混淆错误，提高代码的可靠性和可维护性，同时\inlinepython{NewType} 创建的类型在运行时不会产生额外性能损耗，保持运行时的零开销。
@@ -551,7 +551,7 @@ print(f"字符串列表: {string_items}")
 
 \section{类型检查工具的配置与集成 \label{ch4:sec:mypy}}
 
-Python解释器在运行时并不会强制检查所有类型错误，专业的类型提示需要配合专门的类型检查工具才能真正发挥作用。在目前 Python 生态中，mypy\footnote{\url{https://mypy.readthedocs.io/}} 和 pyright\footnote{\url{https://github.com/microsoft/pyright}} 是最主流的两个类型检查器，下面简要说明它们的用法。
+Python解释器在运行时并不会强制检查所有类型错误，专业的类型提示需要配合专门的类型检查工具才能真正发挥作用。在目前 Python 生态中，Mypy\footnote{\url{https://mypy.readthedocs.io/}} 和Pyright\footnote{\url{https://github.com/microsoft/pyright}}是最主流的两个类型检查器，下面简要说明它们的用法。
 
 \subsection{Python社区的类型检查基石：Mypy}
 
@@ -559,16 +559,16 @@ Python解释器在运行时并不会强制检查所有类型错误，专业的�
 
 \heading{安装与使用}
 
-安装Mypy十分简单，如果已经熟悉 uv 工具，可以直接使用以下命令：
+安装Mypy十分简单，如果已经熟悉uv工具，可以直接使用以下命令：
 
 \begin{minted}{bash}
-# 方式1: 全局安装 mypy（不推荐）
+# 方式1: 全局安装mypy（不推荐）
 uv tool install mypy
 
-# 方式2: 使用 uv 安装到当前项目（推荐）
+# 方式2: 使用uv安装到当前项目（推荐）
 uv add mypy --dev
 
-# 方式3: 一次性使用 mypy
+# 方式3: 一次性使用mypy
 uvx mypy main.py
 \end{minted}
 
@@ -615,7 +615,7 @@ Mypy提供了灵活的配置机制\footnote{\url{https://mypy.readthedocs.io/en/
 以下列出若干关键配置选项及其作用：
 
 \begin{minted}{toml}
-# pyproject.toml 中的 mypy 配置节
+# pyproject.toml 中的mypy配置节
 [tool.mypy]
 python_version = "3.12"              # 指定目标Python版本
 warn_return_any = true              # 对返回Any类型的函数发出警告
