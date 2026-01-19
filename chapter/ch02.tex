@@ -1,11 +1,10 @@
-\chapter{现代依赖管理工具链 \label{ch:modern-dependency-management}}
+\chapter{依赖管理工具链 \label{ch:modern-dependency-management}}
 
-虚拟环境解决了环境隔离的问题，但如何高效且可靠地管理项目依赖本身，是现代Python工程实践的核心挑战。本章将追溯依赖管理工具的演变历程，从基础的pip使用到现代工具uv的应用，全面解析如何实现生产级环境的一致性和部署效率的提升。
+虚拟环境解决了环境隔离的问题，但如何高效且可靠地管理项目依赖本身，是Python工程实践的重要挑战之一。本章将追溯依赖管理工具的演变历程，从基础的pip使用到uv的应用，全面解析如何实现生产级环境的一致性和部署效率的提升。
 
 \section{pip与requirements.txt}
 
 \subsection{pip的核心用法}
-
 
 \index{pip}pip作为Python的官方包管理器，提供了从安装到升级、卸载的全生命周期管理，是工程实践中不可或缺的一部分。从 Python 3.4 开始，pip 默认包含在 Python 的安装包中，无需额外安装。
 
@@ -46,8 +45,6 @@ Available versions: 2.32.5, 2.32.4, 2.32.3, 2.32.2, 2.31.0, 2.30.0, 2.29.0, 2.28
 
 \subsection{pipx}
 
-%pip虽然可以安装包，但是当安装命令行工具时，如果直接使用pip安装到全局环境，可能会引起依赖冲突。而如果安装到用户目录，虽然避免了系统环境的污染，但依然无法解决多个工具对同一依赖不同版本的要求。pipx通过为每个工具创建独立的虚拟环境来解决这个问题。同时，pipx使得这些工具的命令行接口在全局可用，方便用户使用。
-
 \heading{pip安装命令行工具的局限性}
 
 当我们需要安装一个 Python 命令行工具时，比如代码格式化工具Black，通常会这样做：
@@ -60,9 +57,7 @@ pip install black
 pip install --user black
 \end{minted}
 
-安装后，我们就可以在终端中直接运行Black命令了。
-
-直接采用pip这种方式安装工具，在实际使用中会带来依赖冲突、环境污染和卸载困难等问题。
+安装后，我们就可以在终端中直接运行\inlinecmd{black}命令了。但在实际使用中，直接采用pip这种安装方式会带来依赖冲突、环境污染和卸载困难等问题。
 
 \circled{1} 依赖冲突
 
@@ -133,7 +128,7 @@ pipx uninstall black
 
 在实际开发中，\texttt{pipx} 特别适合管理各类常用工具。如Black、Flake8、Mypy等开发工具，MkDocs、Sphinx等文档工具，HTTPie、Ansible等系统工具，都是pipx的典型应用场景。
 
-综上，pip和pipx有其明确的职责边界，pip专注于在虚拟环境中管理项目依赖，pipx负责管理全局命令行工具。后续第\ref{sec:uvx}节提到的\inlinecmd{uv tool install}、\inlinecmd{uvx}则作为更现代的工具运行器，提供了\inlinecmd{pipx install}和\inlinecmd{pipx run}的快速替代方案。
+综上，pip和pipx有其明确的职责边界，pip专注于在虚拟环境中管理项目依赖，pipx负责管理全局命令行工具。后续第\ref{sec:uvx}节提到的\inlinecmd{uv tool install}、\inlinecmd{uvx}则作为工具运行器，提供了\inlinecmd{pipx install}和\inlinecmd{pipx run}的快速替代方案。
 
 
 \subsection{requirements.txt的引入}
@@ -190,12 +185,12 @@ requests>=2.25.0,<3.0.0
 \begin{itemize}
     \item {依赖追踪}：提供了所有所需包和版本的集中化列表，维系了项目的依赖关系；
     \item {环境复现}：通过简单的pip命令即可快速重建开发环境；
-    \item {版本控制}：依赖变更通过源代码版本控制系统进行跟踪，便于追溯和管理项目依赖的演进情况。
-    \item {团队协作}：新团队成员能够快速搭建开发环境，降低了项目上手的门槛。
+    \item {版本控制}：依赖变更通过源代码版本控制系统进行跟踪，便于追溯和管理项目依赖的演进情况；
+    \item {团队协作}：新团队成员能够快速搭建开发环境，降低了项目上手的门槛；
     \item {项目分发}：使得项目能够被轻松安装和分发，促进了代码的共享和重用。
 \end{itemize}
 
-正是由于这些优势，\inlinefile{requirements.txt}被广泛应用于各类Python项目中，为Python项目的依赖管理带来了秩序和标准化，成为工程化实践的重要里程碑。然而，随着项目复杂度的增加和团队规模的扩大，\inlinefile{requirements.txt}的局限性也逐渐显现，这促使Python社区不断探索更先进的依赖管理解决方案。
+正是由于这些优势，\inlinefile{requirements.txt}被广泛应用于各类Python项目中，为早期Python项目的依赖管理带来了秩序和标准化，成为工程化实践的重要里程碑。然而，随着项目复杂度的增加和团队规模的扩大，\inlinefile{requirements.txt}的局限性也逐渐显现，这促使Python社区不断探索更先进的依赖管理解决方案。
 
 
 \section{依赖管理工具的演进}
@@ -239,7 +234,7 @@ black==23.10.1      # 开发依赖
 
 当项目依赖较多时，\inlinefile{requirements.txt}文件变得冗长且难以维护。缺乏统一的格式规范和分组标准，不同开发者可能采用不同的编写风格，增加了团队的维护成本。
 
-这些局限性促使Python社区寻求更先进的依赖管理解决方案，最终催生了基于\inlinefile{pyproject.toml}的现代工具链，为Python项目的工程化实践奠定了基础。
+这些局限性促使Python社区寻求更先进的依赖管理解决方案，最终催生了基于\inlinefile{pyproject.toml}的工具链，为Python项目的工程化实践奠定了基础。
 
 
 \subsection{现代阶段：pyproject.toml标准的建立}
@@ -275,7 +270,7 @@ test = [
 
 \section{uv：新一代极速依赖管理工具}
 
-上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具Poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\inlinecmd{poetry install}、\inlinecmd{poetry add}、\inlinecmd{poetry build}，来简化依赖安装、打包和发布流程。
+上面提到的\inlinefile{pyproject.toml}是Python社区推出的标准配置文件，其格式遵从了PEP 518、PEP 621 等定义的规范，任何遵循该标准的工具都可以读取和使用其中的信息，例如poetry和uv。其中，依赖管理和打包工具poetry原生支持并强化了\inlinefile{pyproject.toml}的功能，它不仅会读取\inlinefile{pyproject.toml}中的依赖和元数据，还会通过该文件生成\inlinefile{poetry.lock}文件，锁定依赖版本，并提供一系列命令，如\inlinecmd{poetry install}、\inlinecmd{poetry add}、\inlinecmd{poetry build}，来简化依赖安装、打包和发布流程。
 
 \begin{figure}[h]
     \centering
@@ -428,7 +423,7 @@ export UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple/
 # PyPI镜像源选项
 # 阿里云
 export UV_DEFAULT_INDEX=https://mirrors.aliyun.com/pypi/simple/   
-# 清华源     
+# 清华     
 export UV_DEFAULT_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple/   
 # 腾讯云   
 export UV_DEFAULT_INDEX=https://mirrors.cloud.tencent.com/pypi/simple/ 
@@ -455,7 +450,7 @@ uv python install 3.12
 
 对于长期项目，建议将镜像源配置持久化，避免每次都需要设置环境变量。
 
-\begin{minted}[breakanywhere]{bash}
+\begin{minted}[fontsize=\scriptsize, breakanywhere]{bash}
 # macOS/Linux：添加到shell配置文件
 echo 'export UV_DEFAULT_INDEX = "https://mirrors.aliyun.com/pypi/simple/"' >> ~/.bashrc
 echo 'export UV_PYTHON_INSTALL_MIRROR = "https://gh-proxy.com\
@@ -472,9 +467,9 @@ source ~/.bashrc
 上面的命令会将环境变量添加到\inlinefile{.bashrc}文件中，如果你使用了zsh，请将命令添加到\inlinefile{.zshrc}文件中。
 
 
-\subsection{从传统工具向uv的渐进迁移}
+\subsection{从传统工具向uv的渐进式迁移}
 
-uv提供了平滑的渐进式迁移路径，让现有项目能够平滑过渡到现代工具链。这种渐进迁移策略确保了项目在过渡期间始终保持可构建状态，团队成员可以逐步熟悉新工具而不会影响开发进度。
+uv提供了平滑的渐进式迁移路径，让现有项目能够平滑过渡到新的工具链。这种渐进式迁移策略确保了项目在过渡期间始终保持可构建状态，团队成员可以逐步熟悉新工具而不会影响开发进度。
 
 典型的迁移过程可分为三个阶段，每个阶段都可以独立运行，如下：
 
@@ -492,18 +487,18 @@ uv lock  # 生成锁定文件
 uv sync  # 使用uv同步依赖
 \end{minted}
 
-第一阶段：此阶段完全向后兼容，项目可以继续使用\inlinefile{requirements.txt}文件，但通过\inlinecmd{uv pip install}命令获取更快的依赖解析和安装速度。这是最安全的起步方式，几乎没有任何风险。
+第一阶段：此阶段完全向后兼容，项目可以继续使用\inlinefile{requirements.txt}文件，但通过\inlinecmd{uv pip install}命令获取更快的依赖解析和安装速度。这是最安全的起步方式，几乎没有风险。
 
 第二阶段：创建\inlinefile{pyproject.toml}文件并将现有依赖迁移到结构化配置中。\inlinecmd{uv init}命令会自动生成符合标准的配置文件，而\inlinecmd{uv add}命令则可以将传统依赖转换为\inlinefile{pyproject.toml}格式。
 
-第三阶段：完全转向uv的现代工作流，包括使用\inlinecmd{uv lock}生成锁定文件和\inlinecmd{uv sync}同步依赖。此时项目已经完全采用现代依赖管理实践，可以充分体验uv所提供的性能优势和便捷性。
+第三阶段：完全转向uv工作流，包括使用\inlinecmd{uv lock}生成锁定文件和\inlinecmd{uv sync}同步依赖。此时项目已经完全采用推荐的依赖管理实践，可以充分体验uv所提供的性能优势和便捷性。
 
-这种渐进式迁移策略具有多重优势，能够确保迁移过程的平稳性和安全性。首先，每个阶段都可以独立验证，使得迁移风险完全可控，团队可以在确保当前阶段稳定运行后再推进到下一阶段。其次，团队成员可以逐步适应新工具，学习曲线平缓，不会产生过重的学习负担。更重要的是，在迁移过程中项目始终保持向下兼容，既可以使用传统工具构建，又能从第一阶段开始就享受uv带来的速度优势。
+这种渐进式迁移策略具有多重优势，能够确保迁移过程的平稳性和安全性。首先，每个阶段都可以独立验证，使得迁移风险完全可控，团队可以在确保当前阶段稳定运行后再推进到下一阶段。其次，团队成员可以逐步适应新工具，学习曲线平缓，不会产生过重的学习负担。更重要的是，在迁移过程中项目始终保持向下兼容，既可以使用传统工具构建，又能从第一阶段开始就获得uv带来的速度优势。
 
 
 \subsection{uv pip与uv tool \label{sec:uvx}}
 
-初学者常常困惑于 \inlinecmd{uv pip} 和传统 \inlinecmd{pip} 的区别。实际上，两者的功能完全一致，都是用于 Python 包管理，但 \inlinecmd{uv pip} 作为现代替代方案，具有更快的速度和更智能的依赖处理。在日常开发中，可以完全用 \inlinecmd{uv pip} 替代传统的 \inlinecmd{pip}。
+初学者常常困惑于 \inlinecmd{uv pip} 和传统 \inlinecmd{pip} 的区别。实际上，两者的功能完全一致，都是用于 Python 包管理，但 \inlinecmd{uv pip} 作为新方案，具有更快的速度和更智能的依赖处理。在日常开发中，可以完全用 \inlinecmd{uv pip}替代传统的\inlinecmd{pip}。
 
 另一个重要命令 \inlinecmd{uv tool} 专注于开发工具的运行，它能自动安装工具并执行，无需预先手动安装，相当于一个更快的 \inlinecmd{pipx} 替代品。\inlinecmd{uv tool run} 在功能上等价于\inlinecmd{pipx run}，uvx则是\inlinecmd{uv tool run}的一个便捷别名。
 
@@ -529,12 +524,12 @@ uv tool uninstall black
 \end{minted}
 
 
-简单来说：\inlinecmd{uv pip} 负责安装包，\inlinecmd{uv tool} 负责运行工具，两者共同构成了 uv 这一现代 Python 开发工具集的核心功能。
+简单来说：\inlinecmd{uv pip}负责安装包，\inlinecmd{uv tool}负责运行工具，两者共同构成了 uv开发工具集的核心功能。
 
 
 \subsection{uv与传统方式的特性对比}
 
-\heading{uv与uv与传统依赖管理工具的对比}
+\heading{uv与传统依赖管理工具的对比}
 
 uv与传统依赖管理工具的主要区别可参考表\ref{ch2:tab:uv-vs-traditional}。
 
@@ -558,7 +553,7 @@ uv与传统依赖管理工具的主要区别可参考表\ref{ch2:tab:uv-vs-tradi
 
 \section*{本章总结与进阶思考}
 
-现代Python依赖管理已经从简单的文本列表发展到高度工程化的工具链。通过掌握从基础pip到现代uv的完整工具生态，开发者能够在不同场景下选择最合适的解决方案，为构建可靠的生产级应用奠定坚实基础。
+当前的Python依赖管理已经从简单的文本列表发展到高度工程化的工具链。通过掌握从基础pip到uv的完整工具生态，开发者能够在不同场景下选择最合适的解决方案，为构建可靠的生产级应用奠定坚实基础。
 
 \textbf{要点回顾：}
 
@@ -567,9 +562,9 @@ uv与传统依赖管理工具的主要区别可参考表\ref{ch2:tab:uv-vs-tradi
     \item {工具选择}：pip适合简单场景，uv适合工程化的生产环境；
     \item {环境确定性}：lock文件确保了环境的绝对可复现性；
     \item {配置优化}：合理的镜像源配置是提升开发速度的重要组成部分；
-    \item {渐进迁移}：现有项目可以通过渐进式迁移体验现代工具的优势。
+    \item {渐进迁移}：现有项目可以通过渐进式迁移体验uv新工具的优势。
 \end{itemize}
 
 \textbf{进阶思考：}
 
-掌握了现代依赖管理工具后，我们面临新的挑战：如何将这些工具与规范化的项目结构相结合？依赖管理解决了``用什么''的问题，而项目结构则解决``如何组织''的问题。只有将先进的工具与合理的结构相结合，才能构建出真正可维护、可扩展的Python项目。现代依赖管理工具为我们提供了强大的技术基础，而规范化的项目结构则是将这些技术优势转化为工程实践的关键桥梁，这正是下一章将要深入探讨的核心议题。
+掌握了依赖管理工具后，我们面临新的挑战：如何将这些工具与规范化的项目结构相结合？依赖管理解决了``用什么''的问题，而项目结构则解决``如何组织''的问题。只有将先进的工具与合理的结构相结合，才能构建出真正可维护、可扩展的Python项目。依赖管理工具为我们提供了强大的技术基础，而规范化的项目结构则是将这些技术优势转化为工程实践的桥梁，这正是下一章要探讨的议题。
