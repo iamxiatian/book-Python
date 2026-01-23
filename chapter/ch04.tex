@@ -413,7 +413,7 @@ def handle_response(response: ResponseData) -> bool:
 
 类型别名让代码意图更加清晰。例如，上面代码中的\inlinepython{UserData}定义了一个表示用户数据的字典结构，其中值可以是整数、字符串或字符串列表，这样在函数签名中使用 UserData就比直接写\inlinepython{Dict[str, Union[int, str, List[str]]]}更加简洁明了。
 
-Python 3.10 引入了更现代化的类型别名语法，使用内置类型和 ``|''操作符来替代传统的 typing 模块中的类型。如\inlinepython{ResponseData}，直接使用 dict、list 等内置类型，并用 ``|''表示联合类型，使类型声明更加贴近日常的 Python 语法，代码更加直观。
+Python 3.10 引入了新的类型别名语法，使用内置类型和 ``|''操作符来替代传统的 typing 模块中的类型。如\inlinepython{ResponseData}，直接使用 dict、list 等内置类型，并用 ``|''表示联合类型，使类型声明更加贴近日常的 Python 语法，代码更加直观。
 
 
 \heading{NewType 的语义区分}
@@ -736,7 +736,7 @@ uv run pyright src/ tests/
 
 \subsection{Pydantic 的核心价值与 BaseModel}
 
-\index{Pydantic}Pydantic是一个基于Python类型提示的现代化数据验证库，它能够在运行时对数据进行验证和序列化操作。Pydantic的核心优势在于直接复用Python的类型提示语法，实现了静态类型系统与运行时验证的无缝衔接。其基础构建块是\inlinepython{BaseModel}类，通过继承此类并定义类型注解字段，即可获得自动的数据验证和转换能力。
+\index{Pydantic}Pydantic是一个基于Python类型提示的数据类型验证库，它能够在运行时对数据进行验证和序列化操作。Pydantic的核心优势在于直接复用Python的类型提示语法，实现了静态类型系统与运行时验证的无缝衔接。其基础构建块是\inlinepython{BaseModel}类，通过继承此类并定义类型注解字段，即可获得自动的数据验证和转换能力。
 
 执行以下命令将Pydantic依赖加入到项目中：
 
@@ -841,7 +841,7 @@ Pydantic还支持更复杂的验证场景，如跨字段验证、自定义验证
 
 \subsection{在 FastAPI 中的应用}
 
-FastAPI 是一个现代化的高性能 Python Web 框架，专门用于构建 API 接口。它深度集成了 Pydantic，能够自动利用类型注解进行请求和响应数据的验证，为 Web 应用开发提供强大的类型安全保障。
+FastAPI 是一个高性能Python Web框架，专门用于构建 API 接口。它深度集成了 Pydantic，能够自动利用类型注解进行请求和响应数据的验证，为 Web 应用开发提供强大的类型安全保障。
 
 以下是一个用户注册的完整示例，展示了如何创建简单的用户管理API：
 
