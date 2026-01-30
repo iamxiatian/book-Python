@@ -1,11 +1,11 @@
 \chapter{Python的并发模型}
 \label{ch:python-concurrency}
 
-高效处理并发是构建高性能系统的重要技能。然而，Python 中的全局解释器锁(GIL)常常成为开发者面临的首要挑战。本章将系统解构Python的并发机制，从GIL的本质出发，逐步讲解多线程与多进程的适用场景、实现方式与最佳实践，并探讨进程间通信(IPC)的高效实现，帮助你构建真正高性能的Python应用。
+高效处理并发是构建高性能系统的重要技能。然而，Python中的全局解释器锁（global interpreter lock,GIL）常常成为开发者面临的首要挑战。本章将系统解构Python的并发机制，从GIL的本质出发，逐步讲解多线程与多进程的适用场景、实现方式与最佳实践，并探讨进程间通信的高效实现，帮助你构建高性能的Python应用。
 
-\section{全局解释器锁 (GIL)：Python并发模型的核心限制}
+\section{全局解释器锁：Python并发模型的核心限制}
 
-Python程序需要通过解释器来运行。解释器负责将编写的Python代码转换成机器可以执行的指令，其中官方标准实现为CPython，这也是当前使用最广泛的解释器。\index{全局解释器锁}\index{GIL}全局解释器锁 (Global Interpreter Lock, GIL)则是CPython解释器中的一个互斥锁，它确保在任何时刻只有一个线程执行Python字节码。虽然这简化了内存管理与线程安全，但也限制了多核CPU上Python线程的并行执行能力。
+Python程序需要通过解释器来运行。解释器负责将编写的Python代码转换成机器可以执行的指令，其官方标准实现为CPython，这也是当前使用最广泛的解释器。\index{全局解释器锁}\index{GIL}GIL即全局解释器锁，则是CPython解释器中的一个互斥锁，它确保在任何时刻只有一个线程执行Python字节码。虽然这简化了内存管理与线程安全，但也限制了多核CPU上Python线程的并行执行能力。
 
 
 \subsection{GIL的历史背景与存在意义}
@@ -22,7 +22,7 @@ Python程序需要通过解释器来运行。解释器负责将编写的Python�
 
 \subsection{GIL的工作机制与性能影响}
 
-GIL确保同一时刻只有一个线程执行Python代码，其释放时机包括：线程执行I/O操作（如文件读写、网络请求）；线程主动释放（如调用 \inlinepython{time.sleep()}）；解释器执行一定数量的字节码后强制切换。
+GIL确保同一时刻只有一个线程执行Python代码，其释放时机包括：线程执行I/O操作（如文件读写、网络请求）；线程主动释放（如调用\inlinepython{time.sleep()}）；解释器执行一定数量的字节码后强制切换。
 
 如表\ref{tab:gil-impact}所示，GIL的这一特点使其对I/O密集型任务和CPU密集型任务带来了截然不同的影响。
 
@@ -36,8 +36,8 @@ GIL确保同一时刻只有一个线程执行Python代码，其释放时机包�
     \toprule
     \textbf{任务类型} & \textbf{是否受GIL限制} & \textbf{并发推荐方案} & \textbf{性能表现} \\
     \midrule
-    I/O 密集型 & 否 & 多线程 & 高吞吐 \\
-    CPU 密集型 & 是 & 多进程 & 真正并行 \\
+    I/O密集型 & 否 & 多线程 & 高吞吐 \\
+    CPU密集型 & 是 & 多进程 & 真正并行 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     test_io()
 \end{minted}
 
-上面使用了httpbin.org作为测试服务器。httpbin.org是一个开源的HTTP请求与响应测试服务，由 Kenneth Reitz发起。它自己什么都不做，只是把你发过去的HTTP请求原封不动或按特定规则反射回来，方便开发者调试客户端代码、验证库行为或写自动化测试用例。
+上面使用了httpbin.org作为测试服务器。httpbin.org是一个开源的HTTP请求与响应测试服务，由 Kenneth Reitz发起，它自己什么都不做，只是把你发过去的HTTP请求原封不动或按特定规则反射回来，方便开发者调试客户端代码、验证库行为或写自动化测试用例。
 
 httpbin.org提供的一些常用服务有：
 
@@ -154,13 +154,13 @@ httpbin.org提供的一些常用服务有：
 虽然GIL在未来一段时间内仍将存在，但开发者已经形成了多种有效的应对策略：
 
 \begin{itemize}
-    \item {多进程（multiprocessing）}：通过创建多个进程，每个进程拥有独立的GIL，实现真正的并行计算。
-    \item {异步编程（asyncio）}：适用于高并发I/O场景，通过协程实现轻量级并发，避免线程阻塞。
-    \item {选择无 GIL 的解释器}：如Jython（基于 Java）或IronPython（基于 .NET），这些实现没有 GIL 限制。
-    \item {利用 C 扩展释放 GIL}：在C语言编写的扩展模块中执行密集型计算时，可以主动释放GIL，允许其他线程运行。
+    \item 多进程（multiprocessing）：通过创建多个进程，每个进程拥有独立的GIL，实现真正的并行计算。
+    \item 异步编程（asyncio）：适用于高并发I/O场景，通过协程实现轻量级并发，避免线程阻塞。
+    \item 选择无GIL的解释器：如Jython（基于Java）或IronPython（基于.NET），这些实现没有GIL限制。
+    \item 利用C扩展释放GIL：在C语言编写的扩展模块中执行密集型计算时，可以主动释放GIL，允许其他线程运行。
 \end{itemize}
 
-Python 自身也在不断演进。从 Python 3.13 开始，官方提供了实验性的``自由线程（free-threaded）''版本，允许在编译时选择是否启用GIL。而Python 3.14 则首次推出正式的无GIL版本（遵循PEP 703\footnote{PEP 703 – making the global interpreter lock optional in CPython: \url{https://peps.python.org/pep-0703/}}），彻底移除了全局解释器锁，让Python真正支持多线程并行，显著释放了CPU计算密集型任务的性能，如下述代码所示：
+Python自身也在不断演进。从Python 3.13开始，官方提供了实验性的``自由线程（free-threaded）''版本，允许在编译时选择是否启用GIL。而Python 3.14则首次推出正式的无GIL版本（遵循PEP 703\footnote{PEP 703 - making the global interpreter lock optional in CPython: \url{https://peps.python.org/pep-0703/}}），彻底移除了全局解释器锁，让Python真正支持多线程并行，释放了CPU计算密集型任务的性能，如下述代码所示：
 
 \begin{minted}{python}
 # 先进入到项目目录下，假设目录为fxb，则进入到该目录下顺序执行下面的命令
@@ -182,12 +182,12 @@ CPU 核心数（逻辑核）：12
 单线程耗时: 10.19秒
 \end{minted}
 
-由此可见，Python 3.14的自由线程版本在移除GIL限制后，能够显著提升CPU密集型任务在多核CPU上的运行性能。该版本是迈向真正并行Python的重要里程碑，但目前并非 Python 3.14 的默认发行版本。此外，整个生态系统的迁移仍需逐步推进，因此在实际情况中，往往仍需综合运用多进程、异步、C 扩展等多种策略，以应对实际应用场景中的复杂性。
+由此可见，Python 3.14的自由线程版本在移除GIL限制后，能够显著提升CPU密集型任务在多核CPU上的运行性能。该版本是迈向真正并行Python的重要里程碑，但目前尚不是Python 3.14的默认发行版本。此外，整个生态系统的迁移仍需逐步推进，因此在实际情况中，需综合运用多进程、异步、C扩展等多种策略以应对实际应用场景中的复杂性。
 
 
 \section{适用于I/O密集型任务的多线程编程}
 
-\index{多线程编程}对于网络请求、文件操作、数据库查询等I/O密集型场景，多线程编程仍然是提升系统吞吐量的重要手段。虽然Python的全局解释器锁GIL限制了多线程在CPU密集型任务上的并行能力，但在I/O操作期间，线程会主动释放GIL，这使得多线程在I/O密集型任务中仍能有效利用等待时间，实现并发执行。
+\index{多线程编程}对于网络请求、文件操作、数据库查询等I/O密集型场景，多线程编程仍然是提升系统吞吐量的重要手段。虽然GIL限制了多线程在CPU密集型任务上的并行能力，但在I/O操作期间，线程会主动释放GIL，这使得多线程在I/O密集型任务中仍能有效利用等待时间，实现并发执行。
 
 \subsection{线程的创建与管理}
 
@@ -229,12 +229,12 @@ if __name__ == "__main__":
     demo_thread_creation()
 \end{minted}
 
-其中，线程的\inlinepython{join()}方法主要用于阻塞当前线程（通常是主线程），直到调用该方法的线程执行完毕，从而确保线程间的同步执行，防止主线程过早退出导致子线程被强制终止。
+其中，线程的\inlinepython{join()}方法用于阻塞当前线程（通常是主线程），直到调用该方法的线程执行完毕，从而确保线程之间的同步执行，防止主线程过早退出导致子线程被强制终止。
 
 
 \subsection{线程安全与锁机制}
 
-\index{竞态条件}当多个线程同时访问共享资源时，可能会引发竞态条件（Race Condition），导致数据不一致。\index{Lock}Python提供了多种原语来保证线程安全，\inlinepython{threading.Lock}最为常用。
+\index{竞态条件}当多个线程同时访问共享资源时，可能会引发竞态条件（race condition），导致数据不一致。如表\ref{tab:thread-sync}所示，\index{Lock}Python提供了多种原语来保证线程安全，其中最为常用的是\inlinepython{threading.Lock}。
 
 \begin{table}[htbp]
   \centering
@@ -316,19 +316,21 @@ if __name__ == "__main__":
 
 \subsection{线程间通信与协调}
 
-除了使用锁进行同步外，线程间还需要进行通信和协调。Python提供了多种线程间通信机制：
+除了使用锁进行同步外，线程间还需要进行通信和协调。Python提供的线程间通信机制有：
 
 \begin{itemize}
-    \item \inlinepython{queue.Queue}：线程安全的队列，常用于生产者-消费者模型。
-    \item \inlinepython{threading.Event}：事件标志，用于线程间的简单信号通知。
+    \item \inlinepython{queue.Queue}：线程安全的队列，常用于生产者-消费者模型；
+    \item \inlinepython{threading.Event}：事件标志，用于线程间的简单信号通知；
     \item \inlinepython{threading.Condition}：条件变量，用于复杂的线程间协调，如等待/通知模式。
 \end{itemize}
 
-下面通过示例展示如何使用这些机制实现线程间的通信与协调。
+下面展示如何使用这些机制实现线程间的通信与协调。
 
 \heading{使用队列实现生产者-消费者模型}
 
-\inlinepython{queue.Queue} 是线程安全的先进先出（FIFO）队列，适用于多个线程间安全地传递数据。下面模拟果农生产水果，店员销售水果的场景：
+\inlinepython{queue.Queue}是线程安全的先进先出（first in first out, FIFO）队列，适用于多个线程间安全地传递数据。
+
+下面以果农生产水果，店员销售水果的模拟场景展示队列的使用方式：
 
 \begin{minted}{python}
 # file: src/fxb/ch07/thread_queue.py
@@ -377,7 +379,7 @@ for t in threads:
 print("今日水果销售完毕！")
 \end{minted}
 
-上述代码中，果农线程不断生产水果并放入队列，而店员线程则不断从队列中取出水果并销售。通过队列的 \inlinepython{put} 和 \inlinepython{get} 方法，果农和店员可以安全地共享水果数据。
+上述代码中，果农线程不断生产水果并放入队列，而店员线程则不断从队列中取出水果并销售。通过队列的\inlinepython{put}和\inlinepython{get} 法，果农和店员可以安全地共享水果数据。
 
 
 \heading{使用事件进行线程间协调}
@@ -423,7 +425,7 @@ for c in customers:
 print("所有顾客都享用完毕！")
 \end{minted}
 
-在这个例子中，当厨师调用\inlinepython{fruit\_plate\_ready.set()}设置事件后，所有正在等待该事件的顾客线程（通过\inlinepython{fruit\_plate\_ready.wait()}）都会被同时唤醒，然后继续执行各自的后续代码。
+在这个例子中，当厨师调用\inlinepython{fruit\_plate\_ready.set()}设置事件后，所有正在等待该事件的顾客线程（\inlinepython{fruit\_plate\_ready.wait()}）都会被同时唤醒，然后继续执行各自的后续代码。
 
 
 \heading{使用条件变量实现等待/通知模式}
@@ -498,12 +500,12 @@ for c in customer_threads:
 print("今日营业结束！")
 \end{minted}
 
-通过这些简单的例子可以看出：队列适合有序的数据传递，如生产者-消费者场景；事件适合简单的信号通知，一个线程通知其他线程某个事件已发生；条件变量适合复杂的协调，允许线程在特定条件下等待和唤醒。在实际开发中，应根据具体场景选择合适的通信机制，以保证线程间的正确协作和高效运行。
+通过这些简单的例子可以看出：队列适合有序的数据传递，如生产者-消费者场景；事件适合简单的信号通知，一个线程通知其他线程某个事件已发生；条件变量适合复杂的协调，允许线程在特定条件下等待和唤醒。在实际开发中，应根据具体场景选择合适的通信机制。
 
 
 \subsection{线程池}
 
-频繁创建和销毁线程会带来较大的开销，使用线程池可以复用线程，提高性能。\index{线程池}Python标准库提供了 \texttt{concurrent.futures.ThreadPoolExecutor}，它是一个高层级的线程池接口。
+使用线程池可以复用线程，避免频繁创建和销毁线程带来的额外开销。\index{线程池}Python标准库提供了一个高层级的线程池接口\texttt{concurrent.futures.ThreadPoolExecutor}用于实现此类功能。
 
 \begin{minted}{python}
 from concurrent.futures import ThreadPoolExecutor, as_completed, wait
@@ -528,19 +530,19 @@ def demo_thread_pool():
     ]
     
     with ThreadPoolExecutor(max_workers=3) as executor:
-        print("=== 方法1: submit() 每次提交单个任务 ===")
+        print("方法1: submit() 每次提交单个任务")
         for url in urls:
             future = executor.submit(download_file, url)
             url, size = future.result()
             print(f"单个任务结果: {url} -> {size}KB")
 
     with ThreadPoolExecutor(max_workers=3) as executor:
-        print("\n=== 方法2: map() 批量提交，按提交顺序获取结果 ===")
+        print("\n方法2: map() 批量提交，按提交顺序获取结果")
         for url, size in executor.map(download_file, urls):
             print(f"获取结果: {url} -> {size}KB")
     
     with ThreadPoolExecutor(max_workers=3) as executor:
-        print("\n=== 方法3: submit()批量提交，借助as_completed按完成顺序获取结果 ===")
+        print("\n方法3: submit()批量提交，借助as_completed按完成顺序获取结果")
         futures = {executor.submit(download_file, url): url for url in urls}
         for future in as_completed(futures): 
             url, size = future.result()
@@ -550,19 +552,19 @@ if __name__ == "__main__":
     demo_thread_pool()
 \end{minted}
 
-上面展示了线程池的使用方法，包括使用 \inlinepython{submit()} 方法提交单个任务，使用 \inlinepython{map()} 方法批量提交任务并按提交顺序获取结果，以及使用 \inlinepython{as\_completed()} 方法批量提交任务并按完成顺序获取结果。
-请注意，线程池与\inlinepython{threading}模块不同，我们无需通过列表来跟踪线程，不需要使用\inlinepython{join()}进行同步等待或在线程完成后释放资源——所有这些都由构造器自动处理，使代码更紧凑且不易出错。
+上面展示了线程池的使用方法，包括使用\inlinepython{submit()}方法提交单个任务，使用\inlinepython{map()}方法批量提交任务并按提交顺序获取结果，以及使用\inlinepython{as\_completed()}方法批量提交任务并按完成顺序获取结果。
+请注意，线程池与\inlinepython{threading}模块不同，我们无需通过列表来跟踪线程，不需要使用\inlinepython{join()}进行同步等待或在线程完成后释放资源，所有这些都由构造器自动处理，使代码更紧凑且不易出错。
 
 
 \section{适用于CPU密集型任务的多进程编程}
 
 
-\index{多进程编程}对于需要大量CPU计算的任务，Python的多进程编程是绕过GIL限制、实现真正并行计算的首选方案。每个 Python进程都拥有自己独立的解释器和内存空间，因此可以充分利用多核CPU的计算能力。
+\index{多进程编程}对于需要大量CPU计算的任务，Python的多进程编程是绕过GIL限制、实现真正并行计算的首选方案。此时，每个Python进程都拥有自己独立的解释器和内存空间，可以充分利用多核CPU的计算能力。
 
 
 \subsection{多进程的基本使用}
 
-Python 标准库提供了\inlinepython{multiprocessing} 模块来支持多进程编程。其接口与 \inlinepython{threading} 模块类似，但底层实现完全不同。以下是一个简单的多进程示例，演示如何创建和启动进程：
+Python标准库提供了\inlinepython{multiprocessing}模块来支持多进程编程。其接口与\inlinepython{threading}模块类似，但底层实现完全不同。以下是一个简单的多进程示例，演示如何创建和启动进程：
 
 \begin{minted}{python}
 import multiprocessing
@@ -633,13 +635,13 @@ if __name__ == "__main__":
 
 \subsection{进程间通信与协调}
 
-由于每个进程拥有独立的内存空间，进程间不能直接共享变量。\index{IPC}Python提供了多种\index{进程间通信}进程间通信（inter-process communication，IPC）机制，包括：队列（queue）、管道（pipe）和共享内存（shared memory）。
+由于每个进程拥有独立的内存空间，进程间不能直接共享变量。\index{进程间通信}\index{IPC}Python提供的进程间通信（inter-process communication，IPC）机制有队列（queue）、管道（pipe）和共享内存（shared memory）三种常见方式。
 
 \heading{使用队列进行进程间通信}
 
 \inlinepython{multiprocessing.Queue}是一个进程安全的FIFO队列，允许多个进程安全地传递数据，注意，此处的队列不是用于线程的\inlinepython{queue.Queue}。
 
-以下示例展示如何使用进程安全的队列在水果批发商（生产者进程）和零售商（消费者进程）之间传递水果：
+以下示例展示如何使用进程安全的队列，在水果批发商（生产者进程）和零售商（消费者进程）之间传递水果：
 
 \begin{minted}{python}
 import multiprocessing
@@ -714,14 +716,14 @@ if __name__ == "__main__":
     demo_fruit_queue()
 \end{minted}
 
-注意，队列在进程间传递数据时会对数据进行序列化和反序列化，因此传递的对象必须是可序列化的（picklable）。
+注意，队列在进程间传递数据时会对数据进行序列化和反序列化处理，因此传递的对象必须是可序列化的（picklable）。
 
 
 \heading{使用管道进行进程间通信}
 
-\index{管道}管道（pipe）是一种半双工的通信机制，用于实现两个进程间的双向/单向数据传输。在Python中，\inlinepython{multiprocessing.Pipe} 提供了一个简单的管道实现，可以默认创建双向管道（两端均可读写），也可通过参数指定单向管道（仅一端写、另一端读）。
+\index{管道}管道（pipe）是一种半双工的通信机制，用于实现两个进程间的数据传输。在Python中，\inlinepython{multiprocessing.Pipe}提供了一个简单的管道实现，可以默认创建双向管道（两端均可读写），也可通过参数指定单向管道（仅一端写、另一端读）。
 
-以下示例展示如何使用管道在水果检测员和质量监督员之间进行双向通信：
+以下示例展示如何使用管道进行双向通信：
 
 \begin{minted}{python}
 from multiprocessing import Process, Pipe
@@ -746,18 +748,18 @@ if __name__ == "__main__":
     conn2.close()
 \end{minted}
 
-管道适用于两个进程之间的双向通信，但多个进程间通信时使用队列更为方便。
+管道适用于两个进程之间的双向通信。对于多个进程间的通信，使用队列会更为方便。
 
 
 \heading{使用共享内存进行进程间通信}
 
-\index{共享内存}共享内存是Python的\inlinepython{multiprocessing}模块中高性能的进程间通信机制之一，其核心优势在于允许多个进程直接读写同一块物理内存区域，完全避免了管道或队列所需的数据序列化和复制开销，从而成为速度最快的进程间通信方式。
+\index{共享内存}共享内存是一种高性能的进程间通信机制，其核心优势在于允许多个进程直接读写同一块物理内存区域，完全避免了管道或队列所需的数据序列化和复制开销。
 
-从实现原理看，操作系统负责在内存中开辟专门的共享区域，各进程可直接访问该区域而无需内核中转。Python通过\inlinepython{multiprocessing}模块的Value/Array（针对基础数据类型）或Manager（支持复杂结构）对此机制进行封装，底层则依赖于操作系统的共享内存实现，如Linux的shm\footnote{\url{https://www.kernel.org/doc/gorman/html/understand/understand015.html}}或Windows的CreateFileMapping\footnote{\url{https://www.jeremyong.com/winapi/io/2024/11/03/windows-memory-mapped-file-io/}}。
+从实现原理看，操作系统负责在内存中开辟专门的共享区域，各进程可直接访问该区域而无需经内核中转。Python通过\inlinepython{multiprocessing}模块的Value/Array（针对基础数据类型）或Manager（支持复杂结构）对此机制进行封装，底层则依赖于操作系统的共享内存实现，如Linux的shm\footnote{\url{https://www.kernel.org/doc/gorman/html/understand/understand015.html}}或Windows的CreateFileMapping\footnote{\url{https://www.jeremyong.com/winapi/io/2024/11/03/windows-memory-mapped-file-io/}}。
 
 \circled{1} 基于Value/Array的简单类型共享
 
-这是一种最快的内存共享方法。其中，Value用于在进程间共享单个基本数据类型（如整数、浮点数），而Array则用于共享数组类型的数据。这两种方式均直接映射到操作系统的共享内存区域，完全避免了数据序列化和复制的开销，因此能够实现极速的数据交换性能。
+这是一种最快的内存共享方法。其中，Value用于在进程间共享单个基本数据类型（如整数、浮点数），而Array则用于共享数组类型的数据。这两种方式均直接映射到操作系统的共享内存区域，完全避免了数据序列化和复制的开销，因此能够实现极速的进程间数据交换。
 
 \begin{minted}{python}
 from multiprocessing import Process, Value, Array
@@ -823,11 +825,11 @@ if __name__ == "__main__":
 
 \subsection{进程池}
 
-与线程池类似，频繁创建和销毁进程会带来较大的系统开销。进程池通过复用进程的方式，可以有效降低这种开销，尤其适用于需要大量执行短期CPU密集型任务的场景。Python提供了两种实现：标准库中的 \inlinepython{multiprocessing.Pool} 和更高层级的 \inlinepython{concurrent.futures.ProcessPoolExecutor}。
+与线程池类似，频繁创建和销毁进程会带来较大的系统开销。进程池通过复用进程的方式，可以有效降低这种开销，尤其适用于需要大量执行短期CPU密集型任务的场景。Python提供了两种实现：标准库中的\inlinepython{multiprocessing.Pool}和更高层级的\inlinepython{concurrent.futures.ProcessPoolExecutor}。
 
 \heading{使用multiprocessing.Pool}
 
-\inlinepython{multiprocessing.Pool} 提供了丰富的进程池管理接口，支持同步和异步执行方式。以下是其核心方法：
+\inlinepython{multiprocessing.Pool}提供了丰富的进程池管理接口，支持同步和异步执行方式。以下是其核心方法：
 
 \begin{description}
     \item[apply(func, args)] 同步执行，阻塞直到返回结果。
@@ -856,6 +858,7 @@ def demo_multiprocessing_pool():
     print("=== 方法1: 同步map() ===")
     start = time.time()
     with multiprocessing.Pool(processes=4) as pool:
+        # 调用后会阻塞主进程，直到所有子进程完成任务
         results = pool.map(square, numbers)
     print(f"结果: {results}")
     print(f"耗时: {time.time() - start:.2f}秒")
@@ -895,7 +898,7 @@ if __name__ == "__main__":
 总耗时: 1.55秒
 \end{minted}
 
-\heading{使用 concurrent.futures.ProcessPoolExecutor}
+\heading{使用concurrent.futures.ProcessPoolExecutor}
 
 \index{进程池}\inlinepython{ProcessPoolExecutor}是\inlinepython{concurrent.futures}模块提供的更高层级的进程池接口，其用法与\inlinepython{ThreadPoolExecutor}几乎完全一致，只是底层使用进程而非线程。这使得在I/O密集型和CPU密集型任务之间切换实现变得非常容易。
 
@@ -960,10 +963,10 @@ if __name__ == "__main__":
 \heading{进程池的最佳实践与注意事项}
 
 \begin{itemize}
-    \item {进程数量选择}：通常设置为计算机拥有的CP 核心数，过多的进程会因上下文切换和内存开销导致性能下降。
-    \item {任务粒度}：任务应足够“重”以抵消进程间通信的开销。对于非常轻量的任务，多进程可能不如单进程。
-    \item {数据序列化}：传递的参数和返回的结果必须是可序列化的（picklable）。如果涉及大量数据传递，考虑使用共享内存减少复制开销。
-    \item {资源清理}：使用\inlinepython{with}语句确保进程池正确关闭，避免僵尸进程。
+    \item 进程数量选择：通常设置为计算机拥有的CP核心数，过多的进程会因上下文切换和内存开销导致性能下降。
+    \item 任务粒度：任务应足够``重''以抵消进程间通信的开销。对于非常轻量的任务，多进程可能不如单进程。
+    \item 数据序列化：传递的参数和返回的结果通常要求可序列化，如果涉及大量数据传递，应考虑使用共享内存以减少复制开销。
+    \item 资源清理：使用\inlinepython{with}语句确保进程池正确关闭，避免僵尸进程。
 \end{itemize}
 
 进程池是多进程编程中的重要工具，合理使用可以显著提升CPU密集型任务的执行效率，同时保持代码的简洁性和可维护性。在实际项目中，应根据任务特性、数据规模和硬件条件灵活选择进程池的实现方式和参数配置。
@@ -971,12 +974,13 @@ if __name__ == "__main__":
 
 \section*{本章总结与进阶思考}
 
-本章系统讲解了 Python 并发模型的核心机制与实践方法：
+本章系统讲解了Python并发模型的核心机制与实践方法，给出了多线程编程与多进程编程的具体方法和适用场景。实践中具体选择哪一种并发模型，与任务的类型是I/O密集型还是CPU密集型有关。
 
 \textbf{要点回顾：}
+
 \begin{itemize}
     \item GIL限制了多线程的并行能力，但对I/O密集型任务影响较小。
-    \item 多线程适用于I/O密集型场景，需注意线程安全。
+    \item 多线程适用于I/O密集型场景，但需注意线程安全。
     \item 多进程可绕过GIL，适用于CPU密集型计算，但进程间通信成本较高。
     \item 合理选择进程间通信机制是保证多进程性能的关键。
 \end{itemize}
@@ -984,4 +988,4 @@ if __name__ == "__main__":
 
 \textbf{进阶思考：} 
 
-Python 的异步编程模型 (asyncio) 为高并发 I/O 场景提供了更轻量级的解决方案。下一章，我们将深入探讨如何使用 asyncio 构建高性能网络应用与异步任务处理系统。
+Python的异步编程模型 (asyncio) 为高并发I/O场景提供了更轻量级的解决方案。下一章，我们将进一步探讨如何使用asyncio构建高性能应用与异步任务处理系统。
