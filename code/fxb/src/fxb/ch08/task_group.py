@@ -14,7 +14,7 @@ async def main():
     try:
         async with asyncio.TaskGroup() as tg:
             # 创建任务组内的任务
-            t1 = tg.create_task(worker("A", 1.5))
+            t1 = tg.create_task(worker("A", 3.5))
             t2 = tg.create_task(worker("B", 2.5))  # 这个会出错, 改成0.5则正常
             t3 = tg.create_task(worker("C", 0.5))
 
